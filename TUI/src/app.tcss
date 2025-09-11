@@ -1,0 +1,128 @@
+/* Main layout */
+Screen {
+    background: #1e1e1e;
+}
+
+Header {
+    dock: top;
+    background: #2d2d2d;
+    color: #ffffff;
+}
+
+Footer {
+    dock: bottom;
+    background: #2d2d2d;
+}
+
+/* Widget layout */
+#file-browser {
+    width: 30%;
+    border-right: solid #444444;
+}
+
+#chat-interface {
+    width: 70%;
+}
+
+/* File browser widget styles */
+FileBrowser {
+    background: #252526;
+    color: #cccccc;
+}
+
+/* Chat interface widget styles */
+ChatInterface {
+    background: #1e1e1e;
+}
+
+/* Model selection screen */
+ModelSelectionScreen {
+    align: center middle;
+    background: rgba(0, 0, 0, 0.8);
+}
+
+#model-selection-container {
+    width: 60;
+    height: 20;
+    border: thick #007acc;
+    background: #2d2d2d;
+}
+
+#model-selection-title {
+    dock: top;
+    height: 3;
+    background: #007acc;
+    color: #ffffff;
+    text-align: center;
+    content-align: center middle;
+}
+
+#model-list {
+    background: #2d2d2d;
+    color: #cccccc;
+    border: none;
+}
+
+#model-list > .list-item {
+    background: #2d2d2d;
+    color: #cccccc;
+}
+
+#model-list > .list-item:hover {
+    background: #404040;
+}
+
+#model-list > .list-item.-highlighted {
+    background: #007acc;
+    color: #ffffff;
+}
+
+/* File tree styling */
+DirectoryTree {
+    background: #252526;
+    color: #cccccc;
+}
+
+DirectoryTree > .tree--guides {
+    color: #444444;
+}
+
+DirectoryTree > .tree--guides-selected {
+    color: #007acc;
+}
+
+DirectoryTree > .tree-node {
+    color: #cccccc;
+}
+
+DirectoryTree > .tree-node:hover {
+    background: #2a2d2e;
+}
+
+DirectoryTree > .tree-node.-selected {
+    background: #094771;
+    color: #ffffff;
+}
+
+/* Rich content styling */
+RichLog .code {
+    background: #2d2d2d;
+    border: solid #444444;
+}
+
+RichLog .markdown-h1,
+RichLog .markdown-h2,
+RichLog .markdown-h3 {
+    color: #569cd6;
+}
+
+RichLog .markdown-code {
+    background: #2d2d2d;
+    color: #d4d4d4;
+}
+
+RichLog .markdown-code-block {
+    background: #2d2d2d;
+    border: solid #444444;
+    color: #d4d4d4;
+}
