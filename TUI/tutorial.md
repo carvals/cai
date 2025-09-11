@@ -30,7 +30,7 @@ The Ollama TUI is a sophisticated terminal-based chat assistant that connects to
 ### Verify Ollama is Running
 Test that Ollama is accessible:
 ```bash
-curl http://localhost:11434/api/tags
+curl http://127.0.0.1:11434/api/tags
 ```
 
 ## 3. Project Setup
@@ -119,7 +119,7 @@ textualize/
 ├── requirements.txt        # Python dependencies
 ├── tutorial.md            # This file
 ├── job_tracker.md         # Development progress
-└── OllamaTUI-Spec.md      # Project specification
+└── CAI-TUI-Spec.md        # Project specification (provider-agnostic)
 ```
 
 ## 7. Technical Details
@@ -194,7 +194,7 @@ pip install -r requirements.txt
 python run.py
 
 # Test Ollama connection
-curl http://localhost:11434/api/tags
+curl http://127.0.0.1:11434/api/tags
 ```
 
 This tutorial covers everything needed to reproduce and use the Ollama TUI project successfully.
