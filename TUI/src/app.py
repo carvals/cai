@@ -5,6 +5,7 @@ from typing import Optional
 
 import ollama
 import httpx
+import json
 from textual.app import App, ComposeResult
 from textual.containers import Horizontal
 from textual.reactive import reactive
@@ -19,6 +20,8 @@ from database import (
 from widgets.chat_interface import ChatInterface
 from widgets.file_browser import FileBrowser
 from widgets.model_selection import ModelSelectionScreen
+from widgets.output_panel import OutputPanel
+from widgets.output_root_prompt import OutputRootPrompt
 
 
 class OllamaTUI(App):
@@ -30,6 +33,8 @@ class OllamaTUI(App):
         ("ctrl+u", "add_to_context", "Add to Context"),
         ("ctrl+s", "summarize_file", "Summarize File"),
         ("ctrl+r", "clear_context", "Clear Context"),
+        ("ctrl+o", "change_output_root", "Change Output Root"),
+        ("f5", "refresh_explorer", "Refresh Explorer"),
     ]
 
     model_name: reactive[Optional[str]] = reactive(None)
@@ -42,6 +47,7 @@ class OllamaTUI(App):
         with Horizontal():
             yield FileBrowser("./", id="file-browser")
             yield ChatInterface(id="chat-interface")
+            yield OutputPanel(id="output-panel")
         yield Footer()
 
     def on_mount(self) -> None:
@@ -121,27 +127,39 @@ class OllamaTUI(App):
             except Exception as ping_err:
                 chat_interface.add_error_message(f"Could not reach Ollama HTTP API: {type(ping_err).__name__}: {ping_err}")
                 # Continue anyway; the Python client might still work
-
-            # Try HTTP API generate first (non-streaming)
-            response = None
+            # Try HTTP API generate with streaming first
+            full_text = ""
+            streamed_successfully = False
             try:
-                async with httpx.AsyncClient(timeout=120.0) as hc:
-                    gen_resp = await hc.post(
+                async with httpx.AsyncClient(timeout=None) as hc:
+                    async with hc.stream(
+                        "POST",
                         'http://127.0.0.1:11434/api/generate',
-                        json={"model": self.model_name, "prompt": full_prompt, "stream": False},
-                    )
-                    if gen_resp.status_code == 200:
-                        data = gen_resp.json()
-                        response = data
-                    else:
-                        chat_interface.add_info_message(
-                            f"HTTP generate failed with {gen_resp.status_code}; falling back to Python client."
-                        )
-            except Exception as http_err:
-                chat_interface.add_info_message(f"HTTP generate error: {http_err}; falling back to Python client.")
+                        json={"model": self.model_name, "prompt": full_prompt, "stream": True},
+                    ) as resp:
+                        if resp.status_code != 200:
+                            raise RuntimeError(f"HTTP {resp.status_code}: {await resp.aread()[:200]}")
+                        chat_interface.add_assistant_stream_start()
+                        async for line in resp.aiter_lines():
+                            if not line:
+                                continue
+                            try:
+                                data = json.loads(line)
+                            except json.JSONDecodeError:
+                                continue
+                            chunk = data.get("response") or ""
+                            if chunk:
+                                full_text += chunk
+                                chat_interface.append_assistant_stream_text(chunk)
+                            if data.get("done") is True:
+                                break
+                        chat_interface.end_assistant_stream()
+                        streamed_successfully = True
+            except Exception as stream_err:
+                chat_interface.add_info_message(f"Streaming failed: {type(stream_err).__name__}: {stream_err}; trying non-stream...")
 
-            if response is None:
-                # Fallback to Python client
+            if not streamed_successfully:
+                # Non-stream fallback via Python client
                 client = ollama.Client(host='http://127.0.0.1:11434')
                 response = await asyncio.wait_for(
                     asyncio.to_thread(
@@ -151,27 +169,22 @@ class OllamaTUI(App):
                     ),
                     timeout=120,
                 )
-            
-            # Display response (supports dict and Pydantic object types)
-            if hasattr(response, 'response'):
-                response_text = response.response  # Pydantic model attribute
-            elif isinstance(response, dict) and 'response' in response:
-                response_text = response['response']
-            else:
-                response_text = None
+                if hasattr(response, 'response'):
+                    full_text = response.response
+                elif isinstance(response, dict):
+                    full_text = response.get('response') or ""
 
-            if response_text:
-                chat_interface.add_assistant_message(response_text)
-                
-                # Save to database
+                if full_text:
+                    chat_interface.add_assistant_message(full_text)
+                else:
+                    chat_interface.add_error_message("No response received from Ollama (fallback path).")
+
+            # Save to database if any text was produced
+            if full_text:
                 try:
-                    await asyncio.to_thread(add_chat_message, self.session_id, self.model_name, "assistant", response_text)
+                    await asyncio.to_thread(add_chat_message, self.session_id, self.model_name, "assistant", full_text)
                 except Exception as db_err:
                     chat_interface.add_error_message(f"DB error (assistant message): {type(db_err).__name__}: {db_err}")
-            else:
-                chat_interface.add_error_message(
-                    f"No response received from Ollama. Type: {type(response)}"
-                )
             
         except asyncio.TimeoutError:
             chat_interface.add_error_message("Timed out waiting for Ollama response. Check the model and server logs.")
@@ -180,6 +193,41 @@ class OllamaTUI(App):
         finally:
             # Hide loading indicator
             chat_interface.set_loading(False)
+
+    # --- Output root change flow ---
+    def on_output_panel_change_root_requested(self, event: OutputPanel.ChangeRootRequested) -> None:
+        """Open a modal prompt to change the output root directory."""
+        def set_root(path_str: str | None) -> None:
+            if not path_str:
+                return
+            try:
+                new_root = Path(path_str).expanduser().resolve()
+                panel = self.query_one("#output-panel", OutputPanel)
+                panel.set_output_root(new_root)
+                ci = self.query_one("#chat-interface", ChatInterface)
+                ci.add_info_message(f"Output root set to: {new_root}")
+            except Exception as e:
+                ci = self.query_one("#chat-interface", ChatInterface)
+                ci.add_error_message(f"Failed to set output root: {e}")
+
+        self.push_screen(OutputRootPrompt(), set_root)
+
+    def action_change_output_root(self) -> None:
+        """Keyboard shortcut handler to change output root (Ctrl+O)."""
+        def set_root(path_str: str | None) -> None:
+            if not path_str:
+                return
+            try:
+                new_root = Path(path_str).expanduser().resolve()
+                panel = self.query_one("#output-panel", OutputPanel)
+                panel.set_output_root(new_root)
+                ci = self.query_one("#chat-interface", ChatInterface)
+                ci.add_info_message(f"Output root set to: {new_root}")
+            except Exception as e:
+                ci = self.query_one("#chat-interface", ChatInterface)
+                ci.add_error_message(f"Failed to set output root: {e}")
+
+        self.push_screen(OutputRootPrompt(), set_root)
 
     def prepare_prompt_with_context(self, message: str, context_files: list[Path]) -> str:
         """Prepare prompt with file context if any."""
@@ -220,6 +268,11 @@ class OllamaTUI(App):
         file_browser.clear_context()
         chat_interface.add_info_message("Context cleared")
 
+    def action_refresh_explorer(self) -> None:
+        """Refresh the file explorer tree (F5)."""
+        fb = self.query_one("#file-browser", FileBrowser)
+        fb.refresh_tree()
+
     def action_summarize_file(self) -> None:
         """Summarize the selected file."""
         if hasattr(self, 'selected_file') and self.selected_file and self.model_name:
@@ -228,6 +281,7 @@ class OllamaTUI(App):
     async def summarize_file(self, file_path: Path) -> None:
         """Generate and store a summary of the file."""
         chat_interface = self.query_one("#chat-interface", ChatInterface)
+        output_panel = self.query_one("#output-panel", OutputPanel)
         
         try:
             content = file_path.read_text(encoding='utf-8')
@@ -282,8 +336,14 @@ class OllamaTUI(App):
             # Save summary to database
             add_file_summary(str(file_path), self.model_name, summary)
             
-            # Display summary
+            # Display summary in chat and Output panel
             chat_interface.add_file_summary(file_path.name, summary)
+            output_panel.display_artifact(f"{file_path.name}", summary)
+
+            # Auto-save artifact to disk per spec answers
+            saved = output_panel.save_current_artifact()
+            if saved:
+                chat_interface.add_info_message(f"Saved summary to: {saved}")
             
         except asyncio.TimeoutError:
             chat_interface.add_error_message("Timed out waiting for summary from Ollama.")

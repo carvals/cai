@@ -1,6 +1,6 @@
-# Ollama TUI Tutorial
+# CAI TUI Tutorial (with Ollama backend)
 
-This tutorial provides complete instructions on how to set up, run, and use the Ollama TUI project.
+This tutorial provides complete instructions on how to set up, run, and use the CAI TUI project with the Ollama backend.
 
 ## 1. Project Overview
 
@@ -201,7 +201,23 @@ This tutorial covers everything needed to reproduce and use the Ollama TUI proje
 
 ---
 
-## 10. Updates & Troubleshooting Addendum (2025-09)
+## 10. Streaming Responses (2025-09)
+
+The chat now streams tokens incrementally:
+
+- The chat log shows partial text as it arrives (buffered into readable chunks).
+- A compact "Generating…" status line appears below the log. There is no full-screen overlay.
+- When the stream ends, the final buffer is rendered once as Markdown for improved formatting.
+
+If you only see the status line but no tokens, verify that models respond to streaming:
+
+```bash
+curl -s -N -X POST http://127.0.0.1:11434/api/generate \
+  -H 'Content-Type: application/json' \
+  -d '{"model":"llama3.2:latest","prompt":"Say hello!","stream":true}'
+```
+
+## 11. Updates & Troubleshooting Addendum (2025-09)
 
 The following improvements were made to address connectivity and persistence edge cases:
 

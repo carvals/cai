@@ -4,11 +4,11 @@ from pathlib import Path
 from typing import List, Set
 
 from textual.app import ComposeResult
-from textual.containers import Vertical
+from textual.containers import Vertical, Horizontal
 from textual.message import Message
 from textual.reactive import reactive
 from textual.widget import Widget
-from textual.widgets import DirectoryTree, Static
+from textual.widgets import DirectoryTree, Static, Button
 
 
 class FileBrowser(Widget):
@@ -64,6 +64,10 @@ class FileBrowser(Widget):
             self.path = path
             super().__init__()
     
+    class RefreshRequested(Message):
+        """Message sent when user requests a refresh of the file explorer."""
+        pass
+    
     def __init__(self, root_path: str = "./", **kwargs):
         super().__init__(**kwargs)
         self.root_path = root_path
@@ -79,6 +83,19 @@ class FileBrowser(Widget):
     def on_mount(self) -> None:
         """Initialize the file browser."""
         pass
+
+    def refresh_tree(self) -> None:
+        """Rebuild the DirectoryTree widget to reflect filesystem changes."""
+        try:
+            old = self.query_one("#file-tree", DirectoryTree)
+            parent = old.parent
+            # Remove old tree and mount a new instance
+            old.remove()
+            if parent is not None:
+                parent.mount(DirectoryTree(self.root_path, id="file-tree"))
+        except Exception:
+            # Best-effort: if anything goes wrong, emit a refresh message for the app
+            self.post_message(self.RefreshRequested())
     
     def watch_context_files(self, context_files: Set[Path]) -> None:
         """Watch for changes to the context files."""
@@ -140,3 +157,5 @@ class FileBrowser(Widget):
     def get_selected_file(self) -> Path | None:
         """Get the currently selected file."""
         return self.selected_file
+
+    # Refresh button removed to test spacing; F5 still calls refresh_tree() via the App

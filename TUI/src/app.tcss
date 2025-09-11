@@ -16,12 +16,18 @@ Footer {
 
 /* Widget layout */
 #file-browser {
-    width: 30%;
+    width: 25%;
     border-right: solid #444444;
 }
 
 #chat-interface {
-    width: 70%;
+    width: 50%;
+    border-right: solid #444444;
+}
+
+#output-panel {
+    width: 25%;
+    background: #1e1e1e;
 }
 
 /* File browser widget styles */
@@ -33,6 +39,12 @@ FileBrowser {
 /* Chat interface widget styles */
 ChatInterface {
     background: #1e1e1e;
+}
+
+/* Output panel widget styles */
+OutputPanel {
+    background: #1e1e1e;
+    color: #cccccc;
 }
 
 /* Model selection screen */

@@ -59,12 +59,13 @@ class ChatInterface(Widget):
         """Create the chat interface layout."""
         with Vertical():
             yield RichLog(id="chat-log", highlight=True, markup=True)
-            yield LoadingIndicator(id="loading")
+            # Use a compact status bar instead of a full-screen loading overlay
+            yield Static("", id="loading")
             yield Input(placeholder="Type your message...", id="chat-input")
     
     def on_mount(self) -> None:
         """Initialize the chat interface."""
-        self.query_one("#loading", LoadingIndicator).display = False
+        self.query_one("#loading", Static).update("")
     
     def watch_is_loading(self, is_loading: bool) -> None:
         """Watch for changes to the loading state."""
@@ -79,8 +80,8 @@ class ChatInterface(Widget):
     
     def update_loading_display(self, is_loading: bool) -> None:
         """Update the loading indicator display."""
-        loading = self.query_one("#loading", LoadingIndicator)
-        loading.display = is_loading
+        status = self.query_one("#loading", Static)
+        status.update("Generating…" if is_loading else "")
     
     def add_system_message(self, message: str) -> None:
         """Add a system message to the chat log."""
@@ -129,3 +130,40 @@ class ChatInterface(Widget):
     def focus_input(self) -> None:
         """Focus the chat input."""
         self.query_one("#chat-input", Input).focus()
+
+    # --- Streaming helpers ---
+    _stream_buffer: str = ""
+    _streaming: bool = False
+
+    def add_assistant_stream_start(self) -> None:
+        """Start a streamed assistant message."""
+        chat_log = self.query_one("#chat-log", RichLog)
+        chat_log.write(f"[bold cyan]LLM:[/]")
+        self._stream_buffer = ""
+        self._streaming = True
+
+    def append_assistant_stream_text(self, text: str) -> None:
+        """Append text to the streamed assistant message.
+
+        Buffer small tokens and flush in larger chunks to avoid one-word-per-line.
+        Flush when a newline appears or when buffer exceeds ~200 characters.
+        Final buffer is rendered as Markdown in end_assistant_stream().
+        """
+        if not text:
+            return
+        self._stream_buffer += text
+        if "\n" in text or len(self._stream_buffer) >= 200:
+            chunk = self._stream_buffer
+            self._stream_buffer = ""
+            chat_log = self.query_one("#chat-log", RichLog)
+            chat_log.write(chunk)
+
+    def end_assistant_stream(self) -> None:
+        """Finish the streamed message, rendering the final buffer as Markdown."""
+        if not self._streaming:
+            return
+        chat_log = self.query_one("#chat-log", RichLog)
+        if self._stream_buffer:
+            chat_log.write(Markdown(self._stream_buffer))
+            self._stream_buffer = ""
+        self._streaming = False
