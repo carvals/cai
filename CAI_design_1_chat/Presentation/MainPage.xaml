@@ -35,9 +35,16 @@
               Background="{ThemeResource LayerFillColorDefaultBrush}"
               BorderBrush="{ThemeResource ControlStrokeColorDefaultBrush}"
               BorderThickness="0,0,1,0">
-        <StackPanel>
+        <Grid>
+          <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+          </Grid.RowDefinitions>
+          
           <!-- Toggle button for left panel -->
           <Button x:Name="ToggleLeftPanelButton"
+                  Grid.Row="0"
                   Click="ToggleLeftPanelButton_Click"
                   Background="{ThemeResource AccentFillColorDefaultBrush}"
                   BorderBrush="{ThemeResource AccentFillColorDefaultBrush}"
@@ -52,7 +59,21 @@
               <SymbolIcon Symbol="Page" HorizontalAlignment="Center" />
             </StackPanel>
           </Button>
-        </StackPanel>
+          
+          <!-- Login avatar at bottom -->
+          <Button x:Name="LoginAvatarButton"
+                  Grid.Row="2"
+                  Background="{ThemeResource SubtleFillColorSecondaryBrush}"
+                  BorderBrush="{ThemeResource ControlStrokeColorDefaultBrush}"
+                  BorderThickness="1"
+                  CornerRadius="24"
+                  Width="48"
+                  Height="48"
+                  Margin="6,0,6,8"
+                  ToolTipService.ToolTip="User profile">
+            <PersonPicture Width="40" Height="40" />
+          </Button>
+        </Grid>
       </Border>
       
       <!-- Left Panel: Espace de travail -->

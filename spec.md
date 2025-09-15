@@ -293,11 +293,50 @@ When implementing collapsible panels in Uno Platform:
 
 This pattern ensures complete layout collapse while maintaining smooth animations and cross-platform compatibility.
 
+## Chat Streaming Feature Specification
+
+### User Interface Components
+
+#### Sidebar Enhancements
+- **Login Avatar**: Round icon placeholder at bottom left of the 61px sidebar
+- **Settings Icon**: Located above the avatar with expandable menu section
+- **Settings Menu**: 3 example items + "AI Settings" option that opens configuration dialog
+
+#### AI Settings Dialog
+- **Provider Selection**: Support for multiple AI providers:
+  - Ollama (local) - default port 11434, custom port option
+  - OpenAI - with API key field
+  - Anthropic - with API key field  
+  - Google Gemini - with API key field
+  - Mistral - with API key field
+- **Ollama Integration**: Auto-detect available models via `/api/tags` endpoint
+- **Connection Testing**: Validate settings before saving
+
+#### Chat Interface
+- **Conversation Format**: Display both user messages and AI responses
+- **Streaming Display**: Word-by-word streaming visualization
+- **Copy Functionality**: Copy button for each AI response
+- **Message Persistence**: Save chat history to local JSON file
+
+### Technical Requirements
+
+#### AI Provider Integration
+- **HTTP Client**: Use HttpClient for API communications
+- **Streaming Support**: Handle Server-Sent Events (SSE) for real-time responses
+- **Error Handling**: Connection failures, API errors, rate limits
+- **Model Selection**: Dynamic model discovery for Ollama, predefined for cloud providers
+
+#### Data Persistence
+- **Local Storage**: JSON file format for chat history
+- **Session Management**: Maintain conversation context
+- **Future Database**: Prepare structure for later database integration
+
 ### 🔄 Next Priority Items
-- Implement file upload dialog functionality
-- Add actual chat message handling
-- Implement search functionality for file management
-- Add document creation capabilities
+- Implement chat streaming functionality (Phase 1)
+- Add AI provider integrations (Phase 2)  
+- Implement file upload dialog functionality (Phase 3)
+- Add search functionality for file management (Phase 4)
+- Add document creation capabilities (Phase 5)
 
 ## Mermaid Diagrams
 

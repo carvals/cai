@@ -275,3 +275,4 @@
 /Users/carvals/RiderProjects/CAI_design_1_chat/CAI_design_1_chat/obj/Debug/net9.0-desktop/CAI_design_1_chat.pdb
 /Users/carvals/RiderProjects/CAI_design_1_chat/CAI_design_1_chat/obj/Debug/net9.0-desktop/CAI_design_1_chat.genruntimeconfig.cache
 /Users/carvals/RiderProjects/CAI_design_1_chat/CAI_design_1_chat/obj/Debug/net9.0-desktop/ref/CAI_design_1_chat.dll
+/Users/carvals/RiderProjects/CAI_design_1_chat/CAI_design_1_chat/obj/Debug/net9.0-desktop/CAI_design_1_chat.sourcelink.json

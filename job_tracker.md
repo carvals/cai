@@ -144,9 +144,106 @@ Conventions
 
 ---
 
+## Phase 7 — Chat Streaming Implementation (chat_stream branch)
+
+### Step 1: Sidebar Enhancements ⏳
+- [ ] **7.1** Add login avatar placeholder (round icon) at bottom left of 61px sidebar
+- [ ] **7.2** Add settings icon above avatar with expandable menu section
+- [ ] **7.3** Create 3 example menu items + "AI Settings" option
+- [ ] **7.4** Style expandable menu with proper animations
+
+### Step 2: AI Settings Dialog 📋
+- [ ] **7.5** Create AI Settings ContentDialog with provider selection
+- [ ] **7.6** Add Ollama configuration (URL, port 11434 default, model selection)
+- [ ] **7.7** Add OpenAI configuration (API key, model selection)
+- [ ] **7.8** Add Anthropic configuration (API key, model selection)
+- [ ] **7.9** Add Google Gemini configuration (API key, model selection)
+- [ ] **7.10** Add Mistral configuration (API key, model selection)
+- [ ] **7.11** Implement connection testing for each provider
+- [ ] **7.12** Add provider icons (download from web)
+
+### Step 3: Chat Interface Enhancement 💬
+- [ ] **7.13** Replace empty state with conversation-style message display
+- [ ] **7.14** Add message bubbles for user and AI responses
+- [ ] **7.15** Implement copy button for each AI response
+- [ ] **7.16** Add proper scrolling and auto-scroll to latest message
+- [ ] **7.17** Style messages with proper spacing and colors
+
+### Step 4: Data Models & Services 🏗️
+- [ ] **7.18** Create AI provider interface and implementations
+- [ ] **7.19** Create message models (User, Assistant, System)
+- [ ] **7.20** Create chat session model
+- [ ] **7.21** Implement local JSON persistence service
+- [ ] **7.22** Create settings service for AI provider configuration
+
+### Step 5: Ollama Integration 🤖
+- [ ] **7.23** Implement Ollama API client (HttpClient)
+- [ ] **7.24** Add model discovery via `/api/tags` endpoint
+- [ ] **7.25** Implement streaming chat via `/api/chat` endpoint
+- [ ] **7.26** Handle word-by-word streaming display
+- [ ] **7.27** Add error handling for connection issues
+
+### Step 6: Cloud Provider Integration ☁️
+- [ ] **7.28** Implement OpenAI API client with streaming
+- [ ] **7.29** Implement Anthropic Claude API client
+- [ ] **7.30** Implement Google Gemini API client
+- [ ] **7.31** Implement Mistral API client
+- [ ] **7.32** Add rate limiting and error handling for all providers
+
+### Step 7: Message Management 📝
+- [ ] **7.33** Implement chat history loading from JSON
+- [ ] **7.34** Add conversation management (new/delete/rename)
+- [ ] **7.35** Add message search functionality
+- [ ] **7.36** Implement message export features
+- [ ] **7.37** Add conversation context management
+
+### Step 8: Polish & Testing 🎨
+- [ ] **7.38** Add loading states and progress indicators
+- [ ] **7.39** Implement proper error messages and user feedback
+- [ ] **7.40** Add keyboard shortcuts (Enter to send, etc.)
+- [ ] **7.41** Test all AI providers thoroughly
+- [ ] **7.42** Add comprehensive error handling and recovery
+
+## Technical Architecture
+
+### File Structure
+```
+CAI_design_1_chat/
+├── Models/
+│   ├── ChatMessage.cs
+│   ├── ChatSession.cs
+│   ├── AIProvider.cs
+│   └── AISettings.cs
+├── Services/
+│   ├── IAIService.cs
+│   ├── OllamaService.cs
+│   ├── OpenAIService.cs
+│   ├── AnthropicService.cs
+│   ├── GeminiService.cs
+│   ├── MistralService.cs
+│   ├── ChatPersistenceService.cs
+│   └── SettingsService.cs
+├── Presentation/
+│   ├── Dialogs/
+│   │   └── AISettingsDialog.xaml
+│   ├── Controls/
+│   │   ├── MessageBubble.xaml
+│   │   └── ProviderIcon.xaml
+│   └── MainPage.xaml (enhanced)
+└── Assets/
+    └── ProviderIcons/
+```
+
+### Dependencies to Add
+- `System.Text.Json` - JSON serialization
+- `Microsoft.Extensions.Http` - HTTP client factory
+- `Microsoft.Extensions.Logging` - Logging support
+
+---
+
 ## Optional Enhancements (Backlog)
-- Real converters (PDF/DOCX → text) for “Convertir en text brut”.
-- Summarization pipeline for “Faire un résumé”.
+- Real converters (PDF/DOCX → text) for "Convertir en text brut".
+- Summarization pipeline for "Faire un résumé".
 - Persist uploaded files and list them in the left panel.
 - Animate column width (`LeftPanelColumn.Width`) instead of element width, if desired.
 
@@ -154,24 +251,22 @@ Conventions
 
 ## Work Breakdown (Suggested Order & Ownership)
 
-- Day 1
-  - Phase 0–1 (env, build, layout)
-- Day 2
-  - Phase 2–3 (splitter + animation + persistence)
-- Day 3
-  - Phase 4 (upload dialog end-to-end)
-- Day 4
-  - Phase 5–6 (navigation sanity, QA, docs)
-
-Owners (example)
-- Layout & Animation: Engineer A
-- Dialog & File IO: Engineer B
-- QA & Documentation: Engineer C
+- **Phase 1-6**: Core UI and file handling (completed)
+- **Phase 7**: Chat streaming implementation (current - chat_stream branch)
+  - Week 1: Steps 7.1-7.12 (UI enhancements + settings)
+  - Week 2: Steps 7.13-7.22 (chat interface + data models)
+  - Week 3: Steps 7.23-7.32 (AI integrations)
+  - Week 4: Steps 7.33-7.42 (advanced features + testing)
 
 ---
 
 ## Quick Commands
 ```bash
 # Build
-DOTNET_CLI_TELEMETRY_OPTOUT=1 dotnet build UnoApp4.sln -c Debug
-```
+dotnet build CAI_design_1_chat.sln -c Debug
+
+# Run
+dotnet run --project CAI_design_1_chat/CAI_design_1_chat.csproj --framework net9.0-desktop
+
+# Switch to chat streaming branch
+git checkout chat_stream
