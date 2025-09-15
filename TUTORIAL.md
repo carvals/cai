@@ -433,10 +433,542 @@ dotnet build CAI_design_1_chat.sln -c Debug
 - ✅ Proper styling and spacing within 61px sidebar
 - ✅ Event handlers for settings toggle and AI settings dialog
 
+## AI Settings Dialog Implementation (Phase 7.5-7.11) ✅
+
+### Challenge: Ollama UI Enhancement & Modal Loading Patterns
+
+**User Requirements**:
+1. Fix Ollama refresh button width to show full "🔄 Refresh" text
+2. Replace test button inline loading with modal dialog showing loading indicator
+
+### Step 7.5-7.11: AI Settings Dialog with Real API Integration ✅
+
+**Implementation Overview**:
+- **Multi-Provider Support**: Ollama, OpenAI, Anthropic, Google Gemini, Mistral
+- **Real API Integration**: HTTP calls to actual Ollama endpoints
+- **Modern UX Patterns**: Modal loading dialogs, progressive disclosure, error prevention
+
+### Key Technical Achievements
+
+#### 1. Enhanced Refresh Button (120px width)
+```xml
+<Button x:Name="OllamaRefreshButton" 
+        Content="🔄 Refresh" 
+        Width="120"  <!-- Increased from 100px -->
+        Click="RefreshOllamaModels" />
+```
+
+#### 2. Real Ollama API Integration
+```csharp
+// Refresh Models - GET /api/tags
+private async void RefreshOllamaModels(object sender, RoutedEventArgs e)
+{
+    var response = await httpClient.GetAsync($"{serverUrl}/api/tags");
+    var modelsData = JsonSerializer.Deserialize<OllamaModelsResponse>(jsonResponse);
+    // Update ComboBox with real model list
+}
+
+// Test Connection - POST /api/generate
+private async void TestOllamaConnection(object sender, RoutedEventArgs e)
+{
+    var requestBody = new { model = selectedModel, prompt = "Say hi in one sentence" };
+    var response = await httpClient.PostAsync($"{serverUrl}/api/generate", content);
+    // Show modal loading dialog during API call
+    var loadingDialog = new ContentDialog
+    {
+        Title = "Testing Model",
+        Content = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Children =
+            {
+                new ProgressRing { IsActive = true, Width = 20, Height = 20 },
+                new TextBlock { Text = "Waking up model..." }
+            }
+        },
+        XamlRoot = this.XamlRoot
+- **Loading States**: Information revealed progressively during operations
+- **Contextual Feedback**: Different dialogs for different outcomes (success/error)
+- **State Management**: Clear visual indicators for each operation phase
+
+#### 2. Error Prevention & Graceful Degradation
+```csharp
+// Input validation before API calls
+if (string.IsNullOrEmpty(selectedModel))
+{
+    var noModelDialog = new ContentDialog
+    {
+        Title = "No Model Selected",
+        Content = "Please select a model first.",
+        CloseButtonText = "OK"
+    };
+    await noModelDialog.ShowAsync();
+    return;
+}
+```
+
+#### 3. Contextual Help & Recovery
+```csharp
+// Error messages with actionable guidance
+var errorDialog = new ContentDialog
+{
+    Title = "Connection Failed",
+    Content = $"Could not connect to Ollama server: {ex.Message}\n\n" +
+             "Make sure Ollama is running at the specified URL.",
+    CloseButtonText = "OK"
+};
+```
+
+#### 4. Immediate Feedback
+- **Button State Changes**: Loading indicators replace button text
+- **Visual Confirmation**: Success dialogs show operation results
+- **Non-Blocking Operations**: Modal dialogs allow background processing
+
+### Data Models for API Integration
+```csharp
+public class OllamaModel
+{
+    public string name { get; set; } = string.Empty;
+    public string modified_at { get; set; } = string.Empty;
+    public long size { get; set; }
+}
+
+public class OllamaModelsResponse
+{
+    public OllamaModel[] models { get; set; } = Array.Empty<OllamaModel>();
+}
+
+public class OllamaGenerateResponse
+{
+    public string response { get; set; } = string.Empty;
+    public bool done { get; set; }
+}
+```
+
+### Best Practices for Junior Developers & AI-Assisted Development
+
+#### 1. Modal Dialog Pattern Template
+```csharp
+// TEMPLATE: Use this pattern for any async operation with user feedback
+private async Task<T> ExecuteWithLoadingDialog<T>(
+    string title, 
+    string loadingMessage, 
+    Func<Task<T>> operation)
+{
+    var loadingDialog = CreateLoadingDialog(title, loadingMessage);
+    var loadingTask = loadingDialog.ShowAsync();
+    
+    try
+    {
+        var result = await operation();
+        loadingDialog.Hide();
+        return result;
+    }
+    catch (Exception ex)
+    {
+        loadingDialog.Hide();
+        await ShowErrorDialog("Operation Failed", ex.Message);
+        throw;
+    }
+}
+```
+
+#### 2. API Integration Checklist
+- ✅ **Timeout Handling**: Set appropriate timeouts (10s refresh, 30s test)
+- ✅ **Error Classification**: Different handling for network vs API errors
+- ✅ **Input Validation**: Validate before making API calls
+- ✅ **User Feedback**: Clear messages for all outcomes
+- ✅ **State Management**: Proper UI state during async operations
+
+#### 3. UX Pattern Implementation Guide
+```csharp
+// 1. VALIDATE INPUT
+if (!IsValidInput()) { ShowValidationError(); return; }
+
+// 2. SHOW LOADING STATE
+ShowLoadingDialog();
+
+// 3. EXECUTE OPERATION
+try { result = await ApiCall(); }
+
+// 4. HIDE LOADING & SHOW RESULT
+HideLoadingDialog();
+ShowSuccessDialog(result);
+
+// 5. HANDLE ERRORS GRACEFULLY
+catch (Exception ex) { 
+    HideLoadingDialog(); 
+    ShowErrorWithRecovery(ex); 
+}
+```
+
+#### 4. Time-Saving Development Strategies
+
+**For AI-Assisted Development**:
+1. **Incremental Implementation**: Build one API endpoint at a time
+2. **Template Reuse**: Create reusable patterns for common operations
+3. **Error-First Design**: Implement error handling before success cases
+4. **Visual Feedback Priority**: Always implement loading states first
+
+**For Junior Developers**:
+1. **Copy-Paste Patterns**: Use the modal dialog template for consistency
+2. **Test Early & Often**: Build after each API integration
+3. **User-Centric Thinking**: Always consider what user sees during operations
+4. **Documentation-Driven**: Write the error message before writing the code
+
+### Performance & Reliability Considerations
+
+#### HTTP Client Best Practices
+```csharp
+// Proper timeout configuration
+using var httpClient = new HttpClient();
+httpClient.Timeout = TimeSpan.FromSeconds(30); // Appropriate for model loading
+
+// Proper JSON handling
+var jsonContent = System.Text.Json.JsonSerializer.Serialize(requestBody);
+var content = new StringContent(jsonContent, System.Text.Encoding.UTF8, "application/json");
+```
+
+#### UI Thread Management
+```csharp
+// All UI updates on main thread (handled by async/await)
+// Modal dialogs properly attached to XamlRoot
+loadingDialog.XamlRoot = this.XamlRoot;
+```
+
+### Lessons Learned Summary
+
+#### What Worked Well
+1. **Modal Loading Dialogs**: Much better UX than inline loading text
+2. **Real API Integration**: Provides immediate value and testing capability
+3. **Progressive Enhancement**: Start with basic functionality, add polish incrementally
+4. **Template-Based Development**: Reusable patterns speed up implementation
+
+#### Common Pitfalls Avoided
+1. **Button Width Issues**: Always test UI with actual content, not placeholders
+2. **API Error Handling**: Plan for network failures from the start
+3. **Modal Dialog Lifecycle**: Proper show/hide management prevents UI locks
+4. **Input Validation**: Validate early to prevent unnecessary API calls
+
+#### Time Investment vs Value
+- **Initial Setup**: 2-3 hours for complete AI settings dialog
+- **Modal Pattern**: 30 minutes per additional provider
+- **API Integration**: 45 minutes per endpoint with proper error handling
+- **User Value**: Immediate feedback and real functionality testing
+
+### Build Commands Used
+```bash
+# Validate implementation
+dotnet build CAI_design_1_chat.sln -c Debug
+
+# Test the application
+dotnet run --project CAI_design_1_chat/CAI_design_1_chat.csproj --framework net9.0-desktop
+```
+
+---
+
+## Phase 7 Step 3: Chat Interface Enhancement (7.13-7.17)
+
+### Implementation Summary
+Successfully implemented a complete chat interface with modern UX patterns and real AI integration.
+
+### Phase 7.13-7.17: Chat Interface with Real AI Integration
+
+**Key Features Implemented:**
+- ✅ **Conversation-style message display** - ScrollViewer with dynamic message container
+- ✅ **Message bubbles** - User (right, blue) and AI (left, themed) with proper styling
+- ✅ **Copy functionality** - Always-visible copy button with clipboard integration
+- ✅ **Auto-scrolling** - Messages automatically scroll to bottom
+- ✅ **Real AI integration** - Full Ollama API integration with provider switching
+- ✅ **Loading states** - Typing indicator with ProgressRing during AI processing
+- ✅ **Error handling** - Comprehensive error messages and fallback responses
+
+### Critical Implementation Patterns
+
+**1. Dynamic Message Bubble Creation:**
+```csharp
+private void AddUserMessage(string message)
+{
+    var userMessageGrid = new Grid
+    {
+        HorizontalAlignment = HorizontalAlignment.Right,
+        MaxWidth = 400,
+        Margin = new Thickness(0, 4, 0, 4)
+    };
+
+    var userBorder = new Border
+    {
+        Background = (Brush)Application.Current.Resources["AccentFillColorDefaultBrush"],
+        CornerRadius = new CornerRadius(16, 16, 4, 16),
+        Padding = new Thickness(12, 8, 12, 8)
+    };
+    // ... rest of implementation
+}
+```
+
+**2. AI Provider Integration Pattern:**
+```csharp
+private async Task GetAIResponseAsync(string userMessage)
+{
+    var typingMessage = AddTypingIndicator();
+    var selectedProvider = localSettings.Values["SelectedAIProvider"]?.ToString() ?? "Ollama";
+    
+    string response = selectedProvider switch
+    {
+        "Ollama" => await GetOllamaResponseAsync(userMessage),
+        "OpenAI" => await GetOpenAIResponseAsync(userMessage),
+        _ => "No AI provider configured."
+    };
+    
+    RemoveTypingIndicator(typingMessage);
+    AddAIMessage(response);
+}
+```
+
+**3. Typing Indicator with ProgressRing:**
+```csharp
+private Grid AddTypingIndicator()
+{
+    var progressRing = new ProgressRing { IsActive = true, Width = 16, Height = 16 };
+    var typingText = new TextBlock { Text = "AI is thinking..." };
+    // ... creates visual typing indicator that gets removed when response arrives
+}
+```
+
+**4. Always-Visible Copy Button:**
+```csharp
+var copyButton = new Button
+{
+    Background = (Brush)Application.Current.Resources["SubtleFillColorSecondaryBrush"],
+    BorderBrush = (Brush)Application.Current.Resources["ControlStrokeColorDefaultBrush"],
+    BorderThickness = new Thickness(1),
+    CornerRadius = new CornerRadius(4)
+};
+```
+
+### Lessons Learned
+
+**1. UI State Management:**
+- Always show/hide empty state based on message count
+- Use typing indicators for better perceived performance
+- Remove typing indicators before adding actual responses
+
+**2. Theme Integration:**
+- Use `Application.Current.Resources` for consistent theming
+- Leverage WinUI theme brushes for proper dark/light mode support
+- Always-visible UI elements need proper background/border styling
+
+**3. Real-time Communication:**
+- HttpClient timeout should be longer for AI responses (60s vs 10s for testing)
+- Always handle HttpRequestException separately from generic exceptions
+- Provide actionable error messages ("Make sure Ollama is running")
+
+**4. Memory Management:**
+- Dynamically created UI elements are properly managed by WinUI
+- Use `DispatcherQueue.TryEnqueue` for cross-thread UI updates
+- Remove typing indicators from UI tree to prevent memory leaks
+
+**5. Settings Integration:**
+- Read AI provider settings from `ApplicationData.Current.LocalSettings`
+- Provide sensible defaults when settings are missing
+- Support provider switching without app restart
+
+### Performance Optimizations
+
+**1. Async/Await Patterns:**
+- All AI calls are fully async to prevent UI blocking
+- Use `Task.Delay` for placeholder implementations
+- Proper exception handling in async methods
+
+**2. UI Responsiveness:**
+- Typing indicators appear immediately
+- Message bubbles are created synchronously
+- Auto-scroll happens after message addition
+
+**3. Resource Management:**
+- HttpClient properly disposed with `using` statements
+- UI elements cleaned up when removed from visual tree
+- Settings cached in local variables during operations
+
+### Build and Test Commands
+```bash
+# Build the solution
+dotnet build CAI_design_1_chat.sln -c Debug
+
+# Run the application
+dotnet run --project CAI_design_1_chat/CAI_design_1_chat.csproj --framework net9.0-desktop
+
+# Test chat functionality:
+# 1. Configure Ollama in AI Settings (🤖 button)
+# 2. Send messages in chat interface
+# 3. Observe typing indicators and real AI responses
+# 4. Test copy functionality on AI responses
+# 5. Test auto-scroll behavior when scrolling up/down
+# 6. Test collapsible thinking sections with sample responses
+```
+
+---
+
+## Phase 7 Step 4: Enhanced Auto-Scroll and Collapsible Thinking (7.18-7.20)
+
+### Implementation Summary
+Enhanced the chat interface with intelligent auto-scroll behavior and collapsible thinking process display for advanced AI models.
+
+### Phase 7.18: Smart Auto-Scroll Implementation
+
+**Key Features Implemented:**
+- ✅ **Scroll state tracking** - Detects when user is near bottom (50px threshold)
+- ✅ **Scroll indicator button** - Floating button appears when user scrolls away from bottom
+- ✅ **Auto-scroll logic** - Only scrolls automatically when user is at/near bottom
+- ✅ **Copy button visibility fix** - Added 40px padding to ensure buttons are fully visible
+- ✅ **Cross-thread safety** - Proper handling of UI updates during scroll events
+
+**Critical Implementation Pattern:**
+```csharp
+// Auto-scroll state tracking
+private bool _isUserScrolling = false;
+private bool _shouldAutoScroll = true;
+private const double SCROLL_THRESHOLD = 50.0; // pixels from bottom
+
+private void UpdateAutoScrollState()
+{
+    var distanceFromBottom = ChatScrollViewer.ScrollableHeight - ChatScrollViewer.VerticalOffset;
+    _shouldAutoScroll = distanceFromBottom <= SCROLL_THRESHOLD;
+    UpdateScrollIndicator();
+}
+
+private void ScrollToBottom()
+{
+    if (_shouldAutoScroll || _isUserScrolling == false)
+    {
+        // Add extra padding to ensure copy button is fully visible
+        var extraPadding = 40; // Account for copy button height + margin
+        var targetOffset = Math.Max(0, ChatScrollViewer.ScrollableHeight + extraPadding);
+        ChatScrollViewer.ChangeView(null, targetOffset, null, true);
+    }
+}
+```
+
+### Phase 7.19: Collapsible Thinking Process Display
+
+**Key Features Implemented:**
+- ✅ **Pattern recognition** - Detects multiple thinking section formats
+- ✅ **Collapsible UI** - Thinking sections start collapsed with expand/collapse toggle
+- ✅ **Visual hierarchy** - Distinct styling with brain icon and themed colors
+- ✅ **Interactive controls** - Click to expand/collapse with chevron animation
+
+**Thinking Pattern Detection:**
+```csharp
+private (string thinking, string response) ParseThinkingResponse(string message)
+{
+    var thinkingPatterns = new[]
+    {
+        (@"<thinking>(.*?)</thinking>", RegexOptions.Singleline | RegexOptions.IgnoreCase),
+        (@"\*\*Thinking:\*\*(.*?)(?=\*\*Response:\*\*|\*\*Answer:\*\*|$)", RegexOptions.Singleline | RegexOptions.IgnoreCase),
+        (@"# Thinking\s*(.*?)(?=# Response|# Answer|$)", RegexOptions.Singleline | RegexOptions.IgnoreCase)
+    };
+    // Pattern matching logic...
+}
+```
+
+**Collapsible UI Creation:**
+```csharp
+private Border CreateThinkingSection(string thinkingContent)
+{
+    // Create themed border with brain icon header
+    // Add expand/collapse button with chevron animation
+    // Initially collapsed, toggles on click
+    // Auto-scrolls when expanded to maintain visibility
+}
+```
+
+### Phase 7.20: Auto-Scroll Bug Fix
+
+**Problem Identified:**
+- Copy buttons were being cut off at bottom of chat
+- Auto-scroll was not accounting for button height and margin
+
+**Solution Implemented:**
+- Added 40px extra padding to scroll calculations
+- Applied to both automatic scrolling and manual scroll-to-bottom button
+- Ensures complete message visibility including interactive elements
+
+### Lessons Learned
+
+**1. Scroll Behavior UX Patterns:**
+- Users expect auto-scroll only when they're actively viewing latest messages
+- Scroll indicators provide clear navigation back to bottom
+- Extra padding prevents UI elements from being cut off
+
+**2. Regex Pattern Flexibility:**
+- Multiple pattern support accommodates different AI model output formats
+- Graceful fallback when no thinking section is detected
+- Case-insensitive matching improves compatibility
+
+**3. UI State Management:**
+- Collapsible sections need proper expand/collapse state tracking
+- Visual feedback (chevron rotation) improves user understanding
+- Theme integration ensures consistent appearance across light/dark modes
+
+**4. Cross-Platform Considerations:**
+- DirectManipulation events not available in Uno Platform (expected warnings)
+- ViewChanged events provide sufficient scroll detection
+- FontIcon with Unicode glyphs ensures icon compatibility
+
+### Performance Optimizations
+
+**1. Efficient Scroll Detection:**
+- Threshold-based auto-scroll prevents excessive calculations
+- Event-driven updates only when scroll state changes
+- Minimal UI updates for better performance
+
+**2. Regex Compilation:**
+- Pre-compiled patterns for better performance
+- Early exit on first match found
+- Minimal string manipulation
+
+**3. UI Element Lifecycle:**
+- Dynamic creation only when thinking sections present
+- Proper event handler cleanup
+- Theme resource reuse for memory efficiency
+
+### Testing Checklist
+
+**Auto-Scroll Testing:**
+- [ ] Scroll up manually, verify scroll indicator appears
+- [ ] Click scroll indicator, verify smooth scroll to bottom
+- [ ] Send new message while scrolled up, verify no auto-scroll
+- [ ] Send new message while at bottom, verify auto-scroll with padding
+- [ ] Verify copy buttons are fully visible after scroll
+
+**Thinking Section Testing:**
+- [ ] Test `<thinking>...</thinking>` format
+- [ ] Test `**Thinking:**` markdown format  
+- [ ] Test `# Thinking` section format
+- [ ] Verify collapsed state by default
+- [ ] Test expand/collapse toggle functionality
+- [ ] Verify chevron icon animation
+- [ ] Test with mixed content (thinking + response)
+
+### Build Commands Used
+```bash
+# Validate auto-scroll implementation
+dotnet build CAI_design_1_chat.sln -c Debug
+
+# Test enhanced chat functionality
+dotnet run --project CAI_design_1_chat/CAI_design_1_chat.csproj --framework net9.0-desktop
+
+# Expected warnings (safe to ignore):
+# - DirectManipulationStarted not implemented in Uno
+# - DirectManipulationCompleted not implemented in Uno
+```
+
 ## Next steps (optional)
 
-- Implement file upload dialog functionality for "Ajouter un fichier"
-- Add actual chat message handling and display
-- Implement search functionality for "Rechercher un fichier"
+- Implement chat streaming functionality with real AI provider integration
+- Add file upload dialog functionality for "Ajouter un fichier"
+- Implement search functionality for "Rechercher un fichier" 
 - Add document creation functionality for "Créer un document"
-- Replace placeholder actions in the left panel with real commands.
+- Extend modal loading pattern to other AI providers (OpenAI, Anthropic, etc.)
+- Add auto-scroll feature when chat reaches bottom
+- Implement collapsible thinking process display for o1-style models

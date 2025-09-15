@@ -234,6 +234,10 @@
               "autoReferenced": true
             }
           },
+          "centralPackageVersions": {
+            "Svg.Skia": "1.0.0.1",
+            "Uno.WinUI.Svg": "6.2.58"
+          },
           "imports": [
             "net461",
             "net462",

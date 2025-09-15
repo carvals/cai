@@ -7,4 +7,8 @@
   -->
   <ItemGroup>
   </ItemGroup>
+  <ItemGroup>
+    <PackageVersion Include="Svg.Skia" Version="1.0.0.1" />
+    <PackageVersion Include="Uno.WinUI.Svg" Version="6.2.58" />
+  </ItemGroup>
 </Project>

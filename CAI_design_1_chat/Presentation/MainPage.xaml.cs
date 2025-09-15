@@ -1,6 +1,9 @@
 using Microsoft.UI.Xaml.Input;
 using Windows.Storage;
 using Windows.System;
+using Windows.ApplicationModel.DataTransfer;
+using Microsoft.UI;
+using Microsoft.UI.Text;
 
 namespace CAI_design_1_chat.Presentation;
 
@@ -12,12 +15,18 @@ public sealed partial class MainPage : Page
     private DateTime _animationStartTime;
     private TimeSpan _animationDuration = TimeSpan.FromMilliseconds(250);
     private bool _isAnimating = false;
+    
+    // Auto-scroll state tracking
+    private bool _isUserScrolling = false;
+    private bool _shouldAutoScroll = true;
+    private const double SCROLL_THRESHOLD = 50.0; // pixels from bottom to trigger auto-scroll
 
     public MainPage()
     {
         this.InitializeComponent();
         this.Loaded += MainPage_Loaded;
         InitializeAnimationTimer();
+        InitializeScrollHandlers();
     }
 
     private void MainPage_Loaded(object sender, RoutedEventArgs e)
@@ -158,12 +167,7 @@ public sealed partial class MainPage : Page
 
     private void SendButton_Click(object sender, RoutedEventArgs e)
     {
-        // TODO: Implement send message functionality
-        if (!string.IsNullOrWhiteSpace(ChatInput?.Text))
-        {
-            // Clear input after sending
-            ChatInput.Text = string.Empty;
-        }
+        SendMessage();
     }
 
     private void SettingsButton_Click(object sender, RoutedEventArgs e)
@@ -179,9 +183,17 @@ public sealed partial class MainPage : Page
         }
     }
 
-    private void AISettingsButton_Click(object sender, RoutedEventArgs e)
+    private async void AISettingsButton_Click(object sender, RoutedEventArgs e)
     {
-        // TODO: Open AI Settings dialog
+        var dialog = new Dialogs.AISettingsDialog();
+        dialog.XamlRoot = this.XamlRoot;
+        
+        var result = await dialog.ShowAsync();
+        
+        if (result == ContentDialogResult.Primary)
+        {
+            dialog.SaveSettings();
+        }
     }
 
     private void ChatInput_KeyDown(object sender, KeyRoutedEventArgs e)
@@ -198,10 +210,512 @@ public sealed partial class MainPage : Page
         var message = ChatInput.Text?.Trim();
         if (string.IsNullOrEmpty(message)) return;
 
+        // Hide empty state if this is the first message
+        if (EmptyStatePanel.Visibility == Visibility.Visible)
+        {
+            EmptyStatePanel.Visibility = Visibility.Collapsed;
+        }
+
+        // Add user message
+        AddUserMessage(message);
+
         // Clear the input
         ChatInput.Text = string.Empty;
         
-        // Placeholder for actual message sending logic
-        // This will be implemented later with proper chat functionality
+        // Get AI response
+        _ = GetAIResponseAsync(message);
+    }
+
+    private void AddUserMessage(string message)
+    {
+        var userMessageGrid = new Grid
+        {
+            HorizontalAlignment = HorizontalAlignment.Right,
+            MaxWidth = 400,
+            Margin = new Thickness(0, 4, 0, 4)
+        };
+
+        var userBorder = new Border
+        {
+            Background = (Brush)Application.Current.Resources["AccentFillColorDefaultBrush"],
+            CornerRadius = new CornerRadius(16, 16, 4, 16),
+            Padding = new Thickness(12, 8, 12, 8)
+        };
+
+        var userText = new TextBlock
+        {
+            Text = message,
+            TextWrapping = TextWrapping.Wrap,
+            FontSize = 14,
+            Foreground = new SolidColorBrush(Colors.White)
+        };
+
+        userBorder.Child = userText;
+        userMessageGrid.Children.Add(userBorder);
+        ChatMessagesPanel.Children.Add(userMessageGrid);
+
+        ScrollToBottom();
+    }
+
+    private void AddAIMessage(string message)
+    {
+        // Parse thinking section if present
+        var (thinkingSection, responseSection) = ParseThinkingResponse(message);
+        
+        // Hide empty state when first message is added
+        if (ChatMessagesPanel.Children.Count == 0)
+        {
+            EmptyStatePanel.Visibility = Visibility.Collapsed;
+        }
+
+        var aiMessageGrid = new Grid
+        {
+            HorizontalAlignment = HorizontalAlignment.Left,
+            MaxWidth = 400,
+            Margin = new Thickness(0, 4, 0, 4)
+        };
+
+        aiMessageGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto }); // Thinking section
+        aiMessageGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto }); // Response section
+        aiMessageGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto }); // Button panel
+
+        var currentRow = 0;
+
+        // Add thinking section if present
+        if (!string.IsNullOrEmpty(thinkingSection))
+        {
+            var thinkingContainer = CreateThinkingSection(thinkingSection);
+            Grid.SetRow(thinkingContainer, currentRow);
+            aiMessageGrid.Children.Add(thinkingContainer);
+            currentRow++;
+        }
+
+        // Add main response
+        var aiBorder = new Border
+        {
+            Background = (Brush)Application.Current.Resources["SubtleFillColorSecondaryBrush"],
+            BorderBrush = (Brush)Application.Current.Resources["ControlStrokeColorDefaultBrush"],
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(16, 16, 16, 4),
+            Padding = new Thickness(12, 8, 12, 8),
+            Margin = new Thickness(0, string.IsNullOrEmpty(thinkingSection) ? 0 : 4, 0, 0)
+        };
+
+        var aiTextBlock = new TextBlock
+        {
+            Text = responseSection,
+            TextWrapping = TextWrapping.Wrap,
+            FontSize = 14
+        };
+
+        aiBorder.Child = aiTextBlock;
+        Grid.SetRow(aiBorder, currentRow);
+        aiMessageGrid.Children.Add(aiBorder);
+        currentRow++;
+
+        // Add copy button
+        var buttonPanel = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            HorizontalAlignment = HorizontalAlignment.Right,
+            Margin = new Thickness(0, 4, 0, 0),
+            Spacing = 8
+        };
+
+        var copyButton = new Button
+        {
+            Background = (Brush)Application.Current.Resources["SubtleFillColorSecondaryBrush"],
+            BorderBrush = (Brush)Application.Current.Resources["ControlStrokeColorDefaultBrush"],
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(4),
+            Padding = new Thickness(8, 4, 8, 4)
+        };
+        ToolTipService.SetToolTip(copyButton, "Copy message");
+
+        var copyButtonContent = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Spacing = 4
+        };
+
+        var copyIcon = new FontIcon
+        {
+            Glyph = "\uE8C8",
+            FontSize = 12
+        };
+
+        var copyText = new TextBlock
+        {
+            Text = "Copy",
+            FontSize = 12
+        };
+
+        copyButtonContent.Children.Add(copyIcon);
+        copyButtonContent.Children.Add(copyText);
+        copyButton.Content = copyButtonContent;
+
+        copyButton.Click += (s, e) => CopyMessageToClipboard(message);
+
+        buttonPanel.Children.Add(copyButton);
+        Grid.SetRow(buttonPanel, currentRow);
+        aiMessageGrid.Children.Add(buttonPanel);
+
+        ChatMessagesPanel.Children.Add(aiMessageGrid);
+        ScrollToBottom();
+    }
+
+    private (string thinking, string response) ParseThinkingResponse(string message)
+    {
+        // Look for thinking markers like <thinking>...</thinking> or similar patterns
+        var thinkingPatterns = new[]
+        {
+            (@"<thinking>(.*?)</thinking>", System.Text.RegularExpressions.RegexOptions.Singleline | System.Text.RegularExpressions.RegexOptions.IgnoreCase),
+            (@"\*\*Thinking:\*\*(.*?)(?=\*\*Response:\*\*|\*\*Answer:\*\*|$)", System.Text.RegularExpressions.RegexOptions.Singleline | System.Text.RegularExpressions.RegexOptions.IgnoreCase),
+            (@"# Thinking\s*(.*?)(?=# Response|# Answer|$)", System.Text.RegularExpressions.RegexOptions.Singleline | System.Text.RegularExpressions.RegexOptions.IgnoreCase)
+        };
+
+        foreach (var (pattern, options) in thinkingPatterns)
+        {
+            var match = System.Text.RegularExpressions.Regex.Match(message, pattern, options);
+            if (match.Success)
+            {
+                var thinking = match.Groups[1].Value.Trim();
+                var response = message.Replace(match.Value, "").Trim();
+                return (thinking, response);
+            }
+        }
+
+        // No thinking section found
+        return (string.Empty, message);
+    }
+
+    private Border CreateThinkingSection(string thinkingContent)
+    {
+        var thinkingBorder = new Border
+        {
+            Background = (Brush)Application.Current.Resources["LayerFillColorDefaultBrush"],
+            BorderBrush = (Brush)Application.Current.Resources["ControlStrokeColorSecondaryBrush"],
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(8),
+            Padding = new Thickness(12, 8, 12, 8)
+        };
+
+        var thinkingContainer = new StackPanel
+        {
+            Spacing = 8
+        };
+
+        // Thinking header with expand/collapse button
+        var headerGrid = new Grid();
+        headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+        var thinkingIcon = new FontIcon
+        {
+            Glyph = "\uE9F9", // Brain/thinking icon
+            FontSize = 12,
+            Foreground = (Brush)Application.Current.Resources["AccentTextFillColorPrimaryBrush"]
+        };
+        Grid.SetColumn(thinkingIcon, 0);
+
+        var thinkingLabel = new TextBlock
+        {
+            Text = "AI Thinking Process",
+            FontSize = 12,
+            FontWeight = FontWeights.SemiBold,
+            Foreground = (Brush)Application.Current.Resources["AccentTextFillColorPrimaryBrush"],
+            Margin = new Thickness(8, 0, 0, 0)
+        };
+        Grid.SetColumn(thinkingLabel, 1);
+
+        var expandButton = new Button
+        {
+            Background = new SolidColorBrush(Colors.Transparent),
+            BorderThickness = new Thickness(0),
+            Padding = new Thickness(4),
+            Width = 24,
+            Height = 24
+        };
+
+        var expandIcon = new FontIcon
+        {
+            Glyph = "\uE70D", // ChevronDown
+            FontSize = 10
+        };
+        expandButton.Content = expandIcon;
+        Grid.SetColumn(expandButton, 2);
+
+        headerGrid.Children.Add(thinkingIcon);
+        headerGrid.Children.Add(thinkingLabel);
+        headerGrid.Children.Add(expandButton);
+
+        // Thinking content (initially collapsed)
+        var thinkingTextBlock = new TextBlock
+        {
+            Text = thinkingContent,
+            TextWrapping = TextWrapping.Wrap,
+            FontSize = 12,
+            Foreground = (Brush)Application.Current.Resources["TextFillColorSecondaryBrush"],
+            Margin = new Thickness(0, 8, 0, 0),
+            Visibility = Visibility.Collapsed
+        };
+
+        // Toggle expand/collapse functionality
+        var isExpanded = false;
+        expandButton.Click += (s, e) =>
+        {
+            isExpanded = !isExpanded;
+            thinkingTextBlock.Visibility = isExpanded ? Visibility.Visible : Visibility.Collapsed;
+            expandIcon.Glyph = isExpanded ? "\uE70E" : "\uE70D"; // ChevronUp : ChevronDown
+            ScrollToBottom();
+        };
+
+        thinkingContainer.Children.Add(headerGrid);
+        thinkingContainer.Children.Add(thinkingTextBlock);
+        thinkingBorder.Child = thinkingContainer;
+
+        return thinkingBorder;
+    }
+
+    private void CopyMessageToClipboard(string message)
+    {
+        var dataPackage = new DataPackage();
+        dataPackage.SetText(message);
+        Clipboard.SetContent(dataPackage);
+    }
+
+    private void InitializeScrollHandlers()
+    {
+        // Handle scroll events to detect user scrolling
+        ChatScrollViewer.ViewChanged += ChatScrollViewer_ViewChanged;
+        ChatScrollViewer.DirectManipulationStarted += (s, e) => _isUserScrolling = true;
+        ChatScrollViewer.DirectManipulationCompleted += (s, e) => 
+        {
+            _isUserScrolling = false;
+            UpdateAutoScrollState();
+        };
+    }
+
+    private void ChatScrollViewer_ViewChanged(object? sender, ScrollViewerViewChangedEventArgs e)
+    {
+        if (!e.IsIntermediate && !_isUserScrolling)
+        {
+            UpdateAutoScrollState();
+        }
+    }
+
+    private void UpdateAutoScrollState()
+    {
+        var distanceFromBottom = ChatScrollViewer.ScrollableHeight - ChatScrollViewer.VerticalOffset;
+        _shouldAutoScroll = distanceFromBottom <= SCROLL_THRESHOLD;
+        
+        // Show/hide scroll indicator based on auto-scroll state
+        UpdateScrollIndicator();
+    }
+
+    private void UpdateScrollIndicator()
+    {
+        // Only show scroll indicator if there are messages and user is not at bottom
+        var hasMessages = ChatMessagesPanel.Children.Count > 0 && EmptyStatePanel.Visibility == Visibility.Collapsed;
+        var showIndicator = hasMessages && !_shouldAutoScroll;
+        
+        if (ScrollIndicator != null)
+        {
+            ScrollIndicator.Visibility = showIndicator ? Visibility.Visible : Visibility.Collapsed;
+        }
+    }
+
+    private void ScrollToBottom()
+    {
+        if (_shouldAutoScroll || _isUserScrolling == false)
+        {
+            // Add extra padding to ensure copy button is fully visible
+            var extraPadding = 40; // Account for copy button height + margin
+            var targetOffset = Math.Max(0, ChatScrollViewer.ScrollableHeight + extraPadding);
+            ChatScrollViewer.ChangeView(null, targetOffset, null, true);
+        }
+    }
+
+    private void ScrollIndicator_Click(object sender, RoutedEventArgs e)
+    {
+        _shouldAutoScroll = true;
+        // Add extra padding to ensure copy button is fully visible
+        var extraPadding = 40; // Account for copy button height + margin
+        var targetOffset = Math.Max(0, ChatScrollViewer.ScrollableHeight + extraPadding);
+        ChatScrollViewer.ChangeView(null, targetOffset, null, false);
+        UpdateScrollIndicator();
+    }
+
+    private async Task GetAIResponseAsync(string userMessage)
+    {
+        try
+        {
+            // Show typing indicator
+            var typingMessage = AddTypingIndicator();
+
+            // Get AI provider settings
+            var localSettings = ApplicationData.Current.LocalSettings;
+            var selectedProvider = localSettings.Values["SelectedAIProvider"]?.ToString() ?? "Ollama";
+
+            string response;
+            switch (selectedProvider)
+            {
+                case "Ollama":
+                    response = await GetOllamaResponseAsync(userMessage);
+                    break;
+                case "OpenAI":
+                    response = await GetOpenAIResponseAsync(userMessage);
+                    break;
+                case "Anthropic":
+                    response = await GetAnthropicResponseAsync(userMessage);
+                    break;
+                case "Gemini":
+                    response = await GetGeminiResponseAsync(userMessage);
+                    break;
+                case "Mistral":
+                    response = await GetMistralResponseAsync(userMessage);
+                    break;
+                default:
+                    response = "No AI provider configured. Please configure an AI provider in Settings.";
+                    break;
+            }
+
+            // Remove typing indicator and add actual response
+            RemoveTypingIndicator(typingMessage);
+            AddAIMessage(response);
+        }
+        catch (Exception ex)
+        {
+            AddAIMessage($"Error getting AI response: {ex.Message}");
+        }
+    }
+
+    private Grid AddTypingIndicator()
+    {
+        var typingGrid = new Grid
+        {
+            HorizontalAlignment = HorizontalAlignment.Left,
+            MaxWidth = 500,
+            Margin = new Thickness(0, 4, 0, 4)
+        };
+
+        var typingBorder = new Border
+        {
+            Background = (Brush)Application.Current.Resources["CardBackgroundFillColorSecondaryBrush"],
+            BorderBrush = (Brush)Application.Current.Resources["CardStrokeColorDefaultBrush"],
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(16, 16, 16, 4),
+            Padding = new Thickness(12, 8, 12, 8)
+        };
+
+        var typingContent = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Spacing = 8
+        };
+
+        var progressRing = new ProgressRing
+        {
+            IsActive = true,
+            Width = 16,
+            Height = 16
+        };
+
+        var typingText = new TextBlock
+        {
+            Text = "AI is thinking...",
+            Foreground = (Brush)Application.Current.Resources["TextFillColorSecondaryBrush"],
+            FontSize = 14,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+
+        typingContent.Children.Add(progressRing);
+        typingContent.Children.Add(typingText);
+        typingBorder.Child = typingContent;
+        typingGrid.Children.Add(typingBorder);
+        ChatMessagesPanel.Children.Add(typingGrid);
+
+        ScrollToBottom();
+        return typingGrid;
+    }
+
+    private void RemoveTypingIndicator(Grid typingIndicator)
+    {
+        ChatMessagesPanel.Children.Remove(typingIndicator);
+    }
+
+    private async Task<string> GetOllamaResponseAsync(string message)
+    {
+        try
+        {
+            var localSettings = ApplicationData.Current.LocalSettings;
+            var serverUrl = localSettings.Values["OllamaUrl"]?.ToString() ?? "http://localhost:11434";
+            var model = localSettings.Values["OllamaModel"]?.ToString() ?? "llama2";
+
+            using var httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(60) };
+            var requestBody = new
+            {
+                model = model,
+                prompt = message,
+                stream = false
+            };
+
+            var jsonContent = System.Text.Json.JsonSerializer.Serialize(requestBody);
+            var content = new StringContent(jsonContent, System.Text.Encoding.UTF8, "application/json");
+            var response = await httpClient.PostAsync($"{serverUrl}/api/generate", content);
+            
+            if (!response.IsSuccessStatusCode)
+            {
+                return $"Ollama API error: {response.StatusCode} - {response.ReasonPhrase}";
+            }
+
+            var responseText = await response.Content.ReadAsStringAsync();
+            var responseData = System.Text.Json.JsonSerializer.Deserialize<OllamaGenerateResponse>(responseText);
+            return responseData?.response ?? "No response from Ollama";
+        }
+        catch (HttpRequestException ex)
+        {
+            return $"Connection error: {ex.Message}. Make sure Ollama is running.";
+        }
+        catch (Exception ex)
+        {
+            return $"Error: {ex.Message}";
+        }
+    }
+
+    private async Task<string> GetOpenAIResponseAsync(string message)
+    {
+        // Placeholder - will implement with OpenAI API
+        await Task.Delay(2000);
+        return "OpenAI integration not yet implemented. Please configure Ollama for now.";
+    }
+
+    private async Task<string> GetAnthropicResponseAsync(string message)
+    {
+        // Placeholder - will implement with Anthropic API
+        await Task.Delay(2000);
+        return "Anthropic integration not yet implemented. Please configure Ollama for now.";
+    }
+
+    private async Task<string> GetGeminiResponseAsync(string message)
+    {
+        // Placeholder - will implement with Gemini API
+        await Task.Delay(2000);
+        return "Gemini integration not yet implemented. Please configure Ollama for now.";
+    }
+
+    private async Task<string> GetMistralResponseAsync(string message)
+    {
+        // Placeholder - will implement with Mistral API
+        await Task.Delay(2000);
+        return "Mistral integration not yet implemented. Please configure Ollama for now.";
+    }
+
+    // Data model for Ollama response (reusing from AISettingsDialog)
+    public class OllamaGenerateResponse
+    {
+        public string? response { get; set; }
+        public bool done { get; set; }
     }
 }

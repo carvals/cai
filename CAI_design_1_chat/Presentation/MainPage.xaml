@@ -63,20 +63,20 @@
           
           <!-- Settings section with expandable menu -->
           <StackPanel x:Name="SettingsSection" Grid.Row="2" Margin="6,0,6,4">
-            <!-- Settings button -->
-            <Button x:Name="SettingsButton"
-                    Click="SettingsButton_Click"
-                    Background="{ThemeResource SubtleFillColorSecondaryBrush}"
-                    BorderBrush="{ThemeResource ControlStrokeColorDefaultBrush}"
-                    BorderThickness="1"
-                    CornerRadius="6"
-                    Width="48"
-                    Height="48"
-                    ToolTipService.ToolTip="Settings">
-              <FontIcon Glyph="&#xE713;" 
-                        Foreground="{ThemeResource TextFillColorPrimaryBrush}"
-                        FontSize="20" />
-            </Button>
+              <!-- Settings Button -->
+              <Button x:Name="SettingsButton"
+                      Click="SettingsButton_Click"
+                      Background="{ThemeResource SubtleFillColorSecondaryBrush}"
+                      BorderBrush="{ThemeResource ControlStrokeColorDefaultBrush}"
+                      BorderThickness="1"
+                      CornerRadius="6"
+                      Width="48"
+                      Height="48"
+                      ToolTipService.ToolTip="Settings">
+                <FontIcon Glyph="⚙" 
+                          Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                          FontSize="20" />
+              </Button>
             
             <!-- Expandable settings menu -->
             <StackPanel x:Name="SettingsMenu"
@@ -93,7 +93,7 @@
                       Height="48"
                       Margin="0,0,0,4"
                       ToolTipService.ToolTip="Notifications">
-                <FontIcon Glyph="&#xE7E7;" 
+                <FontIcon Glyph="🔔" 
                           Foreground="{ThemeResource TextFillColorPrimaryBrush}"
                           FontSize="18" />
               </Button>
@@ -108,7 +108,7 @@
                       Height="48"
                       Margin="0,0,0,4"
                       ToolTipService.ToolTip="Theme">
-                <FontIcon Glyph="&#xE706;" 
+                <FontIcon Glyph="☀" 
                           Foreground="{ThemeResource TextFillColorPrimaryBrush}"
                           FontSize="18" />
               </Button>
@@ -123,7 +123,7 @@
                       Height="48"
                       Margin="0,0,0,4"
                       ToolTipService.ToolTip="Help">
-                <FontIcon Glyph="&#xE897;" 
+                <FontIcon Glyph="❓" 
                           Foreground="{ThemeResource TextFillColorPrimaryBrush}"
                           FontSize="18" />
               </Button>
@@ -138,7 +138,7 @@
                       Width="48"
                       Height="48"
                       ToolTipService.ToolTip="AI Settings">
-                <FontIcon Glyph="&#xE8B8;" 
+                <FontIcon Glyph="🤖" 
                           Foreground="{ThemeResource AccentFillColorDefaultBrush}"
                           FontSize="18" />
               </Button>
@@ -300,20 +300,104 @@
             </Grid>
           </Border>
           
-          <!-- Chat Messages Area (Empty State) -->
+          <!-- Chat Messages Area -->
           <Grid Grid.Row="1">
-            <StackPanel HorizontalAlignment="Center"
-                        VerticalAlignment="Center"
-                        Spacing="8">
-              <TextBlock Text="No messages here yet"
-                         FontSize="16"
-                         Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                         HorizontalAlignment="Center" />
-              <TextBlock Text="Send a message to chat with AI"
-                         FontSize="14"
-                         Foreground="{ThemeResource TextFillColorTertiaryBrush}"
-                         HorizontalAlignment="Center" />
+            <ScrollViewer x:Name="ChatScrollViewer"
+                          VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollBarVisibility="Disabled"
+                          ZoomMode="Disabled"
+                          Padding="16,8">
+            <StackPanel x:Name="ChatMessagesPanel"
+                        Spacing="12">
+              
+              <!-- Empty State (shown when no messages) -->
+              <StackPanel x:Name="EmptyStatePanel"
+                          HorizontalAlignment="Center"
+                          VerticalAlignment="Center"
+                          Spacing="8"
+                          Margin="0,40">
+                <TextBlock Text="No messages here yet"
+                           FontSize="16"
+                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                           HorizontalAlignment="Center" />
+                <TextBlock Text="Send a message to chat with AI"
+                           FontSize="14"
+                           Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                           HorizontalAlignment="Center" />
+              </StackPanel>
+              
+              <!-- Sample User Message -->
+              <!-- 
+              <Grid HorizontalAlignment="Right" MaxWidth="400" Margin="0,4">
+                <Border Background="{ThemeResource AccentFillColorDefaultBrush}"
+                        CornerRadius="16,16,4,16"
+                        Padding="12,8">
+                  <TextBlock Text="Hello, can you help me with something?"
+                             Foreground="White"
+                             TextWrapping="Wrap"
+                             FontSize="14" />
+                </Border>
+              </Grid>
+              -->
+              
+              <!-- Sample AI Message -->
+              <!--
+              <Grid HorizontalAlignment="Left" MaxWidth="500" Margin="0,4">
+                <Grid.RowDefinitions>
+                  <RowDefinition Height="Auto" />
+                  <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                
+                <Border Grid.Row="0"
+                        Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}"
+                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                        BorderThickness="1"
+                        CornerRadius="16,16,16,4"
+                        Padding="12,8">
+                  <TextBlock Text="Of course! I'd be happy to help you. What do you need assistance with?"
+                             Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                             TextWrapping="Wrap"
+                             FontSize="14" />
+                </Border>
+                
+                <StackPanel Grid.Row="1" 
+                            Orientation="Horizontal" 
+                            HorizontalAlignment="Right"
+                            Margin="0,4,0,0"
+                            Spacing="8">
+                  <Button Background="Transparent"
+                          BorderThickness="0"
+                          Padding="8,4"
+                          ToolTipService.ToolTip="Copy message">
+                    <StackPanel Orientation="Horizontal" Spacing="4">
+                      <FontIcon Glyph="&#xE8C8;" FontSize="12" />
+                      <TextBlock Text="Copy" FontSize="12" />
+                    </StackPanel>
+                  </Button>
+                </StackPanel>
+              </Grid>
+              -->
+              
             </StackPanel>
+          </ScrollViewer>
+          
+          <!-- Scroll to Bottom Indicator -->
+          <Button x:Name="ScrollIndicator"
+                  HorizontalAlignment="Right"
+                  VerticalAlignment="Bottom"
+                  Margin="16,0,16,16"
+                  Background="{ThemeResource AccentFillColorDefaultBrush}"
+                  BorderThickness="0"
+                  CornerRadius="20"
+                  Width="40"
+                  Height="40"
+                  Visibility="Collapsed"
+                  Click="ScrollIndicator_Click"
+                  ToolTipService.ToolTip="Scroll to bottom">
+            <FontIcon Glyph="&#xE96E;" 
+                      Foreground="White" 
+                      FontSize="16" />
+          </Button>
           </Grid>
           
           <!-- Chat Input Area -->

@@ -101,6 +101,14 @@ build_property.EnableGeneratedComInterfaceComImportInterop =
 build_property.EffectiveAnalysisLevelStyle = 9.0
 build_property.EnableCodeStyleSeverity = 
 
+[/Users/carvals/RiderProjects/CAI_design_1_chat/CAI_design_1_chat/Presentation/Dialogs/AISettingsDialog.xaml]
+build_metadata.AdditionalFiles.SourceItemGroup = Page
+build_metadata.AdditionalFiles.Link = 
+build_metadata.AdditionalFiles.TargetPath = 
+build_metadata.AdditionalFiles.FullPath = /Users/carvals/RiderProjects/CAI_design_1_chat/CAI_design_1_chat/Presentation/Dialogs/AISettingsDialog.xaml
+build_metadata.AdditionalFiles.Identity = /Users/carvals/RiderProjects/CAI_design_1_chat/CAI_design_1_chat/Presentation/Dialogs/AISettingsDialog.xaml
+build_metadata.AdditionalFiles.XamlRuntime = 
+
 [/Users/carvals/RiderProjects/CAI_design_1_chat/CAI_design_1_chat/Presentation/LoginPage.xaml]
 build_metadata.AdditionalFiles.SourceItemGroup = Page
 build_metadata.AdditionalFiles.Link = 

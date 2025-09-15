@@ -331,6 +331,29 @@ This pattern ensures complete layout collapse while maintaining smooth animation
 - **Session Management**: Maintain conversation context
 - **Future Database**: Prepare structure for later database integration
 
+## ✅ Completed Features (Latest Update)
+
+### Ollama UI Enhancements & Modern UX Patterns
+- **Enhanced Refresh Button**: Increased width from 100px to 120px to properly display "🔄 Refresh" text
+- **Modal Loading Dialog**: Replaced inline loading text with proper modal dialog showing:
+  - ProgressRing spinner with "Waking up model..." message
+  - Blocks user interaction during API calls
+  - Proper success/error feedback dialogs
+- **Real API Integration**: 
+  - Refresh button calls actual Ollama `/api/tags` endpoint
+  - Test button sends real prompt to `/api/generate` endpoint
+  - Proper timeout handling (10s for refresh, 30s for test)
+- **Enhanced Error Handling**: Connection failures show informative dialogs with troubleshooting hints
+- **Input Validation**: Test button validates model selection before proceeding
+
+### Modern UX Patterns Implemented
+1. **Progressive Disclosure**: Loading states reveal information progressively
+2. **Immediate Feedback**: Visual confirmation for all user actions
+3. **Error Prevention**: Input validation prevents invalid operations
+4. **Graceful Degradation**: Fallback behaviors for connection failures
+5. **Modal Workflows**: Non-blocking background operations with clear visual feedback
+6. **Contextual Help**: Error messages include actionable guidance
+
 ### 🔄 Next Priority Items
 - Implement chat streaming functionality (Phase 1)
 - Add AI provider integrations (Phase 2)  
@@ -405,3 +428,468 @@ sequenceDiagram
   MP->>MP: LoadFilePreviewAsync(file) -> PreviewText
   U->>CD: Reset/Convert/Sauvegarder
   CD->>MP: BtnReset_Click / BtnToText_Click / BtnSave_Click
+```
+
+### AI Settings Dialog Flow
+```mermaid
+sequenceDiagram
+  participant U as User
+  participant S as Settings Menu
+  participant ASD as AISettingsDialog
+  participant O as Ollama API
+
+  U->>S: Click "AI Settings"
+  S->>ASD: ShowAsync()
+  
+  alt Refresh Models
+    U->>ASD: Click "🔄 Refresh"
+    ASD->>ASD: Show loading state "⏳"
+    ASD->>O: GET /api/tags
+    O->>ASD: Return models JSON
+    ASD->>ASD: Update ComboBox items
+    ASD->>ASD: Show success dialog
+  end
+  
+  alt Test Connection
+    U->>ASD: Select model & Click "Test"
+    ASD->>ASD: Validate model selection
+    ASD->>ASD: Show modal loading dialog
+    ASD->>O: POST /api/generate {"prompt": "Say hi"}
+    O->>ASD: Return response
+    ASD->>ASD: Hide loading, show success dialog
+  end
+```
+
+### Modern UX Pattern Flow
+```mermaid
+graph TD
+  A[User Action] --> B{Input Validation}
+  B -->|Valid| C[Show Loading State]
+  B -->|Invalid| D[Show Error Prevention]
+  
+  C --> E[Execute API Call]
+  E --> F{API Response}
+  
+  F -->|Success| G[Hide Loading]
+  F -->|Error| H[Hide Loading]
+  
+  G --> I[Show Success Feedback]
+  H --> J[Show Error with Context]
+  
+  I --> K[Update UI State]
+  J --> L[Provide Recovery Options]
+  
+  D --> M[Guide User to Valid Input]
+  L --> N[Allow Retry]
+  M --> A
+  N --> A
+```
+
+---
+
+## Chat Interface Flow Process
+
+### Chat Message Flow Architecture
+
+The chat interface implements a modern conversation-style UI with real AI integration and comprehensive error handling.
+
+#### Core Chat Flow Process
+
+```mermaid
+graph TD
+  A[User Types Message] --> B[User Presses Send/Enter]
+  B --> C[Add User Message Bubble]
+  C --> D[Show Typing Indicator]
+  D --> E[Get AI Provider from Settings]
+  E --> F{Provider Type?}
+  
+  F -->|Ollama| G[Call Ollama API]
+  F -->|OpenAI| H[Call OpenAI API]
+  F -->|Anthropic| I[Call Anthropic API]
+  F -->|Gemini| J[Call Gemini API]
+  F -->|Mistral| K[Call Mistral API]
+  
+  G --> L[Process AI Response]
+  H --> M[Placeholder Response]
+  I --> M
+  J --> M
+  K --> M
+  
+  L --> N[Remove Typing Indicator]
+  M --> N
+  N --> O[Add AI Message Bubble]
+  O --> P[Auto-scroll to Bottom]
+  P --> Q[Enable Copy Button]
+  
+  Q --> R{User Clicks Copy?}
+  R -->|Yes| S[Copy to Clipboard]
+  R -->|No| T[Wait for Next Message]
+  S --> T
+  T --> A
+  
+  style A fill:#e1f5fe
+  style O fill:#f3e5f5
+  style D fill:#fff3e0
+  style S fill:#e8f5e8
+```
+
+#### Error Handling Flow
+
+```mermaid
+graph TD
+  A[AI API Call] --> B{Request Success?}
+  B -->|Yes| C[Parse Response]
+  B -->|No| D{Error Type?}
+  
+  D -->|Network Error| E[Show Connection Error]
+  D -->|Timeout| F[Show Timeout Error]
+  D -->|API Error| G[Show API Error]
+  D -->|Unknown| H[Show Generic Error]
+  
+  C --> I{Valid Response?}
+  I -->|Yes| J[Display AI Message]
+  I -->|No| K[Show Parse Error]
+  
+  E --> L[Remove Typing Indicator]
+  F --> L
+  G --> L
+  H --> L
+  K --> L
+  
+  L --> M[Show Error Message to User]
+  M --> N[Allow Retry]
+  N --> A
+  
+  style A fill:#e3f2fd
+  style J fill:#e8f5e8
+  style M fill:#ffebee
+```
+
+#### Message Bubble Creation Flow
+
+```mermaid
+graph TD
+  A[Create Message] --> B{Message Type?}
+  B -->|User| C[Right-aligned Blue Bubble]
+  B -->|AI| D[Left-aligned Themed Bubble]
+  B -->|Typing| E[Left-aligned with ProgressRing]
+  
+  C --> F[Add to Chat Container]
+  D --> G[Add Copy Button]
+  E --> H[Add to Chat Container]
+  
+  G --> F
+  F --> I[Auto-scroll to Bottom]
+  H --> I
+  I --> J[Update Empty State Visibility]
+  
+  style C fill:#2196f3,color:#fff
+  style D fill:#f5f5f5
+  style E fill:#fff3e0
+```
+
+### Key Implementation Features
+
+#### 1. Real-time UI Updates
+- **Typing Indicators**: ProgressRing with "AI is thinking..." text
+- **Auto-scrolling**: Automatic scroll to bottom on new messages
+- **Dynamic State**: Empty state shows/hides based on message count
+
+#### 2. Provider Integration
+- **Ollama**: Full HTTP API integration with `/api/generate` endpoint
+- **Other Providers**: Placeholder implementations ready for extension
+- **Settings Integration**: Reads provider configuration from local storage
+
+#### 3. Copy Functionality
+- **Always Visible**: Copy button always shown on AI messages (not hover-only)
+- **Clipboard Integration**: Uses Windows.ApplicationModel.DataTransfer
+- **Visual Feedback**: Themed button styling with proper contrast
+
+#### 4. Error Handling
+- **Network Errors**: Specific messages for connection failures
+- **API Errors**: Detailed error information from provider responses
+- **Timeout Handling**: 60-second timeout for AI responses
+- **User Guidance**: Actionable error messages with troubleshooting hints
+
+#### 5. Performance Optimizations
+- **Async Operations**: All AI calls are fully asynchronous
+- **Memory Management**: Proper disposal of HTTP clients and UI elements
+- **Resource Efficiency**: Typing indicators removed from UI tree when done
+
+### Future Enhancements
+
+#### Auto-scroll Improvements
+```mermaid
+graph TD
+  A[New Message Added] --> B{Chat at Bottom?}
+  B -->|Yes| C[Auto-scroll to Bottom]
+  B -->|No| D[Show Scroll Indicator]
+  
+  C --> E[Keep Last Question Visible]
+  D --> F{User Scrolls Down?}
+  F -->|Yes| G[Resume Auto-scroll]
+  F -->|No| H[Maintain Position]
+  
+  style C fill:#e8f5e8
+  style D fill:#fff3e0
+```
+
+#### Collapsible Thinking Process
+```mermaid
+graph TD
+  A[AI Response with Thinking] --> B[Parse Thinking Section]
+  B --> C[Create Collapsible UI]
+  C --> D[Show Summary by Default]
+  D --> E{User Clicks Expand?}
+  E -->|Yes| F[Show Full Thinking Process]
+  E -->|No| G[Keep Collapsed]
+  
+  F --> H[Add Collapse Button]
+  H --> I{User Clicks Collapse?}
+  I -->|Yes| D
+  I -->|No| F
+  
+  style F fill:#f3e5f5
+  style D fill:#e1f5fe
+```
+
+---
+
+## Enhanced Auto-Scroll Implementation
+
+### Smart Auto-Scroll Architecture
+
+The enhanced auto-scroll system provides intelligent scrolling behavior that respects user intent while ensuring optimal chat experience.
+
+#### Auto-Scroll State Management Flow
+
+```mermaid
+graph TD
+  A[User Interaction] --> B{Interaction Type?}
+  B -->|Manual Scroll| C[Update Scroll Position]
+  B -->|New Message| D[Check Current Position]
+  B -->|Scroll Indicator Click| E[Force Scroll to Bottom]
+  
+  C --> F[Calculate Distance from Bottom]
+  D --> F
+  F --> G{Distance < 50px?}
+  
+  G -->|Yes| H[Enable Auto-Scroll]
+  G -->|No| I[Disable Auto-Scroll]
+  
+  H --> J[Show/Hide Scroll Indicator]
+  I --> J
+  
+  J --> K{Auto-Scroll Enabled?}
+  K -->|Yes| L[Scroll with Extra Padding]
+  K -->|No| M[Maintain Position]
+  
+  E --> L
+  L --> N[Update UI State]
+  M --> N
+  
+  style H fill:#e8f5e8
+  style I fill:#fff3e0
+  style L fill:#e1f5fe
+```
+
+#### Copy Button Visibility Fix Flow
+
+```mermaid
+graph TD
+  A[Calculate Scroll Target] --> B[Get ScrollableHeight]
+  B --> C[Add Extra Padding]
+  C --> D[Apply Math.Max for Safety]
+  D --> E[Execute Scroll with Padding]
+  E --> F[Copy Button Fully Visible]
+  
+  C --> G[40px Padding Calculation]
+  G --> H[Button Height: ~24px]
+  G --> I[Button Margin: ~8px]
+  G --> J[Safety Buffer: ~8px]
+  
+  H --> K[Total: 40px]
+  I --> K
+  J --> K
+  K --> D
+  
+  style F fill:#e8f5e8
+  style K fill:#f3e5f5
+```
+
+### Advanced Thinking Process Implementation
+
+#### Pattern Recognition System
+
+The thinking process parser supports multiple AI model output formats with flexible pattern matching.
+
+#### Thinking Pattern Detection Flow
+
+```mermaid
+graph TD
+  A[AI Response Received] --> B[Apply Pattern Matching]
+  B --> C{XML Tags Found?}
+  C -->|Yes| D[Extract <thinking>...</thinking>]
+  C -->|No| E{Markdown Headers Found?}
+  
+  E -->|Yes| F[Extract **Thinking:** Section]
+  E -->|No| G{Section Headers Found?}
+  
+  G -->|Yes| H[Extract # Thinking Section]
+  G -->|No| I[No Thinking Section]
+  
+  D --> J[Parse Thinking Content]
+  F --> J
+  H --> J
+  I --> K[Display Regular Message]
+  
+  J --> L[Create Collapsible UI]
+  L --> M[Add Brain Icon Header]
+  M --> N[Add Expand/Collapse Button]
+  N --> O[Set Initial Collapsed State]
+  O --> P[Attach Toggle Event Handler]
+  
+  style J fill:#f3e5f5
+  style L fill:#e1f5fe
+  style P fill:#e8f5e8
+```
+
+#### Collapsible UI Component Architecture
+
+```mermaid
+graph TD
+  A[Thinking Section Container] --> B[Header Grid]
+  A --> C[Content TextBlock]
+  
+  B --> D[Brain Icon]
+  B --> E[Label Text]
+  B --> F[Chevron Button]
+  
+  C --> G[Thinking Content]
+  C --> H[Initially Collapsed]
+  
+  F --> I[Click Event Handler]
+  I --> J{Current State?}
+  J -->|Collapsed| K[Expand Content]
+  J -->|Expanded| L[Collapse Content]
+  
+  K --> M[Show TextBlock]
+  K --> N[Rotate Chevron Up]
+  K --> O[Auto-Scroll to Maintain Visibility]
+  
+  L --> P[Hide TextBlock]
+  L --> Q[Rotate Chevron Down]
+  
+  style K fill:#e8f5e8
+  style L fill:#fff3e0
+  style O fill:#e1f5fe
+```
+
+### Implementation Patterns and Best Practices
+
+#### 1. Scroll State Tracking Pattern
+
+```csharp
+// State variables for intelligent scrolling
+private bool _isUserScrolling = false;
+private bool _shouldAutoScroll = true;
+private const double SCROLL_THRESHOLD = 50.0;
+
+// Event-driven state updates
+private void UpdateAutoScrollState()
+{
+    var distanceFromBottom = ChatScrollViewer.ScrollableHeight - ChatScrollViewer.VerticalOffset;
+    _shouldAutoScroll = distanceFromBottom <= SCROLL_THRESHOLD;
+    UpdateScrollIndicator();
+}
+```
+
+#### 2. Padding-Aware Scroll Implementation
+
+```csharp
+// Ensures UI elements are fully visible
+private void ScrollToBottom()
+{
+    if (_shouldAutoScroll || _isUserScrolling == false)
+    {
+        var extraPadding = 40; // Copy button height + margin + safety buffer
+        var targetOffset = Math.Max(0, ChatScrollViewer.ScrollableHeight + extraPadding);
+        ChatScrollViewer.ChangeView(null, targetOffset, null, true);
+    }
+}
+```
+
+#### 3. Regex Pattern Flexibility
+
+```csharp
+// Multiple pattern support for different AI models
+var thinkingPatterns = new[]
+{
+    (@"<thinking>(.*?)</thinking>", RegexOptions.Singleline | RegexOptions.IgnoreCase),
+    (@"\*\*Thinking:\*\*(.*?)(?=\*\*Response:\*\*|\*\*Answer:\*\*|$)", RegexOptions.Singleline | RegexOptions.IgnoreCase),
+    (@"# Thinking\s*(.*?)(?=# Response|# Answer|$)", RegexOptions.Singleline | RegexOptions.IgnoreCase)
+};
+```
+
+#### 4. Theme-Integrated UI Components
+
+```csharp
+// Consistent theming across light/dark modes
+var thinkingBorder = new Border
+{
+    Background = (Brush)Application.Current.Resources["LayerFillColorDefaultBrush"],
+    BorderBrush = (Brush)Application.Current.Resources["ControlStrokeColorSecondaryBrush"],
+    // ... other properties
+};
+```
+
+### Performance Considerations
+
+#### 1. Efficient Event Handling
+- Threshold-based scroll detection reduces unnecessary calculations
+- Event-driven updates only when state changes
+- Minimal UI updates for better performance
+
+#### 2. Memory Management
+- Dynamic UI creation only when thinking sections are present
+- Proper event handler cleanup prevents memory leaks
+- Theme resource reuse for memory efficiency
+
+#### 3. Cross-Platform Compatibility
+- DirectManipulation events gracefully handled (Uno Platform limitations)
+- ViewChanged events provide sufficient scroll detection
+- FontIcon with Unicode ensures icon compatibility
+
+### Testing and Validation
+
+#### Auto-Scroll Test Cases
+1. **Manual Scroll Up** → Scroll indicator appears
+2. **Scroll Indicator Click** → Smooth scroll to bottom with padding
+3. **Message While Scrolled Up** → No auto-scroll, maintains position
+4. **Message While at Bottom** → Auto-scroll with proper padding
+5. **Copy Button Visibility** → Always fully visible after scroll
+
+#### Thinking Section Test Cases
+1. **XML Format** → `<thinking>...</thinking>` detection
+2. **Markdown Format** → `**Thinking:**` section parsing
+3. **Section Headers** → `# Thinking` format support
+4. **Collapsed State** → Default collapsed behavior
+5. **Toggle Functionality** → Expand/collapse with chevron animation
+6. **Mixed Content** → Thinking + response combination handling
+
+### Error Handling and Edge Cases
+
+#### 1. Scroll Boundary Conditions
+- Negative scroll values handled with `Math.Max(0, targetOffset)`
+- ScrollableHeight changes managed dynamically
+- Rapid scroll events debounced appropriately
+
+#### 2. Regex Pattern Failures
+- Graceful fallback when no thinking patterns match
+- Empty thinking content handled properly
+- Malformed thinking sections don't break message display
+
+#### 3. UI State Consistency
+- Chevron icon state synchronized with content visibility
+- Theme changes don't break collapsible sections
+- Dynamic content updates maintain proper layout
