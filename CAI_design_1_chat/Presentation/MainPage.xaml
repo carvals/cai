@@ -40,6 +40,7 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
           </Grid.RowDefinitions>
           
           <!-- Toggle button for left panel -->
@@ -60,9 +61,94 @@
             </StackPanel>
           </Button>
           
+          <!-- Settings section with expandable menu -->
+          <StackPanel x:Name="SettingsSection" Grid.Row="2" Margin="6,0,6,4">
+            <!-- Settings button -->
+            <Button x:Name="SettingsButton"
+                    Click="SettingsButton_Click"
+                    Background="{ThemeResource SubtleFillColorSecondaryBrush}"
+                    BorderBrush="{ThemeResource ControlStrokeColorDefaultBrush}"
+                    BorderThickness="1"
+                    CornerRadius="6"
+                    Width="48"
+                    Height="48"
+                    ToolTipService.ToolTip="Settings">
+              <FontIcon Glyph="&#xE713;" 
+                        Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                        FontSize="20" />
+            </Button>
+            
+            <!-- Expandable settings menu -->
+            <StackPanel x:Name="SettingsMenu"
+                        Visibility="Collapsed"
+                        Margin="0,4,0,0">
+              
+              <!-- Notifications -->
+              <Button x:Name="NotificationsButton"
+                      Background="{ThemeResource SubtleFillColorSecondaryBrush}"
+                      BorderBrush="{ThemeResource ControlStrokeColorDefaultBrush}"
+                      BorderThickness="1"
+                      CornerRadius="6"
+                      Width="48"
+                      Height="48"
+                      Margin="0,0,0,4"
+                      ToolTipService.ToolTip="Notifications">
+                <FontIcon Glyph="&#xE7E7;" 
+                          Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                          FontSize="18" />
+              </Button>
+              
+              <!-- Theme -->
+              <Button x:Name="ThemeButton"
+                      Background="{ThemeResource SubtleFillColorSecondaryBrush}"
+                      BorderBrush="{ThemeResource ControlStrokeColorDefaultBrush}"
+                      BorderThickness="1"
+                      CornerRadius="6"
+                      Width="48"
+                      Height="48"
+                      Margin="0,0,0,4"
+                      ToolTipService.ToolTip="Theme">
+                <FontIcon Glyph="&#xE706;" 
+                          Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                          FontSize="18" />
+              </Button>
+              
+              <!-- Help -->
+              <Button x:Name="HelpButton"
+                      Background="{ThemeResource SubtleFillColorSecondaryBrush}"
+                      BorderBrush="{ThemeResource ControlStrokeColorDefaultBrush}"
+                      BorderThickness="1"
+                      CornerRadius="6"
+                      Width="48"
+                      Height="48"
+                      Margin="0,0,0,4"
+                      ToolTipService.ToolTip="Help">
+                <FontIcon Glyph="&#xE897;" 
+                          Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                          FontSize="18" />
+              </Button>
+              
+              <!-- AI Settings -->
+              <Button x:Name="AISettingsButton"
+                      Click="AISettingsButton_Click"
+                      Background="{ThemeResource AccentFillColorSecondaryBrush}"
+                      BorderBrush="{ThemeResource AccentFillColorDefaultBrush}"
+                      BorderThickness="1"
+                      CornerRadius="6"
+                      Width="48"
+                      Height="48"
+                      ToolTipService.ToolTip="AI Settings">
+                <FontIcon Glyph="&#xE8B8;" 
+                          Foreground="{ThemeResource AccentFillColorDefaultBrush}"
+                          FontSize="18" />
+              </Button>
+              
+            </StackPanel>
+          </StackPanel>
+          
           <!-- Login avatar at bottom -->
           <Button x:Name="LoginAvatarButton"
-                  Grid.Row="2"
+                  Grid.Row="3"
                   Background="{ThemeResource SubtleFillColorSecondaryBrush}"
                   BorderBrush="{ThemeResource ControlStrokeColorDefaultBrush}"
                   BorderThickness="1"

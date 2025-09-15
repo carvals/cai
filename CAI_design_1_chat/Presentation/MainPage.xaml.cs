@@ -158,14 +158,37 @@ public sealed partial class MainPage : Page
 
     private void SendButton_Click(object sender, RoutedEventArgs e)
     {
-        SendMessage();
+        // TODO: Implement send message functionality
+        if (!string.IsNullOrWhiteSpace(ChatInput?.Text))
+        {
+            // Clear input after sending
+            ChatInput.Text = string.Empty;
+        }
+    }
+
+    private void SettingsButton_Click(object sender, RoutedEventArgs e)
+    {
+        // Toggle settings menu visibility with animation
+        if (SettingsMenu.Visibility == Visibility.Visible)
+        {
+            SettingsMenu.Visibility = Visibility.Collapsed;
+        }
+        else
+        {
+            SettingsMenu.Visibility = Visibility.Visible;
+        }
+    }
+
+    private void AISettingsButton_Click(object sender, RoutedEventArgs e)
+    {
+        // TODO: Open AI Settings dialog
     }
 
     private void ChatInput_KeyDown(object sender, KeyRoutedEventArgs e)
     {
         if (e.Key == VirtualKey.Enter && !string.IsNullOrWhiteSpace(ChatInput.Text))
         {
-            SendMessage();
+            SendButton_Click(sender, e);
             e.Handled = true;
         }
     }
