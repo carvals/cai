@@ -3,15 +3,29 @@ using Microsoft.UI.Xaml.Controls;
 using Windows.Storage;
 using System.Net.Http;
 using System.Threading.Tasks;
+using System.Linq;
+using System;
+using CAI_design_1_chat.Services;
 
 namespace CAI_design_1_chat.Presentation.Dialogs;
 
 public sealed partial class AISettingsDialog : ContentDialog
 {
+    private readonly OpenAIModelProvider _openAIModelProvider;
+    private ContentDialog? _loadingDialog;
+
     public AISettingsDialog()
     {
         this.InitializeComponent();
+        _openAIModelProvider = new OpenAIModelProvider();
         LoadSettings();
+        
+        // Add event handlers to clear placeholder text when items are selected
+        OllamaModelBox.SelectionChanged += (s, e) => { if (OllamaModelBox.SelectedItem != null) OllamaModelBox.PlaceholderText = ""; };
+        OpenAIModelBox.SelectionChanged += (s, e) => { if (OpenAIModelBox.SelectedItem != null) OpenAIModelBox.PlaceholderText = ""; };
+        AnthropicModelBox.SelectionChanged += (s, e) => { if (AnthropicModelBox.SelectedItem != null) AnthropicModelBox.PlaceholderText = ""; };
+        GeminiModelBox.SelectionChanged += (s, e) => { if (GeminiModelBox.SelectedItem != null) GeminiModelBox.PlaceholderText = ""; };
+        MistralModelBox.SelectionChanged += (s, e) => { if (MistralModelBox.SelectedItem != null) MistralModelBox.PlaceholderText = ""; };
     }
 
     private void LoadSettings()
@@ -50,6 +64,7 @@ public sealed partial class AISettingsDialog : ContentDialog
                 if (item.Content.ToString() == ollamaModel)
                 {
                     OllamaModelBox.SelectedItem = item;
+                    OllamaModelBox.PlaceholderText = ""; // Clear placeholder to prevent overlap
                     break;
                 }
             }
@@ -65,6 +80,7 @@ public sealed partial class AISettingsDialog : ContentDialog
                 if (item.Content.ToString() == openAIModel)
                 {
                     OpenAIModelBox.SelectedItem = item;
+                    OpenAIModelBox.PlaceholderText = ""; // Clear placeholder to prevent overlap
                     break;
                 }
             }
@@ -81,6 +97,7 @@ public sealed partial class AISettingsDialog : ContentDialog
                 if (item.Content.ToString() == anthropicModel)
                 {
                     AnthropicModelBox.SelectedItem = item;
+                    AnthropicModelBox.PlaceholderText = ""; // Clear placeholder to prevent overlap
                     break;
                 }
             }
@@ -96,6 +113,7 @@ public sealed partial class AISettingsDialog : ContentDialog
                 if (item.Content.ToString() == geminiModel)
                 {
                     GeminiModelBox.SelectedItem = item;
+                    GeminiModelBox.PlaceholderText = ""; // Clear placeholder to prevent overlap
                     break;
                 }
             }
@@ -111,6 +129,7 @@ public sealed partial class AISettingsDialog : ContentDialog
                 if (item.Content.ToString() == mistralModel)
                 {
                     MistralModelBox.SelectedItem = item;
+                    MistralModelBox.PlaceholderText = ""; // Clear placeholder to prevent overlap
                     break;
                 }
             }
@@ -519,6 +538,132 @@ public sealed partial class AISettingsDialog : ContentDialog
     public class OllamaModelsResponse
     {
         public OllamaModel[] models { get; set; } = Array.Empty<OllamaModel>();
+    }
+
+    private async void RefreshOpenAIModels(object sender, RoutedEventArgs e)
+    {
+        var apiKey = OpenAIKeyBox.Password;
+        if (string.IsNullOrEmpty(apiKey))
+        {
+            await ShowErrorDialog("Please enter your OpenAI API key first.");
+            return;
+        }
+
+        await ShowLoadingDialog("Fetching OpenAI models...");
+        
+        try
+        {
+            var models = await _openAIModelProvider.FetchAvailableModelsAsync(apiKey);
+            
+            // Update ComboBox with new models
+            OpenAIModelBox.Items.Clear();
+            foreach (var model in models)
+            {
+                var item = new ComboBoxItem { Content = model.Id, Tag = model };
+                OpenAIModelBox.Items.Add(item);
+            }
+            
+            // Cache the models
+            _openAIModelProvider.CacheModels(models);
+            
+            await HideLoadingDialog();
+            await ShowSuccessDialog($"Found {models.Count} OpenAI models");
+        }
+        catch (Exception ex)
+        {
+            await HideLoadingDialog();
+            await ShowErrorDialog($"Failed to fetch models: {ex.Message}");
+        }
+    }
+
+    private async Task ShowLoadingDialog(string message)
+    {
+        _loadingDialog = new ContentDialog
+        {
+            Title = "Loading",
+            Content = new StackPanel
+            {
+                Children =
+                {
+                    new ProgressRing { IsActive = true, Margin = new Thickness(0, 0, 0, 16) },
+                    new TextBlock { Text = message, HorizontalAlignment = HorizontalAlignment.Center }
+                }
+            },
+            XamlRoot = this.XamlRoot
+        };
+        
+        _ = _loadingDialog.ShowAsync();
+        await Task.Delay(100); // Allow dialog to show
+    }
+
+    private async Task HideLoadingDialog()
+    {
+        if (_loadingDialog != null)
+        {
+            _loadingDialog.Hide();
+            _loadingDialog = null;
+        }
+        await Task.Delay(100); // Allow dialog to hide
+    }
+
+    private async Task ShowSuccessDialog(string message)
+    {
+        var dialog = new ContentDialog
+        {
+            Title = "Success",
+            Content = message,
+            CloseButtonText = "OK",
+            XamlRoot = this.XamlRoot
+        };
+        await dialog.ShowAsync();
+    }
+
+    private async Task ShowErrorDialog(string message)
+    {
+        var dialog = new ContentDialog
+        {
+            Title = "Error",
+            Content = message,
+            CloseButtonText = "OK",
+            XamlRoot = this.XamlRoot
+        };
+        await dialog.ShowAsync();
+    }
+
+    private async void RefreshAnthropicModels(object sender, RoutedEventArgs e)
+    {
+        var apiKey = AnthropicKeyBox.Password;
+        if (string.IsNullOrEmpty(apiKey))
+        {
+            await ShowErrorDialog("Please enter your Anthropic API key first.");
+            return;
+        }
+
+        await ShowErrorDialog("Anthropic model refresh not yet implemented. Coming soon!");
+    }
+
+    private async void RefreshGeminiModels(object sender, RoutedEventArgs e)
+    {
+        var apiKey = GeminiKeyBox.Password;
+        if (string.IsNullOrEmpty(apiKey))
+        {
+            await ShowErrorDialog("Please enter your Gemini API key first.");
+            return;
+        }
+
+        await ShowErrorDialog("Gemini model refresh not yet implemented. Coming soon!");
+    }
+
+    private async void RefreshMistralModels(object sender, RoutedEventArgs e)
+    {
+        var apiKey = MistralKeyBox.Password;
+        if (string.IsNullOrEmpty(apiKey))
+        {
+            await ShowErrorDialog("Please enter your Mistral API key first.");
+            return;
+        }
+
+        await ShowErrorDialog("Mistral model refresh not yet implemented. Coming soon!");
     }
 
     public class OllamaGenerateResponse

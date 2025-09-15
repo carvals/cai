@@ -157,12 +157,21 @@
                          PlaceholderText="org-..."/>
               </StackPanel>
               
-              <Button Grid.Column="1" 
-                      x:Name="OpenAITestButton"
-                      Content="Test"
-                      VerticalAlignment="Bottom"
-                      Margin="8,0,0,0"
-                      Click="TestOpenAIConnection"/>
+              <StackPanel Grid.Column="1" 
+                          Spacing="8"
+                          VerticalAlignment="Bottom">
+                <Button x:Name="OpenAIRefreshButton" 
+                        Content="🔄 Refresh" 
+                        Width="120" 
+                        Margin="0,5,0,0" 
+                        Click="RefreshOpenAIModels" />
+                        
+                <Button x:Name="OpenAITestButton"
+                        Content="Test"
+                        Width="100"
+                        Height="32"
+                        Click="TestOpenAIConnection"/>
+              </StackPanel>
             </Grid>
           </StackPanel>
         </Border>
@@ -208,12 +217,21 @@
                 </ComboBox>
               </StackPanel>
               
-              <Button Grid.Column="1" 
-                      x:Name="AnthropicTestButton"
-                      Content="Test"
-                      VerticalAlignment="Bottom"
-                      Margin="8,0,0,0"
-                      Click="TestAnthropicConnection"/>
+              <StackPanel Grid.Column="1" 
+                          Spacing="8"
+                          VerticalAlignment="Bottom">
+                <Button x:Name="AnthropicRefreshButton" 
+                        Content="🔄 Refresh" 
+                        Width="120" 
+                        Margin="0,5,0,0" 
+                        Click="RefreshAnthropicModels" />
+                        
+                <Button x:Name="AnthropicTestButton"
+                        Content="Test"
+                        Width="100"
+                        Height="32"
+                        Click="TestAnthropicConnection"/>
+              </StackPanel>
             </Grid>
           </StackPanel>
         </Border>
@@ -259,12 +277,21 @@
                 </ComboBox>
               </StackPanel>
               
-              <Button Grid.Column="1" 
-                      x:Name="GeminiTestButton"
-                      Content="Test"
-                      VerticalAlignment="Bottom"
-                      Margin="8,0,0,0"
-                      Click="TestGeminiConnection"/>
+              <StackPanel Grid.Column="1" 
+                          Spacing="8"
+                          VerticalAlignment="Bottom">
+                <Button x:Name="GeminiRefreshButton" 
+                        Content="🔄 Refresh" 
+                        Width="120" 
+                        Margin="0,5,0,0" 
+                        Click="RefreshGeminiModels" />
+                        
+                <Button x:Name="GeminiTestButton"
+                        Content="Test"
+                        Width="100"
+                        Height="32"
+                        Click="TestGeminiConnection"/>
+              </StackPanel>
             </Grid>
           </StackPanel>
         </Border>
@@ -310,12 +337,21 @@
                 </ComboBox>
               </StackPanel>
               
-              <Button Grid.Column="1" 
-                      x:Name="MistralTestButton"
-                      Content="Test"
-                      VerticalAlignment="Bottom"
-                      Margin="8,0,0,0"
-                      Click="TestMistralConnection"/>
+              <StackPanel Grid.Column="1" 
+                          Spacing="8"
+                          VerticalAlignment="Bottom">
+                <Button x:Name="MistralRefreshButton" 
+                        Content="🔄 Refresh" 
+                        Width="120" 
+                        Margin="0,5,0,0" 
+                        Click="RefreshMistralModels" />
+                        
+                <Button x:Name="MistralTestButton"
+                        Content="Test"
+                        Width="100"
+                        Height="32"
+                        Click="TestMistralConnection"/>
+              </StackPanel>
             </Grid>
           </StackPanel>
         </Border>

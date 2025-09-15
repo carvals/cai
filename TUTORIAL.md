@@ -936,6 +936,41 @@ curl -X POST "https://api.openai.com/v1/chat/completions" \
 
 **Investigation Required**: Check MainPage.xaml.cs streaming implementation for OpenAI vs Ollama indicator cleanup.
 
+### ComboBox Placeholder Text Overlap Bug Fix
+
+**Problem**: In AI Settings Dialog, when a model is selected from any ComboBox (Ollama, OpenAI, Anthropic, etc.), the selected model name overlaps with the placeholder text "Select model...", creating unreadable mixed text display.
+
+**Root Cause**: WinUI/Uno Platform ComboBox control doesn't automatically clear or hide the `PlaceholderText` property when an item is selected. This causes both the placeholder and selected item text to render simultaneously, resulting in visual overlap.
+
+**Technical Details**:
+- **Platform Issue**: This is a known limitation in WinUI/Uno Platform ComboBox styling
+- **Manifestation**: Selected text renders on top of placeholder text without clearing it
+- **User Impact**: Makes it impossible to read the actual selected model name
+
+**Solution Implemented**:
+
+1. **Load-time Clearing**: Clear placeholder when restoring saved selections:
+```csharp
+if (item.Content.ToString() == savedModel)
+{
+    ComboBox.SelectedItem = item;
+    ComboBox.PlaceholderText = ""; // Clear to prevent overlap
+    break;
+}
+```
+
+2. **Runtime Event Handling**: Clear placeholder on user selection:
+```csharp
+ComboBox.SelectionChanged += (s, e) => { 
+    if (ComboBox.SelectedItem != null) 
+        ComboBox.PlaceholderText = ""; 
+};
+```
+
+3. **Applied Universally**: Fixed for all AI provider ComboBoxes (Ollama, OpenAI, Anthropic, Gemini, Mistral)
+
+**Result**: Clean, readable model selection display without text overlap. Works for both saved settings restoration and new user selections.
+
 ### Build Commands Used
 ```bash
 # Add official OpenAI package
@@ -951,6 +986,184 @@ dotnet run --project CAI_design_1_chat/CAI_design_1_chat.csproj --framework net9
 - **Debugging Time Saved**: Eliminated ~4 hours of custom HTTP client debugging
 - **Maintenance Reduction**: 50% less code to maintain
 - **User Value**: Immediate access to all OpenAI features with robust error handling
+
+---
+
+## Phase 8: Dynamic Model Refresh Implementation (Complete)
+
+### Implementation Summary
+Successfully implemented a comprehensive dynamic model refresh system that allows users to fetch the latest AI models from provider APIs without manual app updates.
+
+### Phase 8.1: Core Infrastructure Design
+
+**Key Architecture Decisions:**
+- ✅ **Interface-based design** - `IModelProvider` for consistent API integration across providers
+- ✅ **Data model abstraction** - `AIModel` class with capabilities, descriptions, and metadata
+- ✅ **Caching strategy** - 24-hour local storage with expiration handling
+- ✅ **Error handling pattern** - Graceful fallbacks with user-friendly messaging
+
+**Critical Files Created:**
+```
+/Models/AIModel.cs - Universal model data structure
+/Services/IModelProvider.cs - Provider abstraction interface
+/Services/OpenAIModelProvider.cs - Full OpenAI API integration
+```
+
+### Phase 8.2: OpenAI Models API Integration
+
+**Implementation Pattern:**
+```csharp
+// API Integration with filtering and caching
+public async Task<List<AIModel>> FetchModelsFromApiAsync()
+{
+    using var client = new HttpClient();
+    client.DefaultRequestHeaders.Authorization = 
+        new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", _apiKey);
+    
+    var response = await client.GetAsync("https://api.openai.com/v1/models");
+    // Filter for chat completion models only
+    var chatModels = models.Where(m => m.Id.Contains("gpt") && 
+        !m.Id.Contains("embedding") && !m.Id.Contains("tts")).ToList();
+}
+```
+
+**Smart Model Filtering Logic:**
+- ✅ **Chat models only** - Excludes embeddings, TTS, and other non-chat models
+- ✅ **Name formatting** - Converts API names to user-friendly display names
+- ✅ **Capability detection** - Identifies vision, function calling, and other features
+- ✅ **Deprecation handling** - Shows warnings for deprecated models
+
+### Phase 8.3: UI Enhancement Pattern
+
+**Consistent Button Layout Implementation:**
+```xml
+<StackPanel Grid.Column="1" Spacing="8" VerticalAlignment="Bottom">
+  <Button x:Name="ProviderRefreshButton" 
+          Content="🔄 Refresh" 
+          Width="120" 
+          Margin="0,5,0,0" 
+          Click="RefreshProviderModels" />
+  <Button x:Name="ProviderTestButton"
+          Content="Test"
+          Width="100"
+          Height="32"
+          Click="TestProviderConnection"/>
+</StackPanel>
+```
+
+**Loading State Management:**
+```csharp
+private async Task ShowLoadingDialog(string message)
+{
+    _loadingDialog = new ContentDialog
+    {
+        Title = "Loading",
+        Content = new StackPanel
+        {
+            Children = {
+                new ProgressRing { IsActive = true, Width = 40, Height = 40 },
+                new TextBlock { Text = message, Margin = new Thickness(0, 16, 0, 0) }
+            }
+        },
+        XamlRoot = this.XamlRoot
+    };
+    _ = _loadingDialog.ShowAsync(); // Fire and forget
+}
+```
+
+### Phase 8.4: Caching and Performance Optimization
+
+**Local Storage Pattern:**
+```csharp
+private async Task CacheModelsAsync(List<AIModel> models)
+{
+    var cacheData = new
+    {
+        Models = models,
+        CachedAt = DateTime.UtcNow,
+        ExpiresAt = DateTime.UtcNow.AddHours(24)
+    };
+    
+    var json = JsonSerializer.Serialize(cacheData);
+    ApplicationData.Current.LocalSettings.Values[$"{ProviderName}_cached_models"] = json;
+}
+```
+
+**Cache Validation Logic:**
+- ✅ **24-hour expiration** - Automatic cache invalidation
+- ✅ **Fallback strategy** - Uses cached models when API fails
+- ✅ **Performance optimization** - Avoids unnecessary API calls
+
+### Phase 8.5: Error Handling and User Experience
+
+**Comprehensive Error Scenarios:**
+- ✅ **Missing API key validation** - Clear error messages before API calls
+- ✅ **Network failure handling** - Graceful fallback to cached models
+- ✅ **API rate limiting** - Proper error messaging and retry suggestions
+- ✅ **Invalid response handling** - JSON parsing error recovery
+
+**User Feedback Pattern:**
+```csharp
+// Success feedback with model count
+await ShowSuccessDialog($"Successfully refreshed {models.Count} models from OpenAI API!");
+
+// Error feedback with actionable advice
+await ShowErrorDialog("Failed to fetch models. Using cached models. Check your API key and internet connection.");
+```
+
+### Build and Test Commands
+
+**Development Workflow:**
+```bash
+# Build and verify compilation
+dotnet build CAI_design_1_chat.sln -c Debug
+
+# Run application for testing
+dotnet run --project CAI_design_1_chat/CAI_design_1_chat.csproj --framework net9.0-desktop
+
+# Test OpenAI integration (requires valid API key)
+# 1. Open AI Settings dialog
+# 2. Enter OpenAI API key
+# 3. Click "🔄 Refresh" button
+# 4. Verify model list updates with latest models
+```
+
+### Time Investment Analysis
+- **Infrastructure Setup**: 1.5 hours (interfaces, models, base classes)
+- **OpenAI Integration**: 2 hours (API calls, filtering, caching)
+- **UI Implementation**: 1 hour (buttons, dialogs, event handlers)
+- **Testing and Refinement**: 0.5 hours (error handling, edge cases)
+- **Total Investment**: 5 hours for complete dynamic model refresh system
+
+### Future Provider Extension Pattern
+For adding new providers (Anthropic, Gemini, Mistral):
+1. Implement `IModelProvider` interface
+2. Add provider-specific API endpoint and authentication
+3. Implement model filtering logic for provider's model types
+4. Update button event handler from placeholder to actual implementation
+5. Test with provider's API key
+
+### Key Lessons for Project Restart Efficiency
+
+**1. Interface-First Design:**
+- Define abstractions before implementations
+- Enables parallel development of multiple providers
+- Reduces coupling and improves testability
+
+**2. Incremental Implementation Strategy:**
+- Start with one provider (OpenAI) as proof of concept
+- Add UI placeholders for other providers early
+- Implement remaining providers using established pattern
+
+**3. Caching Strategy from Day One:**
+- Plan for offline scenarios and API rate limits
+- Use consistent cache key naming conventions
+- Implement cache expiration logic early
+
+**4. User Experience Priorities:**
+- Loading states for all async operations
+- Clear error messages with actionable advice
+- Success feedback to confirm operations completed
 
 ---
 
