@@ -122,10 +122,10 @@ namespace CAI_design_1_chat.Services
             }
         }
 
-        public async Task<List<string>> GetAvailableModelsAsync(CancellationToken cancellationToken = default)
+        public Task<List<string>> GetAvailableModelsAsync(CancellationToken cancellationToken = default)
         {
             // Return common OpenAI models - the official client doesn't expose model listing easily
-            return new List<string> 
+            var models = new List<string> 
             { 
                 "gpt-4", 
                 "gpt-4-turbo", 
@@ -133,6 +133,7 @@ namespace CAI_design_1_chat.Services
                 "gpt-4o-mini", 
                 "gpt-3.5-turbo" 
             };
+            return Task.FromResult(models);
         }
 
         private List<OpenAI.Chat.ChatMessage> BuildChatMessages(string userMessage, List<ChatMessage> conversationHistory)

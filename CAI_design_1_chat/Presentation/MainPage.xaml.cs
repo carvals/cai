@@ -505,12 +505,25 @@ public sealed partial class MainPage : Page
     {
         // Handle scroll events to detect user scrolling
         ChatScrollViewer.ViewChanged += ChatScrollViewer_ViewChanged;
-        ChatScrollViewer.DirectManipulationStarted += (s, e) => _isUserScrolling = true;
-        ChatScrollViewer.DirectManipulationCompleted += (s, e) => 
+        
+        // DirectManipulation events are not implemented in Uno Platform
+        // Use alternative approach for cross-platform compatibility
+#if WINDOWS
+        try
         {
-            _isUserScrolling = false;
-            UpdateAutoScrollState();
-        };
+            ChatScrollViewer.DirectManipulationStarted += (s, e) => _isUserScrolling = true;
+            ChatScrollViewer.DirectManipulationCompleted += (s, e) => 
+            {
+                _isUserScrolling = false;
+                UpdateAutoScrollState();
+            };
+        }
+        catch
+        {
+            // Fallback for platforms where DirectManipulation is not available
+            // User scrolling detection will rely on ViewChanged events only
+        }
+#endif
     }
 
     private void ChatScrollViewer_ViewChanged(object? sender, ScrollViewerViewChangedEventArgs e)

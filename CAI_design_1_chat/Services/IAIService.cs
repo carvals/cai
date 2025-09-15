@@ -24,7 +24,7 @@ namespace CAI_design_1_chat.Services
         /// <param name="conversationHistory">Previous messages in the conversation</param>
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>The AI's response</returns>
-        Task<string> SendMessageAsync(string message, List<ChatMessage> conversationHistory = null, CancellationToken cancellationToken = default);
+        Task<string> SendMessageAsync(string message, List<ChatMessage>? conversationHistory = null, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Sends a message to the AI and streams the response word by word
@@ -34,7 +34,7 @@ namespace CAI_design_1_chat.Services
         /// <param name="conversationHistory">Previous messages in the conversation</param>
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>The complete response when streaming is finished</returns>
-        Task<string> SendMessageStreamAsync(string message, Action<string> onTokenReceived, List<ChatMessage> conversationHistory = null, CancellationToken cancellationToken = default);
+        Task<string> SendMessageStreamAsync(string message, Action<string> onTokenReceived, List<ChatMessage>? conversationHistory = null, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Tests the connection to the AI service
