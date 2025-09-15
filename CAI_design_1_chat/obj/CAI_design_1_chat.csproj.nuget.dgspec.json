@@ -55,6 +55,11 @@
               "version": "[9.0.8, )",
               "autoReferenced": true
             },
+            "OpenAI": {
+              "target": "Package",
+              "version": "[2.4.0, )",
+              "versionCentrallyManaged": true
+            },
             "SkiaSharp.Skottie": {
               "target": "Package",
               "version": "[3.119.0, )",
@@ -235,6 +240,7 @@
             }
           },
           "centralPackageVersions": {
+            "OpenAI": "2.4.0",
             "Svg.Skia": "1.0.0.1",
             "Uno.WinUI.Svg": "6.2.58"
           },

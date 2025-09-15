@@ -893,3 +893,193 @@ var thinkingBorder = new Border
 - Chevron icon state synchronized with content visibility
 - Theme changes don't break collapsible sections
 - Dynamic content updates maintain proper layout
+
+---
+
+## OpenAI Integration Specification
+
+### Official OpenAI Package Integration
+
+**Package Details:**
+- **Name**: `OpenAI` (Official .NET package)
+- **Version**: 2.4.0
+- **NuGet**: https://www.nuget.org/packages/OpenAI
+- **GitHub**: https://github.com/openai/openai-dotnet
+- **Documentation**: https://platform.openai.com/docs/libraries/dotnet
+
+### Migration from Custom Implementation
+
+**Previous Implementation Issues:**
+- Custom HTTP client with manual JSON parsing (~370 lines)
+- Configuration key mismatches between dialog and service
+- Complex error handling and retry logic
+- Nullable reference type warnings
+- Manual streaming response parsing
+
+**Official Package Benefits:**
+- Reduced codebase by 50% (~180 lines)
+- Built-in streaming with `CompleteChatStreamingAsync`
+- Automatic retry logic with exponential backoff
+- Thread-safe `ChatClient` designed for DI containers
+- Strongly typed requests and responses
+- Support for all OpenAI features (tools, structured outputs, function calling)
+- Robust error handling with proper exception types
+
+### Configuration Implementation
+
+**Key Alignment Fix:**
+```csharp
+// AISettingsDialog saves with these keys:
+"OpenAIKey", "OpenAIModel", "OpenAIOrg"
+
+// OpenAIService now loads with matching keys:
+_apiKey = settings.TryGetValue("OpenAIKey", out var apiKey) ? apiKey?.ToString() : null;
+_model = settings.TryGetValue("OpenAIModel", out var model) ? model?.ToString() : "gpt-4";
+_organizationId = settings.TryGetValue("OpenAIOrg", out var org) ? org?.ToString() : null;
+```
+
+**Service Architecture:**
+```csharp
+public class OpenAIService : IAIService
+{
+    private ChatClient? _chatClient;
+    private string? _apiKey;
+    private string? _model;
+    private string? _organizationId;
+
+    public bool IsConfigured => !string.IsNullOrEmpty(_apiKey) && !string.IsNullOrEmpty(_model);
+
+    private void InitializeChatClient()
+    {
+        if (!string.IsNullOrEmpty(_apiKey))
+        {
+            var client = new OpenAIClient(_apiKey);
+            _chatClient = client.GetChatClient(_model ?? "gpt-4");
+        }
+    }
+}
+```
+
+### Streaming Implementation
+
+**Official Package Streaming:**
+```csharp
+public async Task<string> SendMessageStreamAsync(string message, Action<string> onTokenReceived, 
+    List<ChatMessage>? conversationHistory = null, CancellationToken cancellationToken = default)
+{
+    var messages = BuildChatMessages(message, conversationHistory ?? new List<ChatMessage>());
+    var completionUpdates = _chatClient.CompleteChatStreamingAsync(messages, cancellationToken: cancellationToken);
+
+    var fullResponse = new StringBuilder();
+    await foreach (var completionUpdate in completionUpdates)
+    {
+        if (completionUpdate.ContentUpdate.Count > 0)
+        {
+            var token = completionUpdate.ContentUpdate[0].Text;
+            if (!string.IsNullOrEmpty(token))
+            {
+                fullResponse.Append(token);
+                onTokenReceived?.Invoke(token);
+            }
+        }
+    }
+    return fullResponse.ToString();
+}
+```
+
+### Error Handling
+
+**Built-in Exception Types:**
+- Network connectivity issues handled automatically
+- API rate limiting with built-in retry logic
+- Invalid API key detection with clear error messages
+- Model availability validation
+- Request timeout handling
+
+**Custom Error Wrapping:**
+```csharp
+catch (Exception ex)
+{
+    throw new AIServiceException(ProviderName, $"OpenAI API error: {ex.Message}", "API_ERROR", ex);
+}
+```
+
+### Configuration Reload Pattern
+
+**Dynamic Configuration Updates:**
+```csharp
+// In MainPage.xaml.cs after AI Settings dialog
+if (result == ContentDialogResult.Primary)
+{
+    dialog.SaveSettings();
+    _openAIService.ReloadConfiguration(); // Reload without restart
+}
+
+// In OpenAIService
+public void ReloadConfiguration()
+{
+    LoadConfiguration();
+}
+```
+
+### API Validation
+
+**Connection Testing:**
+```bash
+curl -X POST "https://api.openai.com/v1/chat/completions" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -d '{
+    "model": "gpt-4",
+    "messages": [{"role": "user", "content": "Hello"}],
+    "max_tokens": 50
+  }'
+```
+
+### Known Issues and Fixes
+
+**Visual Bug: Persistent "AI is thinking" Indicator**
+- **Problem**: Typing indicator remains visible after OpenAI streaming completes
+- **Root Cause**: Different code path for OpenAI vs Ollama indicator cleanup
+- **Status**: Identified, fix pending
+- **Impact**: Visual glitch only, functionality works correctly
+
+### Performance Optimizations
+
+**Official Client Advantages:**
+- HTTP connection pooling and reuse
+- Automatic request/response compression
+- Memory-efficient streaming with `IAsyncEnumerable`
+- Built-in timeout and cancellation support
+- Optimized JSON serialization/deserialization
+
+### Security Considerations
+
+**API Key Management:**
+- Stored securely in `ApplicationData.Current.LocalSettings`
+- Never logged or exposed in debug output
+- Bearer token authentication handled by official client
+- Organization ID support for team accounts
+
+### Future Enhancements
+
+**Supported OpenAI Features:**
+- Function calling and tools
+- Structured outputs with JSON schema
+- Vision capabilities (image inputs)
+- Audio transcription and generation
+- Embeddings and fine-tuned models
+- Batch processing for large workloads
+
+### Build Integration
+
+**Package Installation:**
+```bash
+dotnet add package OpenAI --version 2.4.0
+```
+
+**Build Commands:**
+```bash
+dotnet build CAI_design_1_chat.sln -c Debug
+dotnet run --project CAI_design_1_chat/CAI_design_1_chat.csproj --framework net9.0-desktop
+```

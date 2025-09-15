@@ -1,9 +1,17 @@
+using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
+using Microsoft.UI.Xaml.Media;
+using Microsoft.UI.Text;
+using System;
+using System.Threading.Tasks;
+using Windows.ApplicationModel.DataTransfer;
 using Windows.Storage;
 using Windows.System;
-using Windows.ApplicationModel.DataTransfer;
-using Microsoft.UI;
-using Microsoft.UI.Text;
+using Windows.UI;
+using System.Net.Http;
+using System.Text;
+using CAI_design_1_chat.Services;
 
 namespace CAI_design_1_chat.Presentation;
 
@@ -14,6 +22,9 @@ public sealed partial class MainPage : Page
     private double _animationTargetWidth;
     private DateTime _animationStartTime;
     private TimeSpan _animationDuration = TimeSpan.FromMilliseconds(250);
+    
+    // AI Services
+    private readonly OpenAIService _openAIService;
     private bool _isAnimating = false;
     
     // Auto-scroll state tracking
@@ -24,6 +35,9 @@ public sealed partial class MainPage : Page
     public MainPage()
     {
         this.InitializeComponent();
+        
+        // Initialize AI services
+        _openAIService = new OpenAIService();
         this.Loaded += MainPage_Loaded;
         InitializeAnimationTimer();
         InitializeScrollHandlers();
@@ -193,6 +207,8 @@ public sealed partial class MainPage : Page
         if (result == ContentDialogResult.Primary)
         {
             dialog.SaveSettings();
+            // Reload OpenAI service configuration after settings are saved
+            _openAIService.ReloadConfiguration();
         }
     }
 
@@ -247,7 +263,7 @@ public sealed partial class MainPage : Page
             Text = message,
             TextWrapping = TextWrapping.Wrap,
             FontSize = 14,
-            Foreground = new SolidColorBrush(Colors.White)
+            Foreground = new SolidColorBrush(Microsoft.UI.Colors.White)
         };
 
         userBorder.Child = userText;
@@ -431,7 +447,7 @@ public sealed partial class MainPage : Page
 
         var expandButton = new Button
         {
-            Background = new SolidColorBrush(Colors.Transparent),
+            Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent),
             BorderThickness = new Thickness(0),
             Padding = new Thickness(4),
             Width = 24,
@@ -551,21 +567,25 @@ public sealed partial class MainPage : Page
     {
         try
         {
-            // Show typing indicator
-            var typingMessage = AddTypingIndicator();
-
             // Get AI provider settings
             var localSettings = ApplicationData.Current.LocalSettings;
             var selectedProvider = localSettings.Values["SelectedAIProvider"]?.ToString() ?? "Ollama";
+
+            if (selectedProvider == "OpenAI")
+            {
+                // OpenAI uses streaming and manages its own typing indicator
+                await GetOpenAIStreamingResponseAsync(userMessage);
+                return;
+            }
+
+            // Show typing indicator for non-streaming providers
+            var typingMessage = AddTypingIndicator();
 
             string response;
             switch (selectedProvider)
             {
                 case "Ollama":
                     response = await GetOllamaResponseAsync(userMessage);
-                    break;
-                case "OpenAI":
-                    response = await GetOpenAIResponseAsync(userMessage);
                     break;
                 case "Anthropic":
                     response = await GetAnthropicResponseAsync(userMessage);
@@ -686,9 +706,166 @@ public sealed partial class MainPage : Page
 
     private async Task<string> GetOpenAIResponseAsync(string message)
     {
-        // Placeholder - will implement with OpenAI API
-        await Task.Delay(2000);
-        return "OpenAI integration not yet implemented. Please configure Ollama for now.";
+        try
+        {
+            if (!_openAIService.IsConfigured)
+            {
+                return "OpenAI is not configured. Please set your API key and model in AI Settings.";
+            }
+
+            var response = await _openAIService.SendMessageAsync(message);
+            return response;
+        }
+        catch (AIServiceException ex)
+        {
+            return $"OpenAI Error: {ex.Message}";
+        }
+        catch (Exception ex)
+        {
+            return $"Unexpected error with OpenAI: {ex.Message}";
+        }
+    }
+
+    private async Task GetOpenAIStreamingResponseAsync(string message)
+    {
+        Grid? typingIndicator = null;
+        TextBlock? streamingTextBlock = null;
+        Grid? streamingMessageGrid = null;
+        bool typingIndicatorRemoved = false;
+        
+        try
+        {
+            if (!_openAIService.IsConfigured)
+            {
+                AddAIMessage("OpenAI is not configured. Please set your API key and model in AI Settings.");
+                return;
+            }
+
+            // Add typing indicator
+            typingIndicator = AddTypingIndicator();
+            
+            // Create streaming message container
+            streamingMessageGrid = CreateStreamingMessageContainer();
+            var streamingBorder = (Border)streamingMessageGrid.Children[0];
+            streamingTextBlock = (TextBlock)streamingBorder.Child;
+            
+            var fullResponse = new StringBuilder();
+            
+            await _openAIService.SendMessageStreamAsync(message, (chunk) =>
+            {
+                if (!string.IsNullOrEmpty(chunk))
+                {
+                    fullResponse.Append(chunk);
+                    
+                    // Update UI on main thread
+                    DispatcherQueue.TryEnqueue(() =>
+                    {
+                        // Remove typing indicator only once, on first token
+                        if (typingIndicator != null && !typingIndicatorRemoved)
+                        {
+                            RemoveTypingIndicator(typingIndicator);
+                            typingIndicator = null;
+                            typingIndicatorRemoved = true;
+                        }
+                        
+                        if (streamingTextBlock != null)
+                        {
+                            streamingTextBlock.Text = fullResponse.ToString();
+                            ScrollToBottom();
+                        }
+                    });
+                }
+            });
+            
+            // Final cleanup on main thread
+            DispatcherQueue.TryEnqueue(() =>
+            {
+                // Ensure typing indicator is removed if no tokens were received
+                if (typingIndicator != null && !typingIndicatorRemoved)
+                {
+                    RemoveTypingIndicator(typingIndicator);
+                }
+                
+                // Replace streaming container with final message
+                if (streamingMessageGrid != null)
+                {
+                    ChatMessagesPanel.Children.Remove(streamingMessageGrid);
+                }
+                
+                var finalResponse = fullResponse.ToString();
+                if (!string.IsNullOrEmpty(finalResponse))
+                {
+                    AddAIMessage(finalResponse);
+                }
+                else
+                {
+                    AddAIMessage("No response received from OpenAI.");
+                }
+            });
+        }
+        catch (AIServiceException ex)
+        {
+            DispatcherQueue.TryEnqueue(() =>
+            {
+                if (typingIndicator != null && !typingIndicatorRemoved)
+                {
+                    RemoveTypingIndicator(typingIndicator);
+                }
+                if (streamingMessageGrid != null)
+                {
+                    ChatMessagesPanel.Children.Remove(streamingMessageGrid);
+                }
+                AddAIMessage($"OpenAI Error: {ex.Message}");
+            });
+        }
+        catch (Exception ex)
+        {
+            DispatcherQueue.TryEnqueue(() =>
+            {
+                if (typingIndicator != null && !typingIndicatorRemoved)
+                {
+                    RemoveTypingIndicator(typingIndicator);
+                }
+                if (streamingMessageGrid != null)
+                {
+                    ChatMessagesPanel.Children.Remove(streamingMessageGrid);
+                }
+                AddAIMessage($"Unexpected error with OpenAI: {ex.Message}");
+            });
+        }
+    }
+
+    private Grid CreateStreamingMessageContainer()
+    {
+        var streamingMessageGrid = new Grid
+        {
+            HorizontalAlignment = HorizontalAlignment.Left,
+            MaxWidth = 400,
+            Margin = new Thickness(0, 4, 0, 4)
+        };
+
+        var streamingBorder = new Border
+        {
+            Background = (Brush)Application.Current.Resources["SubtleFillColorSecondaryBrush"],
+            BorderBrush = (Brush)Application.Current.Resources["ControlStrokeColorDefaultBrush"],
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(16, 16, 16, 4),
+            Padding = new Thickness(12, 8, 12, 8)
+        };
+
+        var streamingTextBlock = new TextBlock
+        {
+            Text = "",
+            TextWrapping = TextWrapping.Wrap,
+            FontSize = 14
+        };
+
+        streamingBorder.Child = streamingTextBlock;
+        streamingMessageGrid.Children.Add(streamingBorder);
+        ChatMessagesPanel.Children.Add(streamingMessageGrid);
+        
+        ScrollToBottom();
+        return streamingMessageGrid;
     }
 
     private async Task<string> GetAnthropicResponseAsync(string message)

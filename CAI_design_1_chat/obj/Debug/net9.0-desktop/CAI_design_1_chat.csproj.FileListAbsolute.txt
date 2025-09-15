@@ -346,3 +346,6 @@
 /Users/carvals/RiderProjects/CAI_design_1_chat/CAI_design_1_chat/obj/Debug/net9.0-desktop/CAI_design_1_chat.pdb
 /Users/carvals/RiderProjects/CAI_design_1_chat/CAI_design_1_chat/obj/Debug/net9.0-desktop/CAI_design_1_chat.genruntimeconfig.cache
 /Users/carvals/RiderProjects/CAI_design_1_chat/CAI_design_1_chat/obj/Debug/net9.0-desktop/ref/CAI_design_1_chat.dll
+/Users/carvals/RiderProjects/CAI_design_1_chat/CAI_design_1_chat/bin/Debug/net9.0-desktop/OpenAI.dll
+/Users/carvals/RiderProjects/CAI_design_1_chat/CAI_design_1_chat/bin/Debug/net9.0-desktop/System.ClientModel.dll
+/Users/carvals/RiderProjects/CAI_design_1_chat/CAI_design_1_chat/bin/Debug/net9.0-desktop/System.Memory.Data.dll

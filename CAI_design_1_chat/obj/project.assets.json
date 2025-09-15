@@ -987,6 +987,22 @@
           }
         }
       },
+      "OpenAI/2.4.0": {
+        "type": "package",
+        "dependencies": {
+          "System.ClientModel": "1.6.1"
+        },
+        "compile": {
+          "lib/net8.0/OpenAI.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/net8.0/OpenAI.dll": {
+            "related": ".xml"
+          }
+        }
+      },
       "Refit/7.2.22": {
         "type": "package",
         "compile": {
@@ -1205,6 +1221,23 @@
           "lib/net5.0/Std.UriTemplate.dll": {}
         }
       },
+      "System.ClientModel/1.6.1": {
+        "type": "package",
+        "dependencies": {
+          "Microsoft.Extensions.Logging.Abstractions": "8.0.3",
+          "System.Memory.Data": "8.0.1"
+        },
+        "compile": {
+          "lib/net8.0/System.ClientModel.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/net8.0/System.ClientModel.dll": {
+            "related": ".xml"
+          }
+        }
+      },
       "System.Collections.Immutable/8.0.0": {
         "type": "package",
         "compile": {
@@ -1287,6 +1320,22 @@
           "lib/netcoreapp3.0/System.Linq.Async.dll": {
             "related": ".xml"
           }
+        }
+      },
+      "System.Memory.Data/8.0.1": {
+        "type": "package",
+        "compile": {
+          "lib/net8.0/System.Memory.Data.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/net8.0/System.Memory.Data.dll": {
+            "related": ".xml"
+          }
+        },
+        "build": {
+          "buildTransitive/net6.0/_._": {}
         }
       },
       "System.Security.AccessControl/4.7.0": {
@@ -4373,6 +4422,24 @@
         "packageIcon.png"
       ]
     },
+    "OpenAI/2.4.0": {
+      "sha512": "hHPAIR84Q1w52YcFSbp/yT8+BuPn1w16fY/pX22kyi8SKcVSfcKCQrBC5Fi5aH7WY2uWDB3xQOF9sI0lBB/a3g==",
+      "type": "package",
+      "path": "openai/2.4.0",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "CHANGELOG.md",
+        "OpenAI.png",
+        "README.md",
+        "lib/net8.0/OpenAI.dll",
+        "lib/net8.0/OpenAI.xml",
+        "lib/netstandard2.0/OpenAI.dll",
+        "lib/netstandard2.0/OpenAI.xml",
+        "openai.2.4.0.nupkg.sha512",
+        "openai.nuspec"
+      ]
+    },
     "Refit/7.2.22": {
       "sha512": "xzpjDvWTKaJkhRejrHI6E2WXs2CaJYWZTMICq5Jha4wlSVvR3dd9n3M4p3X7BQ6uw0LJSFiHlTYwzjQIbJdArg==",
       "type": "package",
@@ -4740,6 +4807,25 @@
         "std.uritemplate.nuspec"
       ]
     },
+    "System.ClientModel/1.6.1": {
+      "sha512": "xcHHhDqB5MnOOY8yIn64Vzp6gtBEs6k5J1hluG04CrShSvQNXOx4PSDs7wJiXLDidlY/FZJmxJdKTKskyJwjvw==",
+      "type": "package",
+      "path": "system.clientmodel/1.6.1",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "CHANGELOG.md",
+        "DotNetPackageIcon.png",
+        "README.md",
+        "analyzers/dotnet/cs/System.ClientModel.SourceGeneration.dll",
+        "lib/net8.0/System.ClientModel.dll",
+        "lib/net8.0/System.ClientModel.xml",
+        "lib/netstandard2.0/System.ClientModel.dll",
+        "lib/netstandard2.0/System.ClientModel.xml",
+        "system.clientmodel.1.6.1.nupkg.sha512",
+        "system.clientmodel.nuspec"
+      ]
+    },
     "System.Collections.Immutable/8.0.0": {
       "sha512": "AurL6Y5BA1WotzlEvVaIDpqzpIPvYnnldxru8oXJU2yFxFUy3+pNXjXd1ymO+RA0rq0+590Q8gaz2l3Sr7fmqg==",
       "type": "package",
@@ -4897,6 +4983,36 @@
         "ref/netstandard2.1/System.Linq.Async.xml",
         "system.linq.async.4.0.0.nupkg.sha512",
         "system.linq.async.nuspec"
+      ]
+    },
+    "System.Memory.Data/8.0.1": {
+      "sha512": "BVYuec3jV23EMRDeR7Dr1/qhx7369dZzJ9IWy2xylvb4YfXsrUxspWc4UWYid/tj4zZK58uGZqn2WQiaDMhmAg==",
+      "type": "package",
+      "path": "system.memory.data/8.0.1",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "Icon.png",
+        "LICENSE.TXT",
+        "PACKAGE.md",
+        "THIRD-PARTY-NOTICES.TXT",
+        "buildTransitive/net461/System.Memory.Data.targets",
+        "buildTransitive/net462/_._",
+        "buildTransitive/net6.0/_._",
+        "buildTransitive/netcoreapp2.0/System.Memory.Data.targets",
+        "lib/net462/System.Memory.Data.dll",
+        "lib/net462/System.Memory.Data.xml",
+        "lib/net6.0/System.Memory.Data.dll",
+        "lib/net6.0/System.Memory.Data.xml",
+        "lib/net7.0/System.Memory.Data.dll",
+        "lib/net7.0/System.Memory.Data.xml",
+        "lib/net8.0/System.Memory.Data.dll",
+        "lib/net8.0/System.Memory.Data.xml",
+        "lib/netstandard2.0/System.Memory.Data.dll",
+        "lib/netstandard2.0/System.Memory.Data.xml",
+        "system.memory.data.8.0.1.nupkg.sha512",
+        "system.memory.data.nuspec",
+        "useSharedDesignerContext.txt"
       ]
     },
     "System.Security.AccessControl/4.7.0": {
@@ -8117,6 +8233,7 @@
   "projectFileDependencyGroups": {
     "net9.0-desktop1.0": [
       "Microsoft.Extensions.Logging.Console >= 9.0.8",
+      "OpenAI >= 2.4.0",
       "SkiaSharp.Skottie >= 3.119.0",
       "SkiaSharp.Views.Uno.WinUI >= 3.119.0",
       "Uno.Dsp.Tasks >= 1.4.0",
@@ -8207,6 +8324,11 @@
             "target": "Package",
             "version": "[9.0.8, )",
             "autoReferenced": true
+          },
+          "OpenAI": {
+            "target": "Package",
+            "version": "[2.4.0, )",
+            "versionCentrallyManaged": true
           },
           "SkiaSharp.Skottie": {
             "target": "Package",
@@ -8388,6 +8510,7 @@
           }
         },
         "centralPackageVersions": {
+          "OpenAI": "2.4.0",
           "Svg.Skia": "1.0.0.1",
           "Uno.WinUI.Svg": "6.2.58"
         },
