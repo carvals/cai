@@ -37,18 +37,9 @@ namespace CAI_design_1_chat.Services
                 using var connection = new SqliteConnection(_connectionString);
                 await connection.OpenAsync();
                 
-                // Execute schema commands
-                var commands = schema.Split(new[] { ";" }, StringSplitOptions.RemoveEmptyEntries);
-                
-                foreach (var command in commands)
-                {
-                    var trimmedCommand = command.Trim();
-                    if (!string.IsNullOrEmpty(trimmedCommand) && !trimmedCommand.StartsWith("--"))
-                    {
-                        using var sqlCommand = new SqliteCommand(trimmedCommand, connection);
-                        await sqlCommand.ExecuteNonQueryAsync();
-                    }
-                }
+                // Execute the entire schema as one command to handle triggers properly
+                using var sqlCommand = new SqliteCommand(schema, connection);
+                await sqlCommand.ExecuteNonQueryAsync();
                 
                 Console.WriteLine($"Database initialized successfully at: {_databasePath}");
             }
