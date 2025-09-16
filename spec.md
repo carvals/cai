@@ -355,11 +355,11 @@ This pattern ensures complete layout collapse while maintaining smooth animation
 6. **Contextual Help**: Error messages include actionable guidance
 
 ### 🔄 Next Priority Items
-- Implement chat streaming functionality (Phase 1)
-- Add AI provider integrations (Phase 2)  
-- Implement file upload dialog functionality (Phase 3)
-- Add search functionality for file management (Phase 4)
-- Add document creation capabilities (Phase 5)
+- Implement file processing and context management system (Phase 1)
+- Add Context Panel with file containers (Phase 2)
+- Enhance file upload dialog with editable preview (Phase 3)
+- Integrate file context with chat system (Phase 4)
+- Add search functionality for file management (Phase 5)
 
 ## Mermaid Diagrams
 
@@ -484,6 +484,203 @@ graph TD
   M --> A
   N --> A
 ```
+
+---
+
+## File Processing and Context Management System
+
+### Enhanced File Upload Dialog with Editable Preview
+
+The file upload dialog now supports comprehensive file processing with AI-powered extraction and summarization capabilities.
+
+#### Dialog Components
+- **File Drop Zone**: Drag-and-drop or click to select files (text, markdown, PDF, DOCX)
+- **Action Buttons**: 
+  - `Convertir en text brut`: Extract raw text from files
+  - `Faire un résumé`: Generate AI summary with customizable prompts
+  - `Reset`: Clear current content and start over
+- **Editable Preview**: User can modify extracted/summarized content before saving
+- **Toggle View**: Switch between "Text brut" and "Résumé" modes
+- **Save Function**: Store processed content to database
+
+#### AI Processing Pipeline
+```mermaid
+graph TD
+  A[File Upload] --> B[Content Extraction]
+  B --> C[AI Processing Request]
+  C --> D{Processing Type?}
+  D -->|Text Extraction| E[Direct Text Output]
+  D -->|Summarization| F[AI Summary Generation]
+  F --> G[Apply Custom Prompt]
+  G --> H[Generate Summary]
+  E --> I[Editable Preview]
+  H --> I
+  I --> J[User Edits Content]
+  J --> K[Save to Database]
+```
+
+#### Default AI Prompt
+**System Prompt**: "You are an executive assistant. Make a summary of the file and keep the original language of the file."
+
+**Customization**: Users can modify prompts or select from database templates for different summary types.
+
+### Context Panel System
+
+A new collapsible panel provides intelligent file context management for chat conversations.
+
+#### Layout Architecture
+```
+┌─ Sidebar ─┬─ Espace de travail ─┬─ Contexte ─┬─ Chat ─┐
+│    56px   │    (collapsible)    │ (new panel)│        │
+│           │                     │             │        │
+│ [📁] [🗂️] │  [File Management]  │ File Cards  │ Messages│
+│           │                     │             │        │
+└───────────┴─────────────────────┴─────────────┴────────┘
+```
+
+#### File Context Cards
+Each file in the context panel displays:
+- **File Name**: Truncated with tooltip for full name
+- **File Size**: Character/byte count
+- **Summary Status**: Availability and size of AI-generated summary
+- **Context Toggle**: Checkbox to use full file or summary in chat context
+- **Action Buttons**:
+  - ✏️ **Edit**: Modify file content or summary
+  - ⚙️ **Settings**: Configure processing options
+  - 🗑️ **Remove**: Clear from context (not database)
+
+#### Context Management Features
+- **Include/Exclude**: Toggle files in/out of chat context
+- **Summary Mode**: Choose between full content or AI summary for context
+- **Temporary Exclusion**: Exclude files without removing from database
+- **Order Management**: Arrange files by importance/relevance
+
+### Database Schema for File Processing
+
+```sql
+-- Enhanced file storage with context management
+CREATE TABLE file_data (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    content TEXT,                    -- Original or edited content
+    summary TEXT,                    -- AI-generated summary
+    owner TEXT,
+    date_created TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    file_type TEXT,                  -- 'pdf', 'markdown', 'text', 'docx'
+    file_size INTEGER,
+    processing_status TEXT DEFAULT 'pending',
+    -- Context management
+    is_in_context BOOLEAN DEFAULT FALSE,
+    use_summary_in_context BOOLEAN DEFAULT FALSE,
+    context_order INTEGER DEFAULT 0,
+    is_excluded_temporarily BOOLEAN DEFAULT FALSE
+);
+
+-- Prompt templates for AI processing
+CREATE TABLE prompt_instructions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    prompt_type TEXT NOT NULL,       -- 'summary', 'extraction', 'analysis'
+    language TEXT NOT NULL,          -- 'fr', 'en', 'es'
+    instruction TEXT NOT NULL,
+    title TEXT,                      -- Display name
+    description TEXT,
+    is_system BOOLEAN DEFAULT FALSE,
+    created_by TEXT,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    usage_count INTEGER DEFAULT 0
+);
+
+-- Processing job tracking
+CREATE TABLE processing_jobs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    file_id INTEGER REFERENCES file_data(id),
+    job_type TEXT NOT NULL,          -- 'extraction', 'summary'
+    status TEXT DEFAULT 'queued',
+    ai_provider TEXT,
+    ai_model TEXT,
+    prompt_used TEXT,
+    result TEXT,
+    error_message TEXT,
+    started_at TIMESTAMPTZ,
+    completed_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+### Chat Integration with File Context
+
+#### Context-Aware Messaging
+When files are active in the Context Panel, the chat system automatically includes relevant file content in AI prompts:
+
+```
+System Context:
+[File: document1.pdf - Summary: 245 characters]
+[File: report.md - Full content: 1203 characters]
+
+User Message: [user input]
+```
+
+#### Context Indicators
+- Chat interface shows active file count
+- Context panel highlights files being used
+- Messages indicate which files influenced responses
+
+### Technical Implementation
+
+#### New Service Interfaces
+```csharp
+public interface IFileProcessingService
+{
+    Task<string> ExtractTextAsync(Stream fileStream, string fileType);
+    Task<string> GenerateSummaryAsync(string content, string customPrompt = null);
+    Task<FileData> ProcessFileAsync(Stream fileStream, string fileName, string fileType);
+}
+
+public interface IContextService
+{
+    Task<List<FileData>> GetActiveContextFilesAsync();
+    Task AddFileToContextAsync(int fileId, bool useSummary = false);
+    Task RemoveFileFromContextAsync(int fileId);
+    Task<string> BuildContextPromptAsync();
+    Task ToggleFileContextModeAsync(int fileId, bool useSummary);
+}
+
+public interface IFileEditService
+{
+    Task UpdateFileContentAsync(int fileId, string newContent);
+    Task UpdateFileSummaryAsync(int fileId, string newSummary);
+    Task RegenerateSummaryAsync(int fileId, string customPrompt = null);
+}
+```
+
+#### File Processing Libraries
+- **PDF**: `PdfPig` or `iTextSharp` for PDF text extraction
+- **DOCX**: `DocumentFormat.OpenXml` for Word document processing
+- **Database**: `Microsoft.Data.Sqlite` for local storage
+- **UI**: Enhanced XAML controls for file cards and editable previews
+
+### User Experience Flow
+
+#### File Upload and Processing
+1. User drags/selects file in upload dialog
+2. System extracts text content automatically
+3. User can generate AI summary with custom or template prompts
+4. User edits extracted/summarized content if needed
+5. Content saved to database with metadata
+6. File automatically added to Context Panel
+
+#### Context Management
+1. User sees all processed files in Context Panel
+2. Toggle files in/out of chat context as needed
+3. Choose between full content or summary for each file
+4. Reorder files by importance
+5. Edit or regenerate summaries as needed
+
+#### Chat with Context
+1. Active context files automatically included in AI prompts
+2. Chat responses consider file content and context
+3. User can see which files are influencing responses
+4. Context can be modified mid-conversation
 
 ---
 

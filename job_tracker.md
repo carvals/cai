@@ -172,23 +172,24 @@ Conventions
   - **Error Handling**: Connection failures show informative dialogs with troubleshooting hints
 
 - [x] **7.7** Add OpenAI configuration (API key, model selection) ✅
-  - **Implementation**: API key PasswordBox, model ComboBox with predefined models
-  - **Features**: Organization ID TextBox (optional), test connection functionality
-  - **Models**: gpt-4, gpt-4-turbo, gpt-3.5-turbo, etc.
+  - **Implementation**: API key PasswordBox, model ComboBox with dynamic model refresh
+  - **Features**: Organization ID TextBox (optional), real API integration with `/v1/models`
+  - **Dynamic Refresh**: Full OpenAI model provider implementation with caching
+  - **Models**: Dynamically fetched from OpenAI API with smart filtering
 
 - [x] **7.8** Add Anthropic configuration (API key, model selection) ✅
   - **Implementation**: API key PasswordBox, model ComboBox with Claude models
-  - **Features**: Test connection button with placeholder implementation
+  - **Features**: Refresh button with placeholder implementation ("Coming soon")
   - **Models**: claude-3-opus, claude-3-sonnet, claude-3-haiku, etc.
 
 - [x] **7.9** Add Google Gemini configuration (API key, model selection) ✅
   - **Implementation**: API key PasswordBox, model ComboBox with Gemini models
-  - **Features**: Test connection functionality
+  - **Features**: Refresh button with placeholder implementation ("Coming soon")
   - **Models**: gemini-pro, gemini-pro-vision, etc.
 
 - [x] **7.10** Add Mistral configuration (API key, model selection) ✅
   - **Implementation**: API key PasswordBox, model ComboBox with Mistral models
-  - **Features**: Test connection functionality
+  - **Features**: Refresh button with placeholder implementation ("Coming soon")
   - **Models**: mistral-large, mistral-medium, mistral-small, etc.
 
 - [x] **7.11** Implement connection testing with modern UX patterns ✅
@@ -199,6 +200,14 @@ Conventions
   - **Contextual Help**: Error messages include actionable guidance
   - **Graceful Degradation**: Fallback behaviors for connection failures
   - **Performance**: Proper timeout handling (10s refresh, 30s test)
+
+- [x] **7.11b** Implement dynamic model refresh architecture ✅
+  - **Core Interface**: Created `IModelProvider` interface for extensible provider support
+  - **Data Model**: Created `AIModel` class with capabilities, descriptions, metadata
+  - **OpenAI Provider**: Full implementation in `OpenAIModelProvider.cs` with real API integration
+  - **Caching System**: 24-hour cache with ApplicationData.Current.LocalSettings
+  - **UI Integration**: Loading dialogs, success/error feedback, model list updates
+  - **Error Handling**: Comprehensive fallback mechanisms and user feedback
 
 - [ ] **7.12** Add provider icons (download from web)
   - Steps:
@@ -216,7 +225,13 @@ Conventions
 - [ ] **7.17** Style messages with proper spacing and colors
 
 ### Step 4: Data Models & Services 🏗️
-- [ ] **7.18** Create AI provider interface and implementations
+- [x] **7.18** Create AI provider interface and implementations ✅
+  - **Implementation**: `IModelProvider` interface with consistent API across providers
+  - **OpenAI Provider**: Full implementation with real API integration
+  - **Placeholder Providers**: Event handlers ready for Anthropic, Gemini, Mistral
+- [x] **7.18b** Create AI model data structure ✅
+  - **Implementation**: `AIModel.cs` with Id, DisplayName, Description, capabilities
+  - **Features**: Provider identification, deprecation flags, creation timestamps
 - [ ] **7.19** Create message models (User, Assistant, System)
 - [ ] **7.20** Create chat session model
 - [ ] **7.21** Implement local JSON persistence service
@@ -281,32 +296,45 @@ Conventions
 
 ## Technical Architecture
 
-### File Structure
+### File Structure (Current Implementation)
 ```
 CAI_design_1_chat/
 ├── Models/
-│   ├── ChatMessage.cs
-│   ├── ChatSession.cs
-│   ├── AIProvider.cs
-│   └── AISettings.cs
+│   ├── AIModel.cs ✅ (IMPLEMENTED)
+│   ├── AppConfig.cs
+│   ├── Entity.cs
+│   ├── ChatMessage.cs (TODO)
+│   ├── ChatSession.cs (TODO)
+│   └── AISettings.cs (TODO)
 ├── Services/
-│   ├── IAIService.cs
-│   ├── OllamaService.cs
-│   ├── OpenAIService.cs
-│   ├── AnthropicService.cs
-│   ├── GeminiService.cs
-│   ├── MistralService.cs
-│   ├── ChatPersistenceService.cs
-│   └── SettingsService.cs
+│   ├── IAIService.cs ✅ (IMPLEMENTED)
+│   ├── IModelProvider.cs ✅ (IMPLEMENTED)
+│   ├── OpenAIService.cs ✅ (IMPLEMENTED)
+│   ├── OpenAIModelProvider.cs ✅ (IMPLEMENTED)
+│   ├── OllamaService.cs (TODO)
+│   ├── AnthropicService.cs (TODO)
+│   ├── GeminiService.cs (TODO)
+│   ├── MistralService.cs (TODO)
+│   ├── ChatPersistenceService.cs (TODO)
+│   ├── SettingsService.cs (TODO)
+│   └── Endpoints/
+│       └── DebugHandler.cs
 ├── Presentation/
 │   ├── Dialogs/
-│   │   └── AISettingsDialog.xaml
-│   ├── Controls/
-│   │   ├── MessageBubble.xaml
-│   │   └── ProviderIcon.xaml
-│   └── MainPage.xaml (enhanced)
+│   │   └── AISettingsDialog.xaml ✅ (IMPLEMENTED)
+│   │   └── AISettingsDialog.xaml.cs ✅ (IMPLEMENTED)
+│   ├── Controls/ (TODO)
+│   │   ├── MessageBubble.xaml (TODO)
+│   │   └── ProviderIcon.xaml (TODO)
+│   ├── MainPage.xaml ✅ (IMPLEMENTED)
+│   ├── MainPage.xaml.cs ✅ (IMPLEMENTED)
+│   ├── LoginPage.xaml
+│   ├── SecondPage.xaml
+│   └── Shell.xaml
 └── Assets/
-    └── ProviderIcons/
+    ├── Icons/
+    ├── Splash/
+    └── ProviderIcons/ (TODO)
 ```
 
 ### Dependencies to Add
@@ -316,11 +344,152 @@ CAI_design_1_chat/
 
 ---
 
+## Phase 8 — File Processing and Context Management System
+
+### Step 1: Database Infrastructure 🗄️
+- [ ] **8.1** Add SQLite database integration
+  - Steps:
+    - Add `Microsoft.Data.Sqlite` NuGet package
+    - Create `Services/Data/DatabaseService.cs` for connection management
+    - Implement database initialization and schema creation
+    - Add migration system for schema updates
+  - Acceptance: Database creates successfully with all required tables
+  - References: Enhanced database schema in spec.md
+
+- [ ] **8.2** Create data models for file processing
+  - Steps:
+    - Create `Models/FileData.cs` with context management fields
+    - Create `Models/PromptInstruction.cs` for AI prompt templates
+    - Create `Models/ProcessingJob.cs` for tracking file operations
+    - Create `Models/ContextSession.cs` for managing active file context
+  - Acceptance: All models compile and support database operations
+
+- [ ] **8.3** Implement data access layer
+  - Steps:
+    - Create `Services/Data/IFileRepository.cs` and implementation
+    - Create `Services/Data/IPromptRepository.cs` and implementation
+    - Create `Services/Data/IContextRepository.cs` and implementation
+    - Add CRUD operations with proper error handling
+  - Acceptance: Repository pattern implemented with full database operations
+
+### Step 2: Enhanced File Upload Dialog 📁
+- [ ] **8.4** Add editable preview functionality
+  - Steps:
+    - Replace read-only TextBlock with editable TextBox in preview area
+    - Add toggle between "Text brut" and "Résumé" modes
+    - Implement content editing before save
+    - Add validation for edited content
+  - Acceptance: Users can edit extracted/summarized content before saving
+
+- [ ] **8.5** Implement file processing pipeline
+  - Steps:
+    - Create `Services/IFileProcessingService.cs` interface
+    - Add PDF text extraction using `PdfPig` library
+    - Add DOCX processing using `DocumentFormat.OpenXml`
+    - Implement AI summarization with custom prompts
+  - Acceptance: Files are processed and content extracted successfully
+
+- [ ] **8.6** Add prompt customization for summaries
+  - Steps:
+    - Add prompt input field next to "Faire un résumé" button
+    - Implement prompt selection dialog for database templates
+    - Add default prompt: "You are an executive assistant. Make a summary of the file and keep the original language of the file."
+    - Store custom prompts in database
+  - Acceptance: Users can customize AI prompts for summarization
+
+### Step 3: Context Panel Implementation 🗂️
+- [ ] **8.7** Add Context Panel to main layout
+  - Steps:
+    - Modify `MainPage.xaml` to add new collapsible Context panel
+    - Add Context toggle button (🗂️) to sidebar
+    - Implement panel collapse/expand animation similar to workspace panel
+    - Add proper splitter between Context and Chat panels
+  - Acceptance: Context panel toggles and resizes properly
+
+- [ ] **8.8** Create file context card component
+  - Steps:
+    - Create `Presentation/Controls/FileContextCard.xaml`
+    - Implement card design matching current UI theme
+    - Add file name, size, summary status display
+    - Add action buttons: Edit (✏️), Settings (⚙️), Remove (🗑️)
+    - Add context toggle checkbox
+  - Acceptance: File cards display properly with all required information
+
+- [ ] **8.9** Implement context management service
+  - Steps:
+    - Create `Services/IContextService.cs` interface
+    - Implement file context operations (add, remove, toggle)
+    - Add context state persistence
+    - Implement context prompt building for chat integration
+  - Acceptance: Files can be managed in context with proper state tracking
+
+### Step 4: Chat Integration with File Context 💬
+- [ ] **8.10** Enhance chat system for context awareness
+  - Steps:
+    - Modify existing chat services to accept file context
+    - Build context prompts from active files
+    - Add context indicators in chat interface
+    - Show which files are influencing AI responses
+  - Acceptance: Chat responses consider active file context
+
+- [ ] **8.11** Add context management UI in chat
+  - Steps:
+    - Add context indicator showing active file count
+    - Highlight files being used in current conversation
+    - Add ability to modify context mid-conversation
+    - Show file influence on specific messages
+  - Acceptance: Users can see and manage file context during chat
+
+### Step 5: File Management Features 📋
+- [ ] **8.12** Implement file editing capabilities
+  - Steps:
+    - Create `Services/IFileEditService.cs` interface
+    - Add file content editing functionality
+    - Add summary regeneration with custom prompts
+    - Implement file metadata updates
+  - Acceptance: Users can edit file content and regenerate summaries
+
+- [ ] **8.13** Add file search and filtering
+  - Steps:
+    - Add search functionality in Context panel
+    - Implement file filtering by type, status, date
+    - Add file sorting options
+    - Create file management toolbar
+  - Acceptance: Users can efficiently find and organize files
+
+### Step 6: Polish and Testing 🎨
+- [ ] **8.14** Add comprehensive error handling
+  - Steps:
+    - Implement proper error messages for file processing failures
+    - Add retry mechanisms for AI operations
+    - Handle database connection issues gracefully
+    - Add validation for file types and sizes
+  - Acceptance: System handles errors gracefully with user feedback
+
+- [ ] **8.15** Performance optimization
+  - Steps:
+    - Implement file processing progress indicators
+    - Add background processing for large files
+    - Optimize database queries with indexing
+    - Add memory management for large file content
+  - Acceptance: System performs well with large files and datasets
+
+## Technical Dependencies for Phase 8
+```xml
+<!-- Add to CAI_design_1_chat.csproj -->
+<PackageReference Include="Microsoft.Data.Sqlite" Version="8.0.0" />
+<PackageReference Include="PdfPig" Version="0.1.8" />
+<PackageReference Include="DocumentFormat.OpenXml" Version="3.0.0" />
+```
+
+---
+
 ## Optional Enhancements (Backlog)
-- Real converters (PDF/DOCX → text) for "Convertir en text brut".
-- Summarization pipeline for "Faire un résumé".
-- Persist uploaded files and list them in the left panel.
-- Animate column width (`LeftPanelColumn.Width`) instead of element width, if desired.
+- Advanced file processing with OCR for scanned documents
+- File export functionality (database to filesystem)
+- Advanced prompt template management with categories
+- File versioning and history tracking
+- Collaborative file sharing features
 
 ---
 
