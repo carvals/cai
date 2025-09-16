@@ -41,6 +41,9 @@ public sealed partial class MainPage : Page
         this.Loaded += MainPage_Loaded;
         InitializeAnimationTimer();
         InitializeScrollHandlers();
+        
+        // Initialize database on page load
+        _ = InitializeDatabaseAsync();
     }
 
     private void MainPage_Loaded(object sender, RoutedEventArgs e)
@@ -175,9 +178,10 @@ public sealed partial class MainPage : Page
 
     private void BtnAddFile_Click(object sender, RoutedEventArgs e)
     {
-        // Placeholder for file upload functionality
-        // This will be implemented later with the upload dialog
+        // Navigate to the full-screen file upload page
+        Frame.Navigate(typeof(FileUploadPage));
     }
+
 
     private void SendButton_Click(object sender, RoutedEventArgs e)
     {
@@ -879,6 +883,22 @@ public sealed partial class MainPage : Page
         
         ScrollToBottom();
         return streamingMessageGrid;
+    }
+
+    private async Task InitializeDatabaseAsync()
+    {
+        try
+        {
+            var dbService = new DatabaseService();
+            await dbService.InitializeDatabaseAsync();
+            
+            // Run database test
+            await DatabaseTest.RunDatabaseTestAsync();
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Database initialization failed: {ex.Message}");
+        }
     }
 
     private async Task<string> GetAnthropicResponseAsync(string message)

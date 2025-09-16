@@ -1,0 +1,368 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Page x:Class="CAI_design_1_chat.Presentation.FileUploadPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      Background="{ThemeResource MaterialBackgroundBrush}">
+
+    <Page.Resources>
+        <Style x:Key="ActionButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="{ThemeResource MaterialPrimaryBrush}"/>
+            <Setter Property="Foreground" Value="{ThemeResource MaterialOnPrimaryBrush}"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Padding" Value="20,12"/>
+            <Setter Property="Margin" Value="0,8"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+            <Setter Property="FontWeight" Value="Medium"/>
+            <Setter Property="FontSize" Value="14"/>
+        </Style>
+        
+        <Style x:Key="SecondaryButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="{ThemeResource MaterialSurfaceVariantBrush}"/>
+            <Setter Property="Foreground" Value="{ThemeResource MaterialOnSurfaceVariantBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderBrush" Value="{ThemeResource MaterialOutlineVariantBrush}"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Padding" Value="20,12"/>
+            <Setter Property="Margin" Value="0,8"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+            <Setter Property="FontWeight" Value="Medium"/>
+            <Setter Property="FontSize" Value="14"/>
+        </Style>
+    </Page.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header Navigation Bar -->
+        <Border Grid.Row="0" 
+                Background="{ThemeResource MaterialSurfaceBrush}"
+                BorderBrush="{ThemeResource MaterialOutlineVariantBrush}"
+                BorderThickness="0,0,0,1"
+                Padding="24,16">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Back Button -->
+                <Button x:Name="BackButton"
+                        Grid.Column="0"
+                        Click="BackButton_Click"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        Padding="12,8"
+                        VerticalAlignment="Center">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <FontIcon Glyph="&#xE72B;" 
+                                  FontSize="16"
+                                  Foreground="{ThemeResource MaterialPrimaryBrush}"/>
+                        <TextBlock Text="Back to Chat"
+                                   Foreground="{ThemeResource MaterialPrimaryBrush}"
+                                   FontWeight="Medium"/>
+                    </StackPanel>
+                </Button>
+
+                <!-- Page Title -->
+                <TextBlock Grid.Column="1"
+                           Text="File Processing"
+                           Style="{ThemeResource TitleTextBlockStyle}"
+                           Foreground="{ThemeResource MaterialOnSurfaceBrush}"
+                           VerticalAlignment="Center"
+                           HorizontalAlignment="Center"
+                           FontWeight="SemiBold"/>
+
+                <!-- AI Settings Button -->
+                <Button x:Name="AISettingsButton"
+                        Grid.Column="2"
+                        Click="AISettingsButton_Click"
+                        Background="{ThemeResource MaterialPrimaryContainerBrush}"
+                        BorderBrush="{ThemeResource MaterialPrimaryBrush}"
+                        BorderThickness="1"
+                        CornerRadius="8"
+                        Padding="12,8"
+                        VerticalAlignment="Center">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <FontIcon Glyph="🤖" 
+                                  FontSize="16"
+                                  Foreground="{ThemeResource MaterialPrimaryBrush}"/>
+                        <TextBlock Text="AI Settings"
+                                   Foreground="{ThemeResource MaterialPrimaryBrush}"
+                                   FontWeight="Medium"/>
+                    </StackPanel>
+                </Button>
+            </Grid>
+        </Border>
+
+        <!-- Main Content Area -->
+        <Grid Grid.Row="1" Margin="24">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="1*"/>
+                <ColumnDefinition Width="20"/>
+                <ColumnDefinition Width="2*"/>
+                <ColumnDefinition Width="20"/>
+                <ColumnDefinition Width="1*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Left Panel: File Upload Zone -->
+            <Border Grid.Column="0"
+                    Background="{ThemeResource MaterialSurfaceBrush}"
+                    BorderBrush="{ThemeResource MaterialOutlineVariantBrush}"
+                    BorderThickness="1"
+                    CornerRadius="12"
+                    Padding="24">
+                <StackPanel Spacing="24">
+                    <!-- Upload Zone Header -->
+                    <TextBlock Text="Upload File"
+                               Style="{ThemeResource SubtitleTextBlockStyle}"
+                               Foreground="{ThemeResource MaterialOnSurfaceBrush}"
+                               FontWeight="SemiBold"
+                               HorizontalAlignment="Center"/>
+
+                    <!-- Drop Zone -->
+                    <Border x:Name="DropZone"
+                            Height="200"
+                            Background="{ThemeResource MaterialSurfaceVariantBrush}"
+                            BorderBrush="{ThemeResource MaterialOutlineVariantBrush}"
+                            BorderThickness="2"
+                            CornerRadius="12"
+                            AllowDrop="True"
+                            DragOver="DropZone_DragOver"
+                            Drop="DropZone_Drop">
+                        <StackPanel HorizontalAlignment="Center" 
+                                    VerticalAlignment="Center"
+                                    Spacing="16">
+                            <FontIcon Glyph="&#xE8B7;" 
+                                      FontSize="48"
+                                      Foreground="{ThemeResource MaterialOnSurfaceVariantBrush}"/>
+                            <TextBlock Text="Drag &amp; drop your file here"
+                                       Style="{ThemeResource BodyTextBlockStyle}"
+                                       Foreground="{ThemeResource MaterialOnSurfaceVariantBrush}"
+                                       HorizontalAlignment="Center"
+                                       FontWeight="Medium"/>
+                            <TextBlock Text="or click to browse"
+                                       Style="{ThemeResource CaptionTextBlockStyle}"
+                                       Foreground="{ThemeResource MaterialOnSurfaceVariantBrush}"
+                                       HorizontalAlignment="Center"/>
+                            <Button x:Name="BrowseButton"
+                                    Content="Browse Files"
+                                    Style="{StaticResource SecondaryButtonStyle}"
+                                    Click="BrowseButton_Click"
+                                    HorizontalAlignment="Center"
+                                    MinWidth="140"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- File Info Panel -->
+                    <StackPanel x:Name="FileInfoPanel" Visibility="Collapsed" Spacing="16">
+                        <TextBlock Text="File Information"
+                                   Style="{ThemeResource BodyTextBlockStyle}"
+                                   Foreground="{ThemeResource MaterialOnSurfaceBrush}"
+                                   FontWeight="SemiBold"/>
+                        
+                        <StackPanel Spacing="8">
+                            <TextBlock x:Name="SelectedFileText"
+                                       Text="Selected File: document.pdf"
+                                       Style="{ThemeResource CaptionTextBlockStyle}"
+                                       Foreground="{ThemeResource MaterialOnSurfaceBrush}"
+                                       TextWrapping="Wrap"/>
+                            <TextBlock x:Name="FileSizeText"
+                                       Text="Size: 2.3 MB"
+                                       Style="{ThemeResource CaptionTextBlockStyle}"
+                                       Foreground="{ThemeResource MaterialOnSurfaceVariantBrush}"/>
+                        </StackPanel>
+
+                        <!-- LLM Indicator -->
+                        <Border Background="{ThemeResource MaterialPrimaryContainerBrush}"
+                                BorderBrush="{ThemeResource MaterialPrimaryBrush}"
+                                BorderThickness="1"
+                                CornerRadius="8"
+                                Padding="12">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <FontIcon Glyph="🤖" 
+                                          FontSize="16"
+                                          Foreground="{ThemeResource MaterialPrimaryBrush}"/>
+                                <TextBlock x:Name="LLMIndicatorText"
+                                           Text="AI Model: OpenAI GPT-4"
+                                           Style="{ThemeResource CaptionTextBlockStyle}"
+                                           Foreground="{ThemeResource MaterialPrimaryBrush}"
+                                           FontWeight="Medium"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- Center Panel: Preview Editor -->
+            <Border Grid.Column="2"
+                    Background="{ThemeResource MaterialSurfaceBrush}"
+                    BorderBrush="{ThemeResource MaterialOutlineVariantBrush}"
+                    BorderThickness="1"
+                    CornerRadius="12"
+                    Padding="24">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Preview Header -->
+                    <Grid Grid.Row="0" Margin="0,0,0,16">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock Grid.Column="0"
+                                   Text="Content Preview"
+                                   Style="{ThemeResource SubtitleTextBlockStyle}"
+                                   Foreground="{ThemeResource MaterialOnSurfaceBrush}"
+                                   FontWeight="SemiBold"
+                                   VerticalAlignment="Center"/>
+
+                        <!-- View Mode Toggle -->
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="12">
+                            <TextBlock Text="Raw Text"
+                                       Style="{ThemeResource CaptionTextBlockStyle}"
+                                       Foreground="{ThemeResource MaterialOnSurfaceVariantBrush}"
+                                       VerticalAlignment="Center"/>
+                            <ToggleSwitch x:Name="ViewModeToggle"
+                                          OnContent="Summary"
+                                          OffContent=""
+                                          Toggled="ViewModeToggle_Toggled"/>
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- Preview Content -->
+                    <Border Grid.Row="1"
+                            Background="{ThemeResource MaterialSurfaceVariantBrush}"
+                            BorderBrush="{ThemeResource MaterialOutlineVariantBrush}"
+                            BorderThickness="1"
+                            CornerRadius="8">
+                        <ScrollViewer Padding="20" VerticalScrollBarVisibility="Auto">
+                            <TextBox x:Name="PreviewTextBox"
+                                     PlaceholderText="No content loaded. Upload a file to see its content here..."
+                                     Background="Transparent"
+                                     BorderThickness="0"
+                                     AcceptsReturn="True"
+                                     TextWrapping="Wrap"
+                                     MinHeight="400"
+                                     FontFamily="Consolas"
+                                     FontSize="14"
+                                     Foreground="{ThemeResource MaterialOnSurfaceBrush}"/>
+                        </ScrollViewer>
+                    </Border>
+                </Grid>
+            </Border>
+
+            <!-- Right Panel: Processing Actions -->
+            <Border Grid.Column="4"
+                    Background="{ThemeResource MaterialSurfaceBrush}"
+                    BorderBrush="{ThemeResource MaterialOutlineVariantBrush}"
+                    BorderThickness="1"
+                    CornerRadius="12"
+                    Padding="24">
+                <StackPanel Spacing="24">
+                    <!-- Actions Header -->
+                    <TextBlock Text="Processing Actions"
+                               Style="{ThemeResource SubtitleTextBlockStyle}"
+                               Foreground="{ThemeResource MaterialOnSurfaceBrush}"
+                               FontWeight="SemiBold"
+                               HorizontalAlignment="Center"/>
+
+                    <!-- Action Buttons -->
+                    <StackPanel Spacing="12">
+                        <Button x:Name="ConvertToTextButton"
+                                Content="Extract Text"
+                                Style="{StaticResource ActionButtonStyle}"
+                                Click="ConvertToTextButton_Click"
+                                IsEnabled="False">
+                            <Button.Resources>
+                                <Style TargetType="Button" BasedOn="{StaticResource ActionButtonStyle}">
+                                    <Setter Property="Background" Value="{ThemeResource MaterialSecondaryBrush}"/>
+                                    <Setter Property="Foreground" Value="{ThemeResource MaterialOnSecondaryBrush}"/>
+                                </Style>
+                            </Button.Resources>
+                        </Button>
+
+                        <Button x:Name="GenerateSummaryButton"
+                                Content="Generate Summary"
+                                Style="{StaticResource ActionButtonStyle}"
+                                Click="GenerateSummaryButton_Click"
+                                IsEnabled="False"/>
+
+                        <Button x:Name="SaveButton"
+                                Content="Save to Database"
+                                Style="{StaticResource ActionButtonStyle}"
+                                Click="SaveButton_Click"
+                                IsEnabled="False">
+                            <Button.Resources>
+                                <Style TargetType="Button" BasedOn="{StaticResource ActionButtonStyle}">
+                                    <Setter Property="Background" Value="{ThemeResource MaterialTertiaryBrush}"/>
+                                    <Setter Property="Foreground" Value="{ThemeResource MaterialOnTertiaryBrush}"/>
+                                </Style>
+                            </Button.Resources>
+                        </Button>
+
+                        <Button x:Name="ResetButton"
+                                Content="Reset"
+                                Style="{StaticResource SecondaryButtonStyle}"
+                                Click="ResetButton_Click"/>
+                    </StackPanel>
+
+                    <!-- Processing Status -->
+                    <Border x:Name="StatusPanel"
+                            Background="{ThemeResource MaterialSurfaceVariantBrush}"
+                            BorderBrush="{ThemeResource MaterialOutlineVariantBrush}"
+                            BorderThickness="1"
+                            CornerRadius="8"
+                            Padding="16"
+                            Visibility="Collapsed">
+                        <StackPanel Spacing="8">
+                            <TextBlock Text="Processing Status"
+                                       Style="{ThemeResource CaptionTextBlockStyle}"
+                                       Foreground="{ThemeResource MaterialOnSurfaceVariantBrush}"
+                                       FontWeight="SemiBold"/>
+                            <ProgressBar x:Name="ProcessingProgress"
+                                         IsIndeterminate="True"
+                                         Foreground="{ThemeResource MaterialPrimaryBrush}"/>
+                            <TextBlock x:Name="StatusText"
+                                       Text="Processing file..."
+                                       Style="{ThemeResource CaptionTextBlockStyle}"
+                                       Foreground="{ThemeResource MaterialOnSurfaceVariantBrush}"/>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <!-- Loading Overlay -->
+        <Border x:Name="LoadingOverlay"
+                Grid.RowSpan="2"
+                Background="#80000000"
+                Visibility="Collapsed">
+            <StackPanel HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Background="{ThemeResource MaterialSurfaceBrush}"
+                        Padding="48"
+                        CornerRadius="12"
+                        Spacing="20">
+                <ProgressRing IsActive="True"
+                              Width="64"
+                              Height="64"
+                              Foreground="{ThemeResource MaterialPrimaryBrush}"/>
+                <TextBlock x:Name="LoadingText"
+                           Text="Processing file..."
+                           Style="{ThemeResource SubtitleTextBlockStyle}"
+                           Foreground="{ThemeResource MaterialOnSurfaceBrush}"
+                           HorizontalAlignment="Center"
+                           FontWeight="Medium"/>
+            </StackPanel>
+        </Border>
+    </Grid>
+</Page>

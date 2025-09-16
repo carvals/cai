@@ -6,7 +6,7 @@
       xmlns:utu="using:Uno.Toolkit.UI"
       xmlns:um="using:Uno.Material"
       NavigationCacheMode="Required"
-      Background="{ThemeResource BackgroundBrush}">
+      Background="{ThemeResource MaterialBackgroundBrush}">
   
   <Grid utu:SafeArea.Insets="VisibleBounds">
     <Grid.RowDefinitions>
@@ -32,8 +32,8 @@
       
       <!-- Far-left Sidebar (icons only) -->
       <Border Grid.Column="0" 
-              Background="{ThemeResource LayerFillColorDefaultBrush}"
-              BorderBrush="{ThemeResource ControlStrokeColorDefaultBrush}"
+              Background="{ThemeResource MaterialSurfaceBrush}"
+              BorderBrush="{ThemeResource MaterialOutlineBrush}"
               BorderThickness="0,0,1,0">
         <Grid>
           <Grid.RowDefinitions>
@@ -47,8 +47,8 @@
           <Button x:Name="ToggleLeftPanelButton"
                   Grid.Row="0"
                   Click="ToggleLeftPanelButton_Click"
-                  Background="{ThemeResource AccentFillColorDefaultBrush}"
-                  BorderBrush="{ThemeResource AccentFillColorDefaultBrush}"
+                  Background="{ThemeResource MaterialPrimaryBrush}"
+                  BorderBrush="{ThemeResource MaterialPrimaryBrush}"
                   BorderThickness="2"
                   CornerRadius="6"
                   Width="48"
@@ -131,15 +131,15 @@
               <!-- AI Settings -->
               <Button x:Name="AISettingsButton"
                       Click="AISettingsButton_Click"
-                      Background="{ThemeResource AccentFillColorSecondaryBrush}"
-                      BorderBrush="{ThemeResource AccentFillColorDefaultBrush}"
+                      Background="{ThemeResource MaterialPrimaryContainerBrush}"
+                      BorderBrush="{ThemeResource MaterialPrimaryBrush}"
                       BorderThickness="1"
                       CornerRadius="6"
                       Width="48"
                       Height="48"
                       ToolTipService.ToolTip="AI Settings">
                 <FontIcon Glyph="🤖" 
-                          Foreground="{ThemeResource AccentFillColorDefaultBrush}"
+                          Foreground="{ThemeResource MaterialPrimaryBrush}"
                           FontSize="18" />
               </Button>
               
@@ -193,11 +193,11 @@
                       Margin="16"
                       Spacing="8">
             
-            <!-- Ajouter un fichier button -->
+            
             <Button x:Name="BtnAddFile"
                     HorizontalAlignment="Stretch"
-                    Background="{ThemeResource SubtleFillColorSecondaryBrush}"
-                    BorderBrush="{ThemeResource AccentFillColorDefaultBrush}"
+                    Background="{ThemeResource MaterialSurfaceVariantBrush}"
+                    BorderBrush="{ThemeResource MaterialPrimaryBrush}"
                     BorderThickness="1"
                     CornerRadius="4"
                     Padding="12,8"
