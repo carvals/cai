@@ -35,9 +35,10 @@ namespace CAI_design_1_chat.Services
             try
             {
                 // Extract content based on file type
-                switch (fileData.FileType)
+                switch (fileData.FileType.ToLowerInvariant())
                 {
                     case ".txt":
+                    case ".md":
                         fileData.Content = await File.ReadAllTextAsync(filePath, Encoding.UTF8);
                         fileData.ExtractionMethod = "text_read";
                         break;
