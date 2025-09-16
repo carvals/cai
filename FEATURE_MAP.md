@@ -1,6 +1,30 @@
 # Feature to File Mapping
 
-This document provides a comprehensive mapping between features and their implementation files, making it easier to navigate the codebase and understand where specific functionality is located.
+This feature map provides a comprehensive overview of the CAI Design 1 Chat application's capabilities, implementation status, and architectural organization. Use this as a reference for understanding the system's current state and planning future enhancements.
+
+## Development Insights and Lessons
+
+### Key Success Factors
+1. **Comprehensive Debug Logging**: Essential for troubleshooting AI integration and database operations
+2. **Schema-Code Alignment**: Critical for preventing SQLite constraint violations
+3. **State Management**: Tracking objects throughout UI workflows prevents data inconsistencies
+4. **Defensive Programming**: Input validation and precondition checks prevent cascade failures
+5. **Error Recovery**: Graceful handling with user feedback maintains application stability
+
+### Common Pitfalls Avoided
+1. **Database Schema Mismatches**: Always verify schema before writing SQL operations
+2. **Foreign Key Violations**: Validate IDs before creating dependent records
+3. **File Type Inconsistencies**: Ensure UI and service layers support same file types
+4. **Data Duplication**: Use update operations for existing records, not insert
+5. **Silent Failures**: Comprehensive logging reveals hidden issues during development
+
+### Modern Development Practices Applied
+- **Async/Await Patterns**: Non-blocking operations for better UX
+- **Resource Management**: Proper disposal of connections and HTTP clients
+- **Separation of Concerns**: Clear boundaries between extraction and summarization
+- **Configuration Validation**: Runtime checks for AI provider settings
+- **Command-Line Debugging**: SQLite CLI for rapid database inspection
+- **Structured Error Handling**: Categorized exceptions with specific recovery strategies
 
 ## Core Architecture
 
@@ -54,113 +78,145 @@ This document provides a comprehensive mapping between features and their implem
 
 ## Feature Implementation Status
 
-### ✅ Completed Features
+### ✅ Fully Implemented
+- File upload with drag & drop support
+- PDF text extraction using iText7
+- Text and Markdown file support (.txt, .md)
+- AI summarization with OpenAI and Ollama
+- Custom prompt instruction system
+- SQLite database integration with schema validation
+- Material Design UI consistency
+- Comprehensive debug logging
+- Modal dialog system for prompt management
+- State management and data consistency
+- Error handling with graceful recovery
+- Database operation debugging tools
 
-#### AI-Powered File Processing with Custom Instructions
-- **Files**: `/Services/FileProcessingService.cs`, `/Models/PromptInstruction.cs`, `/Services/PromptInstructionService.cs`
-- **UI**: `/Presentation/FileUploadPage.xaml`, `/Presentation/Dialogs/PromptSearchDialog.xaml`, `/Presentation/Dialogs/SavePromptDialog.xaml`
-- **Functions**:
-  - `GenerateSummaryAsync()` - AI summarization with custom instructions
-  - `SearchPromptsAsync()` - Search saved instructions with filters
-  - `SavePromptAsync()` - Create new prompt templates
-  - `IncrementUsageAsync()` - Track prompt usage statistics
-- **AI Providers**: OpenAI and Ollama integration with comprehensive debug logging
-- **Database**: SQLite schema for prompt_instructions table with full CRUD operations
+### 🔄 Partially Implemented
+- DOCX file support (placeholder implementation)
+- Additional AI providers (Anthropic, Gemini, Mistral - UI only)
 
-#### Dynamic Model Refresh System
-- **Files**: `/Services/IModelProvider.cs`, `/Services/OpenAIModelProvider.cs`, `/Models/AIModel.cs`
-- **UI**: `/Presentation/Dialogs/AISettingsDialog.xaml.cs` (RefreshOpenAIModels)
-- **Functions**: 
-  - `FetchAvailableModelsAsync()` - API integration
-  - `GetCachedModels()` - 24-hour caching
-  - `RefreshOpenAIModels()` - UI event handler
+### 📋 Planned Features
+- OCR support for scanned documents
+- File export functionality
+- Advanced prompt template management
+- Collaborative features
+- Performance optimizations
+- Unit testing framework
+- Automated schema migration
 
-#### OpenAI Integration
-- **Files**: `/Services/OpenAIService.cs`, `/Services/IAIService.cs`
-- **Functions**:
-  - `SendMessageAsync()` - Non-streaming chat
-  - `SendMessageStreamAsync()` - Streaming chat with token callbacks
-  - `ReloadConfiguration()` - Dynamic config updates
+### 🐛 Recently Fixed Issues
+- SQLite schema alignment errors
+- Foreign key constraint violations
+- File type support inconsistencies
+- Summary generation data mismatches
+- UI-database state synchronization
+- Debug logging and error tracking
 
-#### AI Settings Dialog
-- **Files**: `/Presentation/Dialogs/AISettingsDialog.xaml`, `/Presentation/Dialogs/AISettingsDialog.xaml.cs`
-- **Functions**:
-  - `RefreshOpenAIModels()` - OpenAI model refresh (fully functional)
-  - `RefreshAnthropicModels()` - Placeholder ("Coming soon")
-  - `RefreshGeminiModels()` - Placeholder ("Coming soon")
-  - `RefreshMistralModels()` - Placeholder ("Coming soon")
-  - `ShowLoadingDialog()`, `ShowSuccessDialog()`, `ShowErrorDialog()` - UX feedback
+## Quick Reference
 
-#### Main Application Layout
-- **Files**: `/Presentation/MainPage.xaml`, `/Presentation/MainPage.xaml.cs`
-- **Functions**:
-  - `ToggleLeftPanelButton_Click()` - Panel collapse/expand
-  - `AnimateLeftPanelTo()` - Smooth animations
-  - `BtnUpload_Click()` - File upload dialog
-  - `AISettingsButton_Click()` - Settings dialog launcher
+### Key Files by Function
+- **File Processing**: `FileProcessingService.cs`, `FileUploadPage.xaml.cs`
+- **AI Integration**: `OpenAIService.cs`, `IAIService.cs`
+- **Database**: `DatabaseService.cs`, `schema.sql`
+- **Prompts**: `PromptInstructionService.cs`, `PromptInstruction.cs`
+- **UI Dialogs**: `PromptSearchDialog.xaml.cs`, `SavePromptDialog.xaml.cs`
 
-#### Professional File Processing Interface
-- **Files**: `/Presentation/FileUploadPage.xaml`, `/Presentation/FileUploadPage.xaml.cs`
-- **Layout**: Three-panel Material Design interface (33%-50%-33%)
-- **Functions**:
-  - `ExtractTextButton_Click()` - Multi-format text extraction
-  - `GenerateSummaryButton_Click()` - AI summarization with custom instructions
-  - `SearchInstructionsButton_Click()` - Open prompt search modal
-  - `SaveInstructionButton_Click()` - Save new prompt templates
-  - `SummaryInstructionTextBox_TextChanged()` - Enable/disable save button
-- **Features**: Drag & drop, live preview, raw/summary toggle, database integration
+### Essential Commands
+```bash
+# Build and run
+dotnet build && dotnet run --project CAI_design_1_chat
 
-### Partially Implemented Features
+# Database inspection
+sqlite3 database.db ".schema file_data"
+sqlite3 database.db "SELECT id, name, processing_status FROM file_data;"
+sqlite3 database.db "SELECT * FROM prompt_instructions ORDER BY usage_count DESC;"
 
-#### AI Provider Support
-- **OpenAI**: Fully implemented (chat + file summarization)
-- **Ollama**: Fully implemented (chat + file summarization)
-- **Anthropic**: UI ready, API integration pending
-- **Gemini**: UI ready, API integration pending  
-- **Mistral**: UI ready, API integration pending
+# Debug and troubleshooting
+sqlite3 database.db "PRAGMA table_info(processing_jobs);"
+sqlite3 database.db "SELECT * FROM processing_jobs WHERE status='failed';"
+sqlite3 database.db "PRAGMA foreign_key_check;"
 
-### Pending Features
+# Watch for debug markers in console:
+# - "=== AI SUMMARIZATION DEBUG ==="
+# - "DEBUG: Selected AI Provider:"
+# - "=== AI SUMMARIZATION SUCCESS ==="
+```
 
-#### Chat Interface Enhancement
-- **Files**: `/Presentation/MainPage.xaml.cs` (to be enhanced)
-- **Missing Functions**:
-  - Message bubble components
-  - Conversation history display
-  - Auto-scroll functionality
-  - Copy message buttons
+### Troubleshooting Checklist
+1. **SQLite Errors**: Check column names in INSERT/UPDATE statements
+2. **Foreign Key Errors**: Validate file_id > 0 before dependent operations
+3. **File Type Errors**: Ensure ProcessFileAsync supports all UI file types
+4. **Summary Mismatch**: Use UpdateFileDataAsync for existing files
+5. **AI Errors**: Check provider configuration and debug logs
 
-#### Data Models
-- **Missing Files**:
-  - `/Models/ChatMessage.cs` - User/Assistant message structure
-  - `/Models/ChatSession.cs` - Conversation management
-  - `/Models/AISettings.cs` - Settings persistence
+## Core Features
 
-#### Additional Services
-- **Missing Files**:
-  - `/Services/OllamaService.cs` - Local AI integration
-  - `/Services/AnthropicService.cs` - Claude API
-  - `/Services/GeminiService.cs` - Google AI
-  - `/Services/MistralService.cs` - Mistral AI
-  - `/Services/ChatPersistenceService.cs` - Message storage
-  - `/Services/SettingsService.cs` - Configuration management
+#### 1. AI-Powered File Processing 🤖
+- **File Upload**: Drag & drop interface with support for PDF, TXT, MD files (DOCX placeholder)
+- **Text Extraction**: Automated content extraction with method tracking
+- **AI Summarization**: Custom instruction-based summaries using OpenAI or Ollama
+- **Fallback Mechanisms**: Basic summaries when AI services unavailable
+- **State Management**: Track FileData objects throughout processing workflow
+- **Data Consistency**: Update existing records instead of creating duplicates
 
-## Quick Navigation Guide
+#### 2. Prompt Instruction Management 📝
+- **Custom Prompts**: User-defined instructions for different document types
+- **Search & Filter**: Find existing prompts by type, language, or content
+- **Usage Tracking**: Monitor prompt popularity and effectiveness
+- **System Prompts**: Pre-defined templates for common use cases
+- **CRUD Operations**: Complete create, read, update, delete functionality
 
-### To Add a New AI Provider:
-1. Create service: `/Services/{Provider}Service.cs` implementing `IAIService`
-2. Create model provider: `/Services/{Provider}ModelProvider.cs` implementing `IModelProvider`
-3. Update UI: `/Presentation/Dialogs/AISettingsDialog.xaml.cs` - implement `Refresh{Provider}Models()`
-4. Add configuration fields in `/Presentation/Dialogs/AISettingsDialog.xaml`
+#### 3. Multi-Provider AI Integration 🔗
+- **OpenAI Support**: GPT models with API key configuration
+- **Ollama Integration**: Local LLM support with custom server URLs
+- **Provider Switching**: Dynamic selection between AI services
+- **Debug Logging**: Comprehensive request/response tracking with structured markers
+- **Error Handling**: Graceful fallback with detailed error reporting
 
-### To Enhance Chat Interface:
-1. Update: `/Presentation/MainPage.xaml` - add message display components
-2. Enhance: `/Presentation/MainPage.xaml.cs` - add message handling logic
-3. Create: `/Presentation/Controls/MessageBubble.xaml` - message UI component
+#### 4. Database Management 🗄️
+- **SQLite Integration**: Lightweight, embedded database solution with schema validation
+- **File Metadata**: Complete tracking of processing history
+- **Prompt Library**: Persistent storage of custom instructions
+- **Usage Analytics**: Track prompt effectiveness and file processing stats
+- **Foreign Key Management**: Proper constraint handling and validation
+- **Debug Tools**: Command-line inspection and troubleshooting capabilities
 
-### To Add Data Persistence:
-1. Create: `/Models/ChatMessage.cs` and `/Models/ChatSession.cs`
-2. Implement: `/Services/ChatPersistenceService.cs`
-3. Integrate with: `/Presentation/MainPage.xaml.cs`
+## Recent Updates and Bug Fixes
+
+### Phase 9 Completion - AI Summarization Integration ✅
+- **Prompt Instruction System**: Complete CRUD operations with search and save functionality
+- **AI Provider Support**: OpenAI and Ollama integration with comprehensive debug logging
+- **Custom Instructions**: User-defined prompts with reusable templates
+- **Modal Dialog System**: Search existing prompts and save new ones
+- **Database Integration**: Full SQLite integration with usage tracking
+
+### Critical Bug Fixes - Post-Implementation Debugging ✅
+
+#### 1. SQLite Schema Alignment Issues
+- **Issue**: `processing_jobs` table missing columns (`parameters`, `priority`, `retry_count`, `max_retries`)
+- **Fix**: Removed non-existent columns from INSERT statements
+- **Files**: `FileProcessingService.cs` - `CreateProcessingJobAsync` method
+- **Impact**: Eliminated SQLite constraint violations during file processing
+
+#### 2. Foreign Key Constraint Violations
+- **Issue**: Attempting to create processing jobs with invalid file IDs (0)
+- **Fix**: Added ID validation before foreign key operations
+- **Files**: `FileProcessingService.cs` - Exception handling in `ProcessFileAsync`
+- **Pattern**: `if (fileData.Id > 0)` checks before dependent operations
+
+#### 3. File Type Support Inconsistency
+- **Issue**: `.md` files supported in UI but not in `ProcessFileAsync`
+- **Fix**: Added `.md` case to file type switch statement
+- **Files**: `FileProcessingService.cs` - `ProcessFileAsync` method
+- **Pattern**: Group similar file types (`.txt` and `.md`) in same case
+
+#### 4. Summary Generation Data Inconsistency
+- **Issue**: AI-generated summaries not saved to database - UI showed different summary than database
+- **Root Cause**: Automatic basic summary conflicted with manual AI summary generation
+- **Fix**: Removed automatic summary generation, implemented state tracking with `_currentFileData`
+- **Files**: `FileProcessingService.cs`, `FileUploadPage.xaml.cs`
+- **Solution**: Use `UpdateFileDataAsync` for existing files instead of creating duplicates
 
 ## Architecture Patterns
 
