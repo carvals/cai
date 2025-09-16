@@ -23,6 +23,7 @@ namespace CAI_design_1_chat.Presentation
         private string _rawContent = string.Empty;
         private string _summaryContent = string.Empty;
         private bool _isInSummaryMode = false;
+        private FileData? _currentFileData = null;
 
         public FileUploadPage()
         {
@@ -223,22 +224,39 @@ namespace CAI_design_1_chat.Presentation
 
             try
             {
-                var basicProperties = await _selectedFile.GetBasicPropertiesAsync();
-                var fileData = new FileData
+                if (_currentFileData != null)
                 {
-                    Name = _selectedFile.Name,
-                    OriginalFilePath = _selectedFile.Path,
-                    FileSize = (long)basicProperties.Size,
-                    FileType = Path.GetExtension(_selectedFile.Name),
-                    Content = _rawContent,
-                    Summary = _isInSummaryMode ? _summaryContent : null,
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow,
-                    ProcessingStatus = "completed"
-                };
+                    // Update existing file data with the generated summary
+                    _currentFileData.Summary = _isInSummaryMode ? _summaryContent : null;
+                    _currentFileData.ProcessingStatus = "completed";
+                    
+                    await _fileProcessingService.UpdateFileDataAsync(_currentFileData);
+                }
+                else
+                {
+                    // Create new file data for non-PDF files
+                    var basicProperties = await _selectedFile.GetBasicPropertiesAsync();
+                    var fileData = new FileData
+                    {
+                        Name = _selectedFile.Name,
+                        OriginalFilePath = _selectedFile.Path,
+                        FileSize = (long)basicProperties.Size,
+                        FileType = Path.GetExtension(_selectedFile.Name),
+                        Content = _rawContent,
+                        Summary = _isInSummaryMode ? _summaryContent : null,
+                        CreatedAt = DateTime.UtcNow,
+                        UpdatedAt = DateTime.UtcNow,
+                        ProcessingStatus = "completed"
+                    };
 
-                // Save using FileProcessingService
-                await _fileProcessingService.ProcessFileAsync(_selectedFile.Path);
+                    // Save new file data
+                    _currentFileData = await _fileProcessingService.ProcessFileAsync(_selectedFile.Path);
+                    if (_isInSummaryMode && !string.IsNullOrEmpty(_summaryContent))
+                    {
+                        _currentFileData.Summary = _summaryContent;
+                        await _fileProcessingService.UpdateFileDataAsync(_currentFileData);
+                    }
+                }
                 
                 HideLoading();
                 
@@ -297,9 +315,8 @@ namespace CAI_design_1_chat.Presentation
                         _rawContent = await File.ReadAllTextAsync(_selectedFile.Path);
                         break;
                     case ".pdf":
-                        var fileProcessingService = new Services.FileProcessingService(new Services.DatabaseService());
-                        var fileData = await fileProcessingService.ProcessFileAsync(_selectedFile.Path);
-                        _rawContent = fileData.Content ?? "Failed to extract PDF content.";
+                        _currentFileData = await _fileProcessingService.ProcessFileAsync(_selectedFile.Path);
+                        _rawContent = _currentFileData.Content ?? "Failed to extract PDF content.";
                         break;
                     case ".docx":
                         _rawContent = "DOCX text extraction not yet implemented. Please use a text file for now.";

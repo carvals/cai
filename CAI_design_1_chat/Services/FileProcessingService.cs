@@ -1,8 +1,9 @@
 using System;
 using System.IO;
 using System.Threading.Tasks;
-using System.Text;
 using CAI_design_1_chat.Models;
+using System.Net.Http;
+using System.Text;
 using Microsoft.Data.Sqlite;
 using iText.Kernel.Pdf;
 using iText.Kernel.Pdf.Canvas.Parser;
@@ -52,11 +53,8 @@ namespace CAI_design_1_chat.Services
                         throw new NotSupportedException($"File type {fileData.FileType} is not supported");
                 }
 
-                // Generate summary if content is available
-                if (!string.IsNullOrEmpty(fileData.Content))
-                {
-                    fileData.Summary = GenerateBasicSummary(fileData.Content);
-                }
+                // Don't generate summary automatically - let user generate it manually with custom instructions
+                // fileData.Summary will be set when user clicks "Generate Summary" and then "Save to Database"
 
                 fileData.ProcessingStatus = "completed";
                 fileData.UpdatedAt = DateTime.Now;
@@ -71,8 +69,19 @@ namespace CAI_design_1_chat.Services
                 fileData.ProcessingStatus = "failed";
                 fileData.UpdatedAt = DateTime.Now;
                 
-                // Create processing job record for failed processing
-                await CreateProcessingJobAsync(fileData.Id, "file_processing", "failed", null, ex.Message);
+                // Only create processing job record if file was already saved (has valid ID)
+                if (fileData.Id > 0)
+                {
+                    try
+                    {
+                        await CreateProcessingJobAsync(fileData.Id, "file_processing", "failed", null, ex.Message);
+                    }
+                    catch (Exception jobEx)
+                    {
+                        // Log the job creation error but don't let it override the original exception
+                        System.Diagnostics.Debug.WriteLine($"Failed to create processing job: {jobEx.Message}");
+                    }
+                }
                 
                 throw;
             }
@@ -135,11 +144,122 @@ namespace CAI_design_1_chat.Services
                 ? "You are an executive assistant. Make a summary of the file and keep the original language of the file."
                 : customInstruction;
 
-            // TODO: Implement actual AI summarization with custom instruction
-            // For now, return enhanced basic summary with instruction context
-            var basicSummary = GenerateBasicSummary(content);
+            // Debug logging
+            System.Diagnostics.Debug.WriteLine("=== AI SUMMARIZATION DEBUG ===");
+            System.Diagnostics.Debug.WriteLine($"DEBUG: Content length: {content.Length} characters");
+            System.Diagnostics.Debug.WriteLine($"DEBUG: Custom instruction: {instruction}");
+
+            // Get AI provider from settings
+            var localSettings = Windows.Storage.ApplicationData.Current.LocalSettings;
+            var selectedProvider = localSettings.Values["SelectedAIProvider"]?.ToString() ?? "Ollama";
             
-            return $"[AI Summary with instruction: \"{instruction}\"]\n\n{basicSummary}\n\nNote: This is a placeholder. AI integration will use the custom instruction to generate a proper summary.";
+            System.Diagnostics.Debug.WriteLine($"DEBUG: Selected AI Provider: {selectedProvider}");
+
+            try
+            {
+                string summary;
+                
+                if (selectedProvider == "OpenAI")
+                {
+                    // OpenAI implementation
+                    var aiService = new OpenAIService();
+                    
+                    // Add detailed debug info about OpenAI configuration
+                    var apiKey = localSettings.Values.TryGetValue("OpenAIKey", out var key) ? key?.ToString() : null;
+                    var model = localSettings.Values.TryGetValue("OpenAIModel", out var mdl) ? mdl?.ToString() : "gpt-4";
+                    
+                    System.Diagnostics.Debug.WriteLine($"DEBUG: OpenAI API Key: {(!string.IsNullOrEmpty(apiKey) ? "SET" : "NULL")}");
+                    System.Diagnostics.Debug.WriteLine($"DEBUG: OpenAI Model: {model}");
+                    System.Diagnostics.Debug.WriteLine($"DEBUG: OpenAI IsConfigured: {aiService.IsConfigured}");
+
+                    if (aiService.IsConfigured)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"DEBUG: Using OpenAI service");
+                        
+                        // Create AI prompt
+                        var prompt = $"{instruction}\n\nContent to summarize:\n{content}";
+                        System.Diagnostics.Debug.WriteLine($"DEBUG: Full prompt length: {prompt.Length} characters");
+                        System.Diagnostics.Debug.WriteLine($"DEBUG: Prompt preview: {prompt.Substring(0, Math.Min(200, prompt.Length))}...");
+
+                        // Call OpenAI service
+                        System.Diagnostics.Debug.WriteLine("DEBUG: Calling OpenAI service...");
+                        summary = await aiService.SendMessageAsync(prompt);
+                        
+                        System.Diagnostics.Debug.WriteLine($"DEBUG: AI Response length: {summary.Length} characters");
+                        System.Diagnostics.Debug.WriteLine($"DEBUG: AI Response preview: {summary.Substring(0, Math.Min(200, summary.Length))}...");
+                        System.Diagnostics.Debug.WriteLine("=== AI SUMMARIZATION SUCCESS ===");
+                        
+                        return summary;
+                    }
+                    else
+                    {
+                        System.Diagnostics.Debug.WriteLine($"DEBUG: OpenAI Service not configured");
+                        System.Diagnostics.Debug.WriteLine("DEBUG: Please configure OpenAI API key in AI Settings");
+                    }
+                }
+                else if (selectedProvider == "Ollama")
+                {
+                    // Ollama implementation (same as MainPage.xaml.cs)
+                    var serverUrl = localSettings.Values["OllamaUrl"]?.ToString() ?? "http://localhost:11434";
+                    var model = localSettings.Values["OllamaModel"]?.ToString() ?? "llama2";
+                    
+                    System.Diagnostics.Debug.WriteLine($"DEBUG: Ollama Server URL: {serverUrl}");
+                    System.Diagnostics.Debug.WriteLine($"DEBUG: Ollama Model: {model}");
+
+                    using var httpClient = new System.Net.Http.HttpClient { Timeout = TimeSpan.FromSeconds(60) };
+                    
+                    // Create AI prompt
+                    var prompt = $"{instruction}\n\nContent to summarize:\n{content}";
+                    System.Diagnostics.Debug.WriteLine($"DEBUG: Full prompt length: {prompt.Length} characters");
+                    System.Diagnostics.Debug.WriteLine($"DEBUG: Prompt preview: {prompt.Substring(0, Math.Min(200, prompt.Length))}...");
+                    
+                    var requestBody = new
+                    {
+                        model = model,
+                        prompt = prompt,
+                        stream = false
+                    };
+
+                    var jsonContent = System.Text.Json.JsonSerializer.Serialize(requestBody);
+                    var content_http = new System.Net.Http.StringContent(jsonContent, System.Text.Encoding.UTF8, "application/json");
+                    
+                    System.Diagnostics.Debug.WriteLine("DEBUG: Calling Ollama service...");
+                    var response = await httpClient.PostAsync($"{serverUrl}/api/generate", content_http);
+                    
+                    if (!response.IsSuccessStatusCode)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"DEBUG: Ollama API error: {response.StatusCode} - {response.ReasonPhrase}");
+                        throw new Exception($"Ollama API error: {response.StatusCode} - {response.ReasonPhrase}");
+                    }
+
+                    var responseText = await response.Content.ReadAsStringAsync();
+                    var responseData = System.Text.Json.JsonSerializer.Deserialize<OllamaGenerateResponse>(responseText);
+                    summary = responseData?.response ?? "No response from Ollama";
+                    
+                    System.Diagnostics.Debug.WriteLine($"DEBUG: Ollama Response length: {summary.Length} characters");
+                    System.Diagnostics.Debug.WriteLine($"DEBUG: Ollama Response preview: {summary.Substring(0, Math.Min(200, summary.Length))}...");
+                    System.Diagnostics.Debug.WriteLine("=== AI SUMMARIZATION SUCCESS ===");
+                    
+                    return summary;
+                }
+                else
+                {
+                    System.Diagnostics.Debug.WriteLine($"DEBUG: Unsupported AI provider: {selectedProvider}");
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"DEBUG: AI Service error: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"DEBUG: Exception type: {ex.GetType().Name}");
+                System.Diagnostics.Debug.WriteLine("=== AI SUMMARIZATION ERROR ===");
+            }
+
+            // Fallback to basic summary with debug info
+            var basicSummary = GenerateBasicSummary(content);
+            System.Diagnostics.Debug.WriteLine("DEBUG: Using fallback basic summary");
+            System.Diagnostics.Debug.WriteLine("=== AI SUMMARIZATION FALLBACK ===");
+            
+            return $"[AI Summary with instruction: \"{instruction}\"]\n\n{basicSummary}\n\nNote: AI service not available. Using basic summary as fallback.";
         }
 
         private string GenerateBasicSummary(string content)
@@ -193,25 +313,43 @@ namespace CAI_design_1_chat.Services
             fileData.Id = Convert.ToInt32(result);
         }
 
+        public async Task UpdateFileDataAsync(FileData fileData)
+        {
+            using var connection = new SqliteConnection(_databaseService.GetConnectionString());
+            await connection.OpenAsync();
+
+            var sql = @"
+                UPDATE file_data 
+                SET content = @content, summary = @summary, processing_status = @processingStatus, 
+                    extraction_method = @extractionMethod, updated_at = @updatedAt
+                WHERE id = @id";
+
+            using var command = new SqliteCommand(sql, connection);
+            command.Parameters.AddWithValue("@id", fileData.Id);
+            command.Parameters.AddWithValue("@content", fileData.Content ?? (object)DBNull.Value);
+            command.Parameters.AddWithValue("@summary", fileData.Summary ?? (object)DBNull.Value);
+            command.Parameters.AddWithValue("@processingStatus", fileData.ProcessingStatus);
+            command.Parameters.AddWithValue("@extractionMethod", fileData.ExtractionMethod ?? (object)DBNull.Value);
+            command.Parameters.AddWithValue("@updatedAt", DateTime.UtcNow);
+
+            await command.ExecuteNonQueryAsync();
+        }
+
         private async Task CreateProcessingJobAsync(int fileId, string jobType, string status, string? parameters, string? errorMessage)
         {
             using var connection = new SqliteConnection(_databaseService.GetConnectionString());
             await connection.OpenAsync();
 
             var sql = @"
-                INSERT INTO processing_jobs (file_id, job_type, status, parameters, error_message, created_at, priority, retry_count, max_retries)
-                VALUES (@fileId, @jobType, @status, @parameters, @errorMessage, @createdAt, @priority, @retryCount, @maxRetries)";
+                INSERT INTO processing_jobs (file_id, job_type, status, error_message, created_at)
+                VALUES (@fileId, @jobType, @status, @errorMessage, @createdAt)";
 
             using var command = new SqliteCommand(sql, connection);
             command.Parameters.AddWithValue("@fileId", fileId);
             command.Parameters.AddWithValue("@jobType", jobType);
             command.Parameters.AddWithValue("@status", status);
-            command.Parameters.AddWithValue("@parameters", parameters ?? (object)DBNull.Value);
             command.Parameters.AddWithValue("@errorMessage", errorMessage ?? (object)DBNull.Value);
             command.Parameters.AddWithValue("@createdAt", DateTime.Now);
-            command.Parameters.AddWithValue("@priority", 0);
-            command.Parameters.AddWithValue("@retryCount", 0);
-            command.Parameters.AddWithValue("@maxRetries", 3);
 
             await command.ExecuteNonQueryAsync();
         }
@@ -252,5 +390,12 @@ namespace CAI_design_1_chat.Services
 
             return null;
         }
+    }
+
+    // Data model for Ollama response
+    public class OllamaGenerateResponse
+    {
+        public string? response { get; set; }
+        public bool done { get; set; }
     }
 }

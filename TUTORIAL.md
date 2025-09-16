@@ -1,40 +1,285 @@
-## Smooth left panel animation (Skia/macOS and Windows)
+# CAI Design 1 Chat - Complete Tutorial
 
-This app includes a collapsible left panel with a smooth animation that works across Skia/macOS and Windows Desktop.
+## AI-Powered File Processing with Custom Instructions
 
-### What happened during development
+This tutorial covers the complete implementation of an AI-powered file processing system with custom instruction management, built with Uno Platform and Material Design.
 
-- We initially used XAML `Storyboard` + `DoubleAnimation` on `Width`. On our Skia/macOS target the animation didn’t visibly play in this setup.
-- Multiple event hooks (Button `Click`, Button `Tapped`, Sidebar `Tapped`, and a runtime hookup) caused multiple toggles per click. We removed all but the XAML `Click`.
-- After removing Storyboards, XAML still referenced `Completed` handlers, causing build errors. We removed those references.
-
-### Final solution
-
-- We animate the element directly: the border `LeftPanel` in `Presentation/MainPage.xaml`.
-- In code-behind (`Presentation/MainPage.xaml.cs`) we use a small helper `AnimateLeftPanelTo(double targetWidth, TimeSpan? duration)` that:
-  - Uses a `DispatcherTimer` (~60 FPS) with quadratic ease-in/out.
-  - Interpolates `LeftPanel.Width` from the current width to the target (0 for collapse, last saved or 360 for expand) over ~250 ms.
-  - Persists the final width and collapsed state using `ApplicationData.Current.LocalSettings`.
-- `ToggleLeftPanelButton_Click` decides collapse/expand based on `LeftPanel.Width` to keep behavior idempotent.
-
-### Where to look in the code
-
-- `UnoApp4/Presentation/MainPage.xaml` — UI layout. Look for `x:Name="LeftPanel"` and the 4-column grid.
-- `UnoApp4/Presentation/MainPage.xaml.cs` — `AnimateLeftPanelTo(...)` and `ToggleLeftPanelButton_Click`.
-
-### Commands executed while troubleshooting
+## Quick Start Commands
 
 ```bash
-# Restore and build to validate XAML/code-behind generation and fixes
-DOTNET_CLI_TELEMETRY_OPTOUT=1 dotnet build UnoApp4.sln -c Debug
+# Clone and build
+git clone <repository>
+cd CAI_design_1_chat
+dotnet restore
+dotnet build
+
+# Run with debug output for AI integration
+dotnet run --project CAI_design_1_chat --framework net9.0-desktop
+
+# Database location (for debugging)
+# macOS: ~/Library/Application Support/CAI_design_1_chat/cai_chat.db
+# Windows: %LOCALAPPDATA%\CAI_design_1_chat\cai_chat.db
 ```
 
-### Why this approach
+## Core Features Implemented
 
-- Timer + easing ensures consistent visuals on Skia/macOS and Windows without depending on Storyboard behavior.
-- If needed in the future, we can animate the grid column instead by updating `LeftPanelColumn.Width = new GridLength(value)` on each tick.
+### 1. AI Summarization with Custom Instructions
 
-# UnoApp4 – UI Layout Tutorial
+**Key Innovation**: Users can create, save, and reuse custom AI prompts for different document types.
+
+#### Usage Flow:
+1. **Upload File**: Drag & drop or browse for TXT, PDF, DOCX files
+2. **Extract Text**: Click "Extract Text" to process content
+3. **Custom Instructions**: 
+   - Type custom instruction in TextBox
+   - OR click 🔍 "Search Instructions" to browse saved prompts
+   - OR use default: "You are an executive assistant. Make a summary..."
+4. **Generate Summary**: AI processes with custom context
+5. **Save Instructions**: Click 💾 "Save" to store new prompts for reuse
+
+#### AI Provider Support:
+- **OpenAI**: Uses API key from AI Settings
+- **Ollama**: Local server integration (http://localhost:11434)
+- **Debug Logging**: Comprehensive console output for troubleshooting
+
+### 2. Prompt Instruction Management System
+
+#### Database Schema:
+```sql
+CREATE TABLE prompt_instructions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    prompt_type TEXT NOT NULL CHECK(prompt_type IN ('summary', 'extraction', 'analysis', 'custom')),
+    language TEXT NOT NULL DEFAULT 'fr',
+    instruction TEXT NOT NULL,
+    title TEXT NOT NULL,
+    description TEXT,
+    is_system BOOLEAN DEFAULT FALSE,
+    created_by TEXT,
+    usage_count INTEGER DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+#### Modal Dialogs:
+- **PromptSearchDialog**: Search by title/description, filter by type, preview instructions
+- **SavePromptDialog**: Create new prompts with metadata (title, type, language, description)
+
+#### Key Implementation Details:
+```csharp
+// Search with filters
+var prompts = await _promptService.SearchPromptsAsync(searchText, selectedType);
+
+// Save new prompt
+var newPrompt = new PromptInstruction {
+    Title = titleText,
+    PromptType = selectedType,
+    Language = selectedLanguage,
+    Instruction = instructionText,
+    Description = descriptionText
+};
+await _promptService.SavePromptAsync(newPrompt);
+
+// Increment usage when selected
+await _promptService.IncrementUsageAsync(promptId);
+```
+
+### 3. Material Design Implementation
+
+#### Three-Panel Layout (FileUploadPage):
+```xml
+<Grid>
+    <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="1*" />  <!-- File Upload Zone -->
+        <ColumnDefinition Width="2*" />  <!-- Live Preview Editor -->
+        <ColumnDefinition Width="1*" />  <!-- Processing Actions -->
+    </Grid.ColumnDefinitions>
+</Grid>
+```
+
+#### Material Design Resources:
+```xml
+<!-- Primary Actions -->
+Background="{ThemeResource MaterialPrimaryBrush}"
+Foreground="{ThemeResource MaterialOnPrimaryBrush}"
+
+<!-- Surface Cards -->
+Background="{ThemeResource MaterialSurfaceBrush}"
+BorderBrush="{ThemeResource MaterialOutlineVariantBrush}"
+
+<!-- Interactive States -->
+Background="{ThemeResource MaterialSurfaceVariantBrush}"
+```
+
+## Critical Implementation Lessons
+
+### 1. AI Service Integration Fix
+**Problem**: FileProcessingService defaulted to "Ollama" but chat used OpenAI directly.
+**Solution**: Unified initialization to match working chat system.
+
+```csharp
+// Before: Different initialization patterns
+var selectedProvider = localSettings.Values["SelectedAIProvider"]?.ToString() ?? "Ollama";
+
+// After: Consistent with chat system
+var aiService = new OpenAIService(); // Same as MainPage chat
+if (aiService.IsConfigured) {
+    var summary = await aiService.SendMessageAsync(prompt);
+}
+```
+
+### 2. Ollama HTTP Integration
+**Added direct HTTP API support matching MainPage implementation**:
+
+```csharp
+using var httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(60) };
+var requestBody = new {
+    model = model,
+    prompt = $"{instruction}\n\nContent to summarize:\n{content}",
+    stream = false
+};
+var jsonContent = JsonSerializer.Serialize(requestBody);
+var response = await httpClient.PostAsync($"{serverUrl}/api/generate", content);
+```
+
+### 3. Debug Logging Implementation
+**Comprehensive debug output for troubleshooting**:
+
+```csharp
+System.Diagnostics.Debug.WriteLine("=== AI SUMMARIZATION DEBUG ===");
+System.Diagnostics.Debug.WriteLine($"DEBUG: Selected AI Provider: {selectedProvider}");
+System.Diagnostics.Debug.WriteLine($"DEBUG: OpenAI API Key: {(!string.IsNullOrEmpty(apiKey) ? "SET" : "NULL")}");
+System.Diagnostics.Debug.WriteLine($"DEBUG: Model: {model}");
+System.Diagnostics.Debug.WriteLine($"DEBUG: Calling AI service...");
+// ... AI call ...
+System.Diagnostics.Debug.WriteLine("=== AI SUMMARIZATION SUCCESS ===");
+```
+
+### 4. SQLite Schema Execution Fix
+**Problem**: Splitting schema.sql by semicolons broke SQL triggers.
+**Solution**: Execute entire schema as single command.
+
+```csharp
+// Fixed approach:
+var schema = await File.ReadAllTextAsync(schemaPath);
+using var command = new SqliteCommand(schema, connection);
+await command.ExecuteNonQueryAsync();
+```
+
+## Testing Workflow
+
+### 1. Configure AI Provider
+```bash
+# For OpenAI
+1. Click ⚙️ AI Settings
+2. Select OpenAI radio button
+3. Enter API key and model (e.g., gpt-4)
+4. Click Save
+
+# For Ollama
+1. Start Ollama server: ollama serve
+2. Pull model: ollama pull llama2
+3. In AI Settings, select Ollama
+4. Set URL: http://localhost:11434
+5. Set model: llama2
+```
+
+### 2. Test File Processing
+```bash
+1. Click "Ajouter un fichier" from sidebar
+2. Upload TXT/PDF file via drag & drop
+3. Click "Extract Text" - verify content appears
+4. Toggle "Raw Text / Summary" switch
+5. Add custom instruction or search existing
+6. Click "Generate Summary"
+7. Check console for debug output
+```
+
+### 3. Test Prompt Management
+```bash
+1. Type custom instruction in TextBox
+2. Click 🔍 "Search Instructions"
+   - Search by title/description
+   - Filter by prompt_type
+   - Preview instruction text
+   - Select and apply
+3. Click 💾 "Save" (enabled when text modified)
+   - Fill required fields (title, type, language)
+   - Add description
+   - Save to database
+```
+
+## Debug Output Examples
+
+### Successful OpenAI Call:
+```
+=== AI SUMMARIZATION DEBUG ===
+DEBUG: Content length: 9894 characters
+DEBUG: Custom instruction: You are an executive assistant...
+DEBUG: Selected AI Provider: OpenAI
+DEBUG: OpenAI API Key: SET
+DEBUG: OpenAI Model: gpt-4
+DEBUG: Using OpenAI service
+DEBUG: Full prompt length: 9950 characters
+DEBUG: Calling OpenAI service...
+DEBUG: AI Response length: 245 characters
+=== AI SUMMARIZATION SUCCESS ===
+```
+
+### Successful Ollama Call:
+```
+=== AI SUMMARIZATION DEBUG ===
+DEBUG: Selected AI Provider: Ollama
+DEBUG: Ollama Server URL: http://localhost:11434
+DEBUG: Ollama Model: llama2
+DEBUG: Calling Ollama service...
+DEBUG: Ollama Response length: 312 characters
+=== AI SUMMARIZATION SUCCESS ===
+```
+
+### Configuration Issues:
+```
+DEBUG: OpenAI API Key: NULL
+DEBUG: OpenAI Service not configured
+DEBUG: Please configure OpenAI API key in AI Settings
+DEBUG: Using fallback basic summary
+=== AI SUMMARIZATION FALLBACK ===
+```
+
+## Architecture Overview
+
+```mermaid
+graph TB
+    subgraph "User Interface"
+        A[FileUploadPage]
+        B[PromptSearchDialog]
+        C[SavePromptDialog]
+    end
+    
+    subgraph "Services"
+        D[FileProcessingService]
+        E[PromptInstructionService]
+        F[OpenAIService]
+        G[DatabaseService]
+    end
+    
+    subgraph "Data"
+        H[SQLite Database]
+        I[Local Settings]
+    end
+    
+    A --> D
+    A --> E
+    B --> E
+    C --> E
+    D --> F
+    D --> G
+    E --> G
+    G --> H
+    F --> I
+```
+
+# Legacy UI Layout Tutorial
 
 This document explains how to reproduce the new master-detail layout implemented in `UnoApp4`, featuring:
 
@@ -43,7 +288,7 @@ This document explains how to reproduce the new master-detail layout implemented
 - A draggable splitter between left and right panels
 - A right panel with a Chat card, empty state, and input area
 
-The implementation follows MVVM-friendly patterns and uses standard WinUI/Uno controls only.
+**Note**: This section contains legacy documentation for the original UI layout implementation.
 
 ## Files changed
 

@@ -354,7 +354,7 @@ SET usage_count = usage_count + 1, updated_at = CURRENT_TIMESTAMP
 WHERE id = ?;
 ```
 
-### Enhanced AI Summarization
+### Enhanced AI Summarization with Custom Instructions
 
 **Default Instruction**: "You are an executive assistant. Make a summary of the file and keep the original language of the file."
 
@@ -362,12 +362,55 @@ WHERE id = ?;
 1. User types custom instruction in TextBox
 2. OR user searches and selects from database
 3. Generate Summary button uses: `raw_text + custom_instruction`
-4. AI provider processes with enhanced context
+4. AI provider (OpenAI/Ollama) processes with enhanced context
 5. Result displayed in summary toggle view
+
+**AI Provider Integration**:
+- **OpenAI**: Uses existing API key configuration from chat system
+- **Ollama**: Direct HTTP API integration with local server
+- **Debug Logging**: Comprehensive debug output for troubleshooting
+- **Fallback**: Basic summary when AI service unavailable
+
+**Debug Output Example**:
+```
+=== AI SUMMARIZATION DEBUG ===
+DEBUG: Content length: 9894 characters
+DEBUG: Custom instruction: You are an executive assistant...
+DEBUG: Selected AI Provider: OpenAI
+DEBUG: OpenAI API Key: SET
+DEBUG: OpenAI Model: gpt-4
+DEBUG: Calling OpenAI service...
+=== AI SUMMARIZATION SUCCESS ===
+```
 
 ## Implementation Details & Lessons Learned
 
-### Critical SQLite Database Fix
+### Critical AI Service Integration Fixes
+
+#### 1. AI Provider Configuration Issue
+**Problem**: FileProcessingService defaulted to "Ollama" but used different initialization than chat system.
+**Solution**: Unified AI service initialization to match working chat implementation.
+
+```csharp
+// Fixed approach - use same configuration as chat
+var aiService = new OpenAI Service();
+if (aiService.IsConfigured) {
+    var summary = await aiService.SendMessageAsync(prompt);
+}
+```
+
+#### 2. Ollama Integration
+**Problem**: No Ollama service implementation in FileProcessingService.
+**Solution**: Added direct HTTP API integration matching MainPage chat implementation.
+
+```csharp
+// Ollama HTTP API integration
+using var httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(60) };
+var requestBody = new { model = model, prompt = prompt, stream = false };
+var response = await httpClient.PostAsync($"{serverUrl}/api/generate", content);
+```
+
+#### 3. Critical SQLite Database Fix
 **Problem**: Initial implementation split schema.sql by semicolons, breaking SQL triggers with `BEGIN...END` blocks.
 **Solution**: Execute entire schema as single command to preserve transaction integrity.
 
@@ -376,6 +419,14 @@ WHERE id = ?;
 using var sqlCommand = new SqliteCommand(schema, connection);
 await sqlCommand.ExecuteNonQueryAsync();
 ```
+
+#### 4. Debug Logging Implementation
+**Added comprehensive debug output for AI calls**:
+- Provider and model information
+- API key configuration status
+- Full prompt details (with preview)
+- Response length and preview
+- Error handling and fallback behavior
 
 ### File Processing Architecture
 - **FileProcessingService**: Handles multi-format text extraction
@@ -432,7 +483,7 @@ CREATE TRIGGER update_file_data_timestamp
 
 **Access Pattern**:
 ```csharp
-var appDataPath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+var appDataPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
 var appFolder = Path.Combine(appDataPath, "CAI_design_1_chat");
 _databasePath = Path.Combine(appFolder, "cai_chat.db");
 ```
@@ -444,7 +495,7 @@ _databasePath = Path.Combine(appFolder, "cai_chat.db");
 # Build the project
 dotnet build
 
-# Run the application
+# Run the application (with debug output for AI integration)
 dotnet run --project CAI_design_1_chat --framework net9.0-desktop
 
 # Clean build artifacts
@@ -452,6 +503,12 @@ dotnet clean
 
 # Restore packages
 dotnet restore
+
+# Test AI summarization with debug logs
+# 1. Configure AI provider in Settings (OpenAI API key or Ollama server)
+# 2. Upload file and extract text
+# 3. Add custom instruction or search existing prompts
+# 4. Generate summary and check console for debug output
 ```
 
 ### Project Structure
@@ -462,13 +519,20 @@ CAI_design_1_chat/
 ├── Models/
 │   ├── FileData.cs            # File metadata model
 │   ├── AIModel.cs             # AI provider configuration
+│   └── PromptInstruction.cs   # Custom instruction model
 │   └── AppConfig.cs           # Application settings
 ├── Services/
-│   ├── DatabaseService.cs     # SQLite management
-│   └── FileProcessingService.cs # File content extraction
+│   ├── DatabaseService.cs          # SQLite management
+│   ├── FileProcessingService.cs    # File content extraction & AI summarization
+│   ├── PromptInstructionService.cs # Custom instruction management
+│   ├── OpenAIService.cs           # OpenAI API integration
+│   └── IAIService.cs              # AI service interface
 ├── Presentation/
 │   ├── MainPage.xaml          # Main chat interface
 │   ├── FileUploadPage.xaml    # Full-screen file processing
+│   ├── Dialogs/
+│   │   ├── PromptSearchDialog.xaml    # Search existing instructions
+│   │   └── SavePromptDialog.xaml      # Save new instructions
 │   └── App.xaml               # Application resources
 └── CAI_design_1_chat.csproj   # Project configuration
 ```

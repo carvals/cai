@@ -10,18 +10,24 @@ This document provides a comprehensive mapping between features and their implem
 | AI Model Data Structure | `/Models/AIModel.cs` | `AIModel` class with Id, DisplayName, Description, capabilities |
 | Application Configuration | `/Models/AppConfig.cs` | Configuration settings |
 | Entity Base | `/Models/Entity.cs` | Base entity class |
+| File Processing Data | `/Models/FileData.cs` | File metadata, content, processing status |
+| Custom Instructions | `/Models/PromptInstruction.cs` | AI prompt templates with metadata |
 
 ### Service Interfaces
 | Feature | File | Key Classes/Functions |
 |---------|------|----------------------|
 | AI Service Contract | `/Services/IAIService.cs` | `IAIService` interface - SendMessageAsync, SendMessageStreamAsync |
 | Model Provider Contract | `/Services/IModelProvider.cs` | `IModelProvider` interface - FetchAvailableModelsAsync, caching |
+| Custom Instructions Contract | `/Services/IPromptInstructionService.cs` | Search, save, update, delete prompt instructions |
 
 ### Service Implementations
 | Feature | File | Key Classes/Functions |
 |---------|------|----------------------|
 | OpenAI Integration | `/Services/OpenAIService.cs` | `OpenAIService` class - chat completions, streaming |
 | OpenAI Model Provider | `/Services/OpenAIModelProvider.cs` | `OpenAIModelProvider` - dynamic model refresh, caching |
+| File Processing & AI Summarization | `/Services/FileProcessingService.cs` | Text extraction, AI summarization with custom instructions |
+| Custom Instructions Management | `/Services/PromptInstructionService.cs` | CRUD operations for prompt instructions |
+| Database Management | `/Services/DatabaseService.cs` | SQLite operations, schema management |
 | Debug Endpoints | `/Services/Endpoints/DebugHandler.cs` | Debug HTTP handlers |
 
 ## User Interface
@@ -31,6 +37,8 @@ This document provides a comprehensive mapping between features and their implem
 |---------|------|----------------------|
 | Main Layout | `/Presentation/MainPage.xaml` | 4-column grid, left panel, chat area |
 | Main Logic | `/Presentation/MainPage.xaml.cs` | Panel animations, file upload, chat interface |
+| File Processing Interface | `/Presentation/FileUploadPage.xaml` | Three-panel layout, drag & drop, AI summarization |
+| File Processing Logic | `/Presentation/FileUploadPage.xaml.cs` | File handling, AI integration, prompt management |
 | Application Shell | `/Presentation/Shell.xaml` | Navigation shell |
 | Login Page | `/Presentation/LoginPage.xaml` | Authentication UI |
 
@@ -39,10 +47,25 @@ This document provides a comprehensive mapping between features and their implem
 |---------|------|----------------------|
 | AI Settings Dialog | `/Presentation/Dialogs/AISettingsDialog.xaml` | Multi-provider configuration UI |
 | AI Settings Logic | `/Presentation/Dialogs/AISettingsDialog.xaml.cs` | `RefreshOpenAIModels`, `RefreshAnthropicModels`, etc. |
+| Prompt Search Dialog | `/Presentation/Dialogs/PromptSearchDialog.xaml` | Search existing instructions with filters |
+| Prompt Search Logic | `/Presentation/Dialogs/PromptSearchDialog.xaml.cs` | Search, filter, preview, selection handling |
+| Save Prompt Dialog | `/Presentation/Dialogs/SavePromptDialog.xaml` | Create new prompt instructions |
+| Save Prompt Logic | `/Presentation/Dialogs/SavePromptDialog.xaml.cs` | Form validation, database saving |
 
 ## Feature Implementation Status
 
 ### ✅ Completed Features
+
+#### AI-Powered File Processing with Custom Instructions
+- **Files**: `/Services/FileProcessingService.cs`, `/Models/PromptInstruction.cs`, `/Services/PromptInstructionService.cs`
+- **UI**: `/Presentation/FileUploadPage.xaml`, `/Presentation/Dialogs/PromptSearchDialog.xaml`, `/Presentation/Dialogs/SavePromptDialog.xaml`
+- **Functions**:
+  - `GenerateSummaryAsync()` - AI summarization with custom instructions
+  - `SearchPromptsAsync()` - Search saved instructions with filters
+  - `SavePromptAsync()` - Create new prompt templates
+  - `IncrementUsageAsync()` - Track prompt usage statistics
+- **AI Providers**: OpenAI and Ollama integration with comprehensive debug logging
+- **Database**: SQLite schema for prompt_instructions table with full CRUD operations
 
 #### Dynamic Model Refresh System
 - **Files**: `/Services/IModelProvider.cs`, `/Services/OpenAIModelProvider.cs`, `/Models/AIModel.cs`
@@ -76,14 +99,25 @@ This document provides a comprehensive mapping between features and their implem
   - `BtnUpload_Click()` - File upload dialog
   - `AISettingsButton_Click()` - Settings dialog launcher
 
+#### Professional File Processing Interface
+- **Files**: `/Presentation/FileUploadPage.xaml`, `/Presentation/FileUploadPage.xaml.cs`
+- **Layout**: Three-panel Material Design interface (33%-50%-33%)
+- **Functions**:
+  - `ExtractTextButton_Click()` - Multi-format text extraction
+  - `GenerateSummaryButton_Click()` - AI summarization with custom instructions
+  - `SearchInstructionsButton_Click()` - Open prompt search modal
+  - `SaveInstructionButton_Click()` - Save new prompt templates
+  - `SummaryInstructionTextBox_TextChanged()` - Enable/disable save button
+- **Features**: Drag & drop, live preview, raw/summary toggle, database integration
+
 ### Partially Implemented Features
 
 #### AI Provider Support
-- **OpenAI**: Fully implemented
+- **OpenAI**: Fully implemented (chat + file summarization)
+- **Ollama**: Fully implemented (chat + file summarization)
 - **Anthropic**: UI ready, API integration pending
 - **Gemini**: UI ready, API integration pending  
 - **Mistral**: UI ready, API integration pending
-- **Ollama**: Basic refresh implemented, chat integration pending
 
 ### Pending Features
 
