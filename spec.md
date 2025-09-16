@@ -1,70 +1,229 @@
-# UnoApp4 – Functional and Technical Specification
+# CAI Design 1 Chat - Technical Specification
 
-This document specifies the UI/UX, behavior, and technical architecture for the updated Uno Platform app. It complements `TUTORIAL.md` by providing a single reference for requirements and system design.
+## Overview
+A modern, cross-platform chat application built with Uno Platform, featuring comprehensive AI integration, advanced file processing capabilities, and a sophisticated SQLite-based data management system.
 
-##Technology
-- Uno platform (for C# desktop)
+## Technology Stack
+- **.NET 9.0**: Latest framework with performance improvements
+- **Uno Platform 5.4+**: Cross-platform UI framework targeting macOS, Windows, and Linux
+- **WinUI 3**: Modern Windows UI with Material Design theming
+- **SQLite**: Local database with Microsoft.Data.Sqlite 9.0.9
+- **Material Design**: Consistent theming and modern UX patterns
 
-## Goals
-- The app must provide a seamless experience on how to trigger functionality around file and data transformation in the frame of using AI as execution assistant.
-- Provide a master-detail workspace with a collapsible left panel and a chat panel on the right.
-- Implement a far-left fixed sidebar (icons only) with a toggle to collapse/expand the left panel.
-- Allow resizing between the left panel and the right panel.
-- Add a file-upload dialog accessible from the left panel: drag-and-drop/select file, action buttons, and a text preview.
-- Ensure compatibility across macOS (Skia) and Windows Desktop.
-- App is for macOS, windows and linux desktop
-- we will develop on macOS
+## Architecture
 
-## specific context
-- implemenet the csnake python https://github.com/tonybaloney/CSnakes to take care of data while csharp will make the orchestrator and UI
--  App must be multi language starting by french and english, default is french
+```mermaid
+graph TB
+    subgraph "Presentation Layer"
+        A[MainPage - Chat Interface]
+        B[FileUploadPage - File Processing]
+        C[Settings - AI Configuration]
+    end
+    
+    subgraph "Services Layer"
+        D[DatabaseService - SQLite Management]
+        E[FileProcessingService - Content Extraction]
+        F[AI Services - Multiple Providers]
+    end
+    
+    subgraph "Data Layer"
+        G[SQLite Database]
+        H[File Storage]
+        I[Settings Storage]
+    end
+    
+    A --> D
+    B --> D
+    B --> E
+    A --> F
+    E --> D
+    D --> G
+    E --> H
+    C --> I
+```
+
+## Goals & Vision
+- Provide seamless AI-powered file processing and chat experience
+- Modern, professional UI with Material Design principles
+- Cross-platform compatibility (macOS, Windows, Linux)
+- Intelligent file content extraction and summarization
+- Multi-language support (French default, English)
+- Extensible architecture for future AI provider integration
 
 ## Screens and Layout
 
 
 
-### Global Frame
-- Top `NavigationBar` shows the current page title.
-- Main content split into four columns:
-  1) Fixed far-left sidebar (56px) – icons only, contains the toggle button.
-  2) Left content panel (card: "Espace de travail"). Collapsible and resizable.
-  3) Thin resizer (splitter handle).
-  4) Right content panel (card: "Chat").
+## Core Features Implemented
 
-### ASCII Diagram
-```
-+-----------------------------------------------------------------------------------+
-| NavigationBar                                                                     |
-+-----------------------------------------------------------------------------------+
-| 56px |   Left Panel (card)       | || |                 Right Panel (card)       |
-|      |  [Ajouter un fichier]     | || |   [Chat header]                           |
-|      |  [Rechercher un fichier]  | || |   [Empty state / messages]                |
-|      |  [Créer un document]      | || |   [Input + Send]                          |
-|      |                           | || |                                           |
-|      |                           | || |                                           |
-+-----------------------------------------------------------------------------------+
-```
-Legend: `||` denotes the vertical splitter/handle (4px wide).
+### 1. **Enhanced File Processing System**
+- **Full-Page Interface**: Professional workspace with three-panel layout (33%-50%-33%)
+- **Multi-Format Support**: TXT, PDF, DOCX, Markdown files with extensible architecture
+- **Drag & Drop**: Visual feedback with hover states and seamless file selection
+- **AI-Powered Processing**: Text extraction and intelligent summarization
+- **Live Preview**: Real-time editable content with raw/summary toggle
+- **Database Integration**: Persistent storage with comprehensive metadata tracking
 
-### Upload Dialog (ContentDialog)
+### 2. **Modern Chat Interface**
+- **Master-Detail Layout**: Collapsible sidebar with chat panel
+- **Material Design**: Consistent theming with dark mode support
+- **Navigation**: Smooth transitions between chat and file processing
+- **AI Integration**: Multiple provider support with dynamic model selection
+
+### 3. **Robust Database Management**
+- **SQLite Schema**: Comprehensive database with triggers and constraints
+- **File Metadata**: Complete tracking of processing status and content
+- **Session Management**: Chat history and context persistence
+- **Processing Jobs**: Status monitoring and error handling
+
+## UI Architecture
+
+### Main Layout Structure
 ```
-+----------------------------------------------------------------------------+
-|  Charger le contenu d'un fichier                             [x Close]     |
-+----------------------------------------------------------------------------+
-|  +----------------------------+   [Convertir en text brut] [Résumé] [Reset] |
-|  |   Select or drag & drop    |                                        ... |
-|  |   (Drop Zone)              |                                            |
-|  +----------------------------+                                            |
-|                                                                            |
-|  [Sauvegarder]                                                              |
-|                                                                            |
-|  Preview      [toggle]  Text brut / Résumé                                  |
-|  +---------------------------------------------------------------------+   |
-|  |  pas de donnée / file text                                          |   |
-|  |  ...                                                                |   |
-|  +---------------------------------------------------------------------+   |
-+----------------------------------------------------------------------------+
++-----------------------------------------------------------------------------------+
+| Navigation Header - [← Back to Chat] File Processing              [⚙️ AI Settings] |
++-----------------------------------------------------------------------------------+
+| 56px |   Workspace Panel        | || |                 Chat Panel              |
+|      |  [Ajouter un fichier] ←──┼─┼┼─┼─→ FileUploadPage (Full Screen)            |
+|      |  [Rechercher un fichier] | || |   [Chat Messages]                       |
+|      |  [Créer un document]     | || |   [Message Input + Send]                |
+|      |  [AI Settings]           | || |                                         |
++-----------------------------------------------------------------------------------+
 ```
+
+### FileUploadPage Layout (Full Screen)
+```
++-----------------------------------------------------------------------------------+
+| [← Back to Chat] File Processing                              [⚙️ AI Settings]   |
++-----------------------------------------------------------------------------------+
+|   File Upload Zone    |        Live Preview Editor        |  Processing Actions  |
+|  ┌─────────────────┐  |  ┌─────────────────────────────┐  |  ┌─────────────────┐ |
+|  │ Drag & Drop     │  |  │ Raw Text ↔ Summary Toggle  │  |  │ Extract Text    │ |
+|  │ Browse Files    │  |  │                             │  |  │ Generate Summary│ |
+|  │                 │  |  │ Editable Content Preview    │  |  │ Save to DB      │ |
+|  │ File Info       │  |  │                             │  |  │ Reset           │ |
+|  │ LLM Indicator   │  |  │                             │  |  │                 │ |
+|  └─────────────────┘  |  └─────────────────────────────┘  |  └─────────────────┘ |
++-----------------------------------------------------------------------------------+
+```
+
+## Implementation Details & Lessons Learned
+
+### Critical SQLite Database Fix
+**Problem**: Initial implementation split schema.sql by semicolons, breaking SQL triggers with `BEGIN...END` blocks.
+**Solution**: Execute entire schema as single command to preserve transaction integrity.
+
+```csharp
+// Fixed approach:
+using var sqlCommand = new SqliteCommand(schema, connection);
+await sqlCommand.ExecuteNonQueryAsync();
+```
+
+### File Processing Architecture
+- **FileProcessingService**: Handles multi-format text extraction
+- **DatabaseService**: SQLite management with comprehensive schema
+- **FileUploadPage**: Full-screen professional interface replacing modal dialog
+
+### Navigation Pattern
+```csharp
+// MainPage navigation to FileUploadPage
+private void BtnAddFile_Click(object sender, RoutedEventArgs e)
+{
+    Frame.Navigate(typeof(FileUploadPage));
+}
+
+// FileUploadPage back navigation
+private void BackButton_Click(object sender, RoutedEventArgs e)
+{
+    Frame.GoBack();
+}
+```
+
+### Material Design Integration
+- Consistent theming with `MaterialPrimaryBrush`, `MaterialSurfaceBrush`
+- Three-panel layout with proper spacing and rounded corners
+- Visual feedback for drag-and-drop operations
+
+### Database Schema Highlights
+```sql
+-- File processing with context management
+CREATE TABLE file_data (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    content TEXT,
+    summary TEXT,
+    processing_status TEXT DEFAULT 'pending',
+    -- Context management fields
+    is_in_context BOOLEAN DEFAULT FALSE,
+    use_summary_in_context BOOLEAN DEFAULT FALSE
+);
+
+-- Automatic timestamp triggers
+CREATE TRIGGER update_file_data_timestamp 
+    AFTER UPDATE ON file_data
+    BEGIN
+        UPDATE file_data SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
+    END;
+## Development Commands & Workflow
+
+### Essential Commands
+```bash
+# Build the project
+dotnet build
+
+# Run the application
+dotnet run --project CAI_design_1_chat --framework net9.0-desktop
+
+# Clean build artifacts
+dotnet clean
+
+# Restore packages
+dotnet restore
+```
+
+### Project Structure
+```
+CAI_design_1_chat/
+├── Database/
+│   └── schema.sql              # SQLite database schema
+├── Models/
+│   ├── FileData.cs            # File metadata model
+│   ├── AIModel.cs             # AI provider configuration
+│   └── AppConfig.cs           # Application settings
+├── Services/
+│   ├── DatabaseService.cs     # SQLite management
+│   └── FileProcessingService.cs # File content extraction
+├── Presentation/
+│   ├── MainPage.xaml          # Main chat interface
+│   ├── FileUploadPage.xaml    # Full-screen file processing
+│   └── App.xaml               # Application resources
+└── CAI_design_1_chat.csproj   # Project configuration
+```
+
+### Key Dependencies
+- **Microsoft.Data.Sqlite**: 9.0.9 - SQLite database access
+- **Uno.WinUI**: 5.4+ - Cross-platform UI framework
+- **Uno.Toolkit.WinUI**: UI components and resources
+
+### Performance & UX Optimizations
+- Async/await patterns for all IO operations
+- Drag-and-drop visual feedback with hover states
+- Material Design theming for consistent appearance
+- Three-panel layout optimized for file processing workflow
+- Database triggers for automatic timestamp management
+
+### Debugging Notes
+- SQLite database location: `~/Library/Application Support/CAI_design_1_chat/cai_chat.db`
+- Console output shows database initialization success
+- File picker requires proper window handle initialization
+- Navigation warning resolved by implementing proper routing
+
+### Next Development Priorities
+1. **AI Integration**: Implement real text extraction for PDF/DOCX
+2. **Summarization**: Connect to AI providers for content summarization
+3. **Error Handling**: Enhanced user feedback and error recovery
+4. **Testing**: Unit tests for services and UI components
+5. **Localization**: French/English language support
 
 ## UX and Behavior
 - Sidebar toggle: clicking the far-left icon collapses/expands the left panel.
@@ -293,26 +452,80 @@ When implementing collapsible panels in Uno Platform:
 
 This pattern ensures complete layout collapse while maintaining smooth animations and cross-platform compatibility.
 
-## Chat Streaming Feature Specification
+## CAI Design 1 Chat - Technical Specification
 
-### User Interface Components
+## Overview
+A modern, cross-platform chat application built with Uno Platform, featuring comprehensive AI integration, advanced file processing capabilities, and a sophisticated SQLite-based data management system.
 
-#### Sidebar Enhancements
-- **Login Avatar**: Round icon placeholder at bottom left of the 61px sidebar
-- **Settings Icon**: Located above the avatar with expandable menu section
-- **Settings Menu**: 3 example items + "AI Settings" option that opens configuration dialog
+## Architecture
 
-#### AI Settings Dialog
-- **Provider Selection**: Support for multiple AI providers:
-  - Ollama (local) - default port 11434, custom port option
-  - OpenAI - with API key field
-  - Anthropic - with API key field  
-  - Google Gemini - with API key field
-  - Mistral - with API key field
-- **Ollama Integration**: Auto-detect available models via `/api/tags` endpoint
-- **Connection Testing**: Validate settings before saving
+```mermaid
+graph TB
+    subgraph "Presentation Layer"
+        A[MainPage - Chat Interface]
+        B[FileUploadPage - File Processing]
+        C[Settings - AI Configuration]
+    end
+    
+    subgraph "Services Layer"
+        D[DatabaseService - SQLite Management]
+        E[FileProcessingService - Content Extraction]
+        F[AI Services - Multiple Providers]
+    end
+    
+    subgraph "Data Layer"
+        G[SQLite Database]
+        H[File Storage]
+        I[Settings Storage]
+    end
+    
+    A --> D
+    B --> D
+    B --> E
+    A --> F
+    E --> D
+    D --> G
+    E --> H
+    C --> I
+```
 
-#### Chat Interface
+## Core Features
+
+### 1. **Enhanced File Processing System**
+- **Full-Page Interface**: Professional workspace with three-panel layout
+- **Multi-Format Support**: TXT, PDF, DOCX, Markdown files
+- **Drag & Drop**: Visual feedback and seamless file selection
+- **AI-Powered Processing**: Text extraction and intelligent summarization
+- **Live Preview**: Real-time editable content with raw/summary toggle
+- **Database Integration**: Persistent storage with metadata tracking
+
+### 2. **Modern Chat Interface**
+- Material Design theming with dark mode support
+- Collapsible sidebar with workspace management
+- Real-time message rendering
+- AI provider integration with multiple model support
+
+### 3. **Robust Database Management**
+- SQLite with comprehensive schema including triggers
+- File metadata and content storage
+- Session and context management
+- Processing job tracking with status monitoring
+
+## Technical Stack
+- **.NET 9.0**: Latest framework with performance improvements
+- **Uno Platform 5.4+**: Cross-platform UI framework
+- **WinUI 3**: Modern Windows UI with Material Design
+- **SQLite**: Local database with Microsoft.Data.Sqlite 9.0.9
+- **Material Design**: Consistent theming and modern UX patterns
+
+### AI Provider Integration
+- **Ollama**: Local AI provider with auto-detect model support
+- **OpenAI**: Cloud AI provider with API key support
+- **Anthropic**: Cloud AI provider with API key support
+- **Google Gemini**: Cloud AI provider with API key support
+- **Mistral**: Cloud AI provider with API key support
+
+### Chat Interface
 - **Conversation Format**: Display both user messages and AI responses
 - **Streaming Display**: Word-by-word streaming visualization
 - **Copy Functionality**: Copy button for each AI response

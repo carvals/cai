@@ -140,46 +140,223 @@ Note: Building may restore NuGet packages (network access). If you prefer, use y
 - **State Persistence**: Left panel width and collapsed state saved to ApplicationData.Current.LocalSettings
 
 ### Key Changes Made
-- Replaced GridSplitter with Border for cross-platform compatibility
 - Fixed nullability warnings in code-behind
 - Implemented proper MVVM-friendly event handlers
 - Added keyboard support (Enter key) for chat input
 
 ### Files Modified
-- `CAI_design_1_chat/Presentation/MainPage.xaml` - Complete UI layout implementation
-- `CAI_design_1_chat/Presentation/MainPage.xaml.cs` - Animation logic and event handlers
+- CAI_design_1_chat/Presentation/MainPage.xaml
+- CAI_design_1_chat/Presentation/MainPage.xaml.cs
+- CAI_design_1_chat/Models/FileData.cs
+- CAI_design_1_chat/Services/DatabaseService.cs
+- CAI_design_1_chat/Services/FileProcessingService.cs
 
-### Build Command Used
+# CAI Design 1 Chat - Development Tutorial
+
+This comprehensive tutorial provides step-by-step instructions for setting up, developing, and extending the CAI Design 1 Chat application - a modern cross-platform file processing and AI chat application.
+
+## Prerequisites
+
+- **.NET 9.0 SDK** - Latest framework with performance improvements
+- **Visual Studio 2022** or **JetBrains Rider** - IDE with Uno Platform support
+- **Git** - Version control
+- **macOS/Windows/Linux** - Cross-platform development environment
+
+## Quick Start
+
+### 1. Clone and Setup
 ```bash
-# Build the solution
-dotnet build CAI_design_1_chat.sln -c Debug
-
-# Run the application (macOS desktop)
-dotnet run --project CAI_design_1_chat/CAI_design_1_chat.csproj --framework net9.0-desktop
+git clone <repository-url>
+cd CAI_design_1_chat
+dotnet restore
+dotnet build
 ```
 
-### Current Status
-The basic screen layout is complete and matches the provided design image. The application builds successfully and includes:
-- ✅ Fixed far-left sidebar with toggle button
-- ✅ Collapsible "Espace de travail" panel with file management buttons
-- ✅ Visual splitter between panels
-- ✅ Chat panel with empty state and input functionality
-- ✅ Smooth animation for panel collapse/expand
-- ✅ State persistence across app sessions
+### 2. Run the Application
+```bash
+dotnet run --project CAI_design_1_chat --framework net9.0-desktop
+```
 
-### ✅ Issues Resolved
-- ✅ Button visibility: Enhanced contrast with proper theme resources and accent colors
-- ✅ Collapse behavior: Panel now collapses completely to show only far-left sidebar
-- ✅ Color scheme: Improved button styling with visible backgrounds and proper foregrounds
+**Expected Output:**
+```
+Database initialized successfully at: ~/Library/Application Support/CAI_design_1_chat/cai_chat.db
+=== Database Test Starting ===
+✅ Database test successful!
+```
 
-## Complete Collapse Implementation Guide
+## Architecture Deep Dive
 
-### Problem Statement
-The original implementation had two critical issues:
-1. **Toggle button invisibility**: Transparent background made the far-left toggle button nearly invisible
-2. **Incomplete collapse**: Panel would hide content but maintain width, leaving empty space
+```mermaid
+graph TB
+    subgraph "UI Layer"
+        A[MainPage.xaml - Chat Interface]
+        B[FileUploadPage.xaml - File Processing]
+        C[App.xaml - Resources & Theming]
+    end
+    
+    subgraph "Services"
+        D[DatabaseService - SQLite Operations]
+        E[FileProcessingService - Content Extraction]
+    end
+    
+    subgraph "Models"
+        F[FileData - File Metadata]
+        G[AIModel - Provider Configuration]
+    end
+    
+    subgraph "Data Storage"
+        H[(SQLite Database)]
+        I[File System]
+        J[Application Settings]
+    end
+    
+    A --> D
+    B --> D
+    B --> E
+    D --> H
+    E --> I
+    A --> J
+    D --> F
+    E --> F
+```
 
-### Solution Architecture
+## Key Implementation Details
+
+### 1. SQLite Database Management
+
+**Critical Fix Applied**: The database initialization was failing due to improper SQL command splitting.
+
+```csharp
+// ❌ Problematic approach (splits triggers incorrectly)
+var commands = schema.Split(new[] { ";" }, StringSplitOptions.RemoveEmptyEntries);
+foreach (var command in commands) { ... }
+
+// ✅ Fixed approach (preserves transaction integrity)
+using var sqlCommand = new SqliteCommand(schema, connection);
+await sqlCommand.ExecuteNonQueryAsync();
+```
+
+**Database Schema Features:**
+- Comprehensive file metadata tracking
+- Automatic timestamp triggers
+- Context management for AI processing
+- Processing status monitoring
+
+### 2. File Processing Architecture
+
+**Full-Screen Professional Interface:**
+```csharp
+// Navigation from MainPage to FileUploadPage
+private void BtnAddFile_Click(object sender, RoutedEventArgs e)
+{
+    Frame.Navigate(typeof(FileUploadPage));
+}
+
+// Back navigation with proper frame handling
+private void BackButton_Click(object sender, RoutedEventArgs e)
+{
+    Frame.GoBack();
+}
+```
+
+**Three-Panel Layout Design:**
+- **Left Panel (33%)**: File upload zone with drag-and-drop
+- **Center Panel (50%)**: Live preview editor with raw/summary toggle
+- **Right Panel (33%)**: Processing actions and status
+
+### 3. Material Design Integration
+
+**Consistent Theming:**
+```xml
+<Border Background="{ThemeResource MaterialSurfaceBrush}"
+        CornerRadius="8"
+        Padding="16">
+    <!-- Content -->
+</Border>
+```
+
+**Visual Feedback:**
+- Hover states for drag-and-drop operations
+- Loading indicators during processing
+- Status feedback with color coding
+
+## Development Workflow & Commands
+
+### Essential Commands
+```bash
+# Build and run
+dotnet build
+dotnet run --project CAI_design_1_chat --framework net9.0-desktop
+
+# Clean and restore
+dotnet clean
+dotnet restore
+```
+
+### Debugging & Testing
+```bash
+# Check database initialization
+# Look for: "Database initialized successfully at: ..."
+# Look for: "✅ Database test successful!"
+
+# Verify file processing
+# Test drag-and-drop functionality
+# Test navigation between pages
+```
+
+### Project Structure & Key Files
+```
+CAI_design_1_chat/
+├── Database/schema.sql          # SQLite schema with triggers
+├── Models/FileData.cs           # File metadata model
+├── Services/
+│   ├── DatabaseService.cs       # SQLite operations
+│   └── FileProcessingService.cs # Content extraction
+├── Presentation/
+│   ├── MainPage.xaml           # Chat interface
+│   ├── FileUploadPage.xaml     # File processing UI
+│   └── App.xaml                # Material Design resources
+└── CAI_design_1_chat.csproj    # Project configuration
+```
+
+## Critical Implementation Lessons
+
+### 1. SQLite Transaction Handling
+**Problem**: Schema execution failed with "cannot commit - no transaction is active"
+**Root Cause**: Splitting schema.sql by semicolons broke SQL triggers with BEGIN...END blocks
+**Solution**: Execute entire schema as single command
+
+### 2. Navigation Architecture
+**Pattern**: Frame-based navigation between MainPage and FileUploadPage
+**Implementation**: Full-screen file processing interface with back navigation
+**UX**: Professional three-panel layout optimized for file processing workflow
+
+### 3. Material Design Integration
+**Theming**: Consistent use of MaterialSurfaceBrush, MaterialPrimaryBrush
+**Layout**: Proper spacing, rounded corners, visual feedback
+**Accessibility**: High contrast, clear visual hierarchy
+
+## Next Development Steps
+
+1. **AI Integration**: Implement real PDF/DOCX text extraction
+2. **Summarization**: Connect to AI providers (OpenAI, Anthropic, Ollama)
+3. **Error Handling**: Enhanced user feedback and recovery
+4. **Testing**: Unit tests for services and UI components
+5. **Localization**: French/English language support
+
+## Troubleshooting Guide
+
+### Common Issues
+- **Database errors**: Check schema.sql syntax and file permissions
+- **Navigation warnings**: Ensure proper Frame.Navigate() usage
+- **File picker issues**: Verify window handle initialization
+- **XAML compilation**: Check resource references and namespaces
+
+### Performance Optimization
+- Use async/await for all IO operations
+- Implement proper dispose patterns for database connections
+- Optimize UI updates with data binding
+- Cache frequently accessed data
 
 #### 1. Enhanced Toggle Button Visibility
 ```xml
