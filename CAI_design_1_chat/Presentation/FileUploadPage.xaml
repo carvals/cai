@@ -227,7 +227,7 @@
 
                         <!-- View Mode Toggle -->
                         <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="12">
-                            <TextBlock Text="Raw Text"
+                            <TextBlock Text="Raw Text / Summary"
                                        Style="{ThemeResource CaptionTextBlockStyle}"
                                        Foreground="{ThemeResource MaterialOnSurfaceVariantBrush}"
                                        VerticalAlignment="Center"/>

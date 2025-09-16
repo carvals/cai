@@ -9,6 +9,7 @@ using System.IO;
 using System.Threading.Tasks;
 using CAI_design_1_chat.Services;
 using CAI_design_1_chat.Models;
+using CAI_design_1_chat.Presentation.Dialogs;
 using WinRT.Interop;
 
 namespace CAI_design_1_chat.Presentation
@@ -55,10 +56,20 @@ namespace CAI_design_1_chat.Presentation
             Frame.GoBack();
         }
 
-        private void AISettingsButton_Click(object sender, RoutedEventArgs e)
+        private async void AISettingsButton_Click(object sender, RoutedEventArgs e)
         {
-            // TODO: Open AI settings dialog or navigate to settings page
-            // This could be implemented similar to the main page's AI settings
+            var dialog = new AISettingsDialog
+            {
+                XamlRoot = this.XamlRoot
+            };
+            
+            var result = await dialog.ShowAsync();
+            
+            if (result == ContentDialogResult.Primary)
+            {
+                dialog.SaveSettings();
+                UpdateLLMIndicator();
+            }
         }
 
         private async void BrowseButton_Click(object sender, RoutedEventArgs e)
@@ -143,8 +154,10 @@ namespace CAI_design_1_chat.Presentation
                 ConvertToTextButton.IsEnabled = true;
                 GenerateSummaryButton.IsEnabled = true;
                 
-                // Auto-extract text for supported formats
-                await ExtractTextFromFile();
+                // Clear preview text and wait for user to click Extract Text
+                PreviewTextBox.Text = "Click 'Extract Text' to process the file content.";
+                _rawContent = string.Empty;
+                _summaryContent = string.Empty;
             }
             catch (Exception ex)
             {
@@ -241,13 +254,22 @@ namespace CAI_design_1_chat.Presentation
 
         private void ViewModeToggle_Toggled(object sender, RoutedEventArgs e)
         {
-            if (ViewModeToggle.IsOn && !string.IsNullOrEmpty(_summaryContent))
+            if (ViewModeToggle.IsOn)
             {
-                PreviewTextBox.Text = _summaryContent;
+                // Switch to summary mode
+                if (!string.IsNullOrEmpty(_summaryContent))
+                {
+                    PreviewTextBox.Text = _summaryContent;
+                }
+                else
+                {
+                    PreviewTextBox.Text = "Click 'Generate Summary' to create an AI-powered summary of the content.";
+                }
                 _isInSummaryMode = true;
             }
             else if (!string.IsNullOrEmpty(_rawContent))
             {
+                // Switch to raw text mode
                 PreviewTextBox.Text = _rawContent;
                 _isInSummaryMode = false;
             }
@@ -350,10 +372,30 @@ namespace CAI_design_1_chat.Presentation
         {
             // Read AI provider settings from local storage
             var localSettings = Windows.Storage.ApplicationData.Current.LocalSettings;
-            var provider = localSettings.Values["AIProvider"]?.ToString() ?? "OpenAI";
-            var model = localSettings.Values["AIModel"]?.ToString() ?? "gpt-4";
+            var selectedProvider = localSettings.Values["SelectedAIProvider"]?.ToString() ?? "Ollama";
             
-            LLMIndicatorText.Text = $"AI Model: {provider} - {model}";
+            string model = "";
+            switch (selectedProvider)
+            {
+                case "OpenAI":
+                    model = localSettings.Values["OpenAIModel"]?.ToString() ?? "gpt-4";
+                    break;
+                case "Anthropic":
+                    model = localSettings.Values["AnthropicModel"]?.ToString() ?? "claude-3-sonnet";
+                    break;
+                case "Gemini":
+                    model = localSettings.Values["GeminiModel"]?.ToString() ?? "gemini-pro";
+                    break;
+                case "Mistral":
+                    model = localSettings.Values["MistralModel"]?.ToString() ?? "mistral-large";
+                    break;
+                case "Ollama":
+                default:
+                    model = localSettings.Values["OllamaModel"]?.ToString() ?? "llama2";
+                    break;
+            }
+            
+            LLMIndicatorText.Text = $"AI Model: {selectedProvider} - {model}";
         }
 
         private void ShowLoading(string message)
