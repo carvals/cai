@@ -269,7 +269,9 @@ namespace CAI_design_1_chat.Presentation
                         _rawContent = await File.ReadAllTextAsync(_selectedFile.Path);
                         break;
                     case ".pdf":
-                        _rawContent = "PDF text extraction not yet implemented. Please use a text file for now.";
+                        var fileProcessingService = new Services.FileProcessingService(new Services.DatabaseService());
+                        var fileData = await fileProcessingService.ProcessFileAsync(_selectedFile.Path);
+                        _rawContent = fileData.Content ?? "Failed to extract PDF content.";
                         break;
                     case ".docx":
                         _rawContent = "DOCX text extraction not yet implemented. Please use a text file for now.";

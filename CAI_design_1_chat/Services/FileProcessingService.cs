@@ -4,6 +4,9 @@ using System.Threading.Tasks;
 using System.Text;
 using CAI_design_1_chat.Models;
 using Microsoft.Data.Sqlite;
+using iText.Kernel.Pdf;
+using iText.Kernel.Pdf.Canvas.Parser;
+using iText.Kernel.Pdf.Canvas.Parser.Listener;
 
 namespace CAI_design_1_chat.Services
 {
@@ -77,10 +80,41 @@ namespace CAI_design_1_chat.Services
 
         private async Task<string> ExtractPdfContentAsync(string filePath)
         {
-            // Placeholder for PDF extraction
-            // In a real implementation, you would use a library like iTextSharp or PdfPig
-            await Task.Delay(100); // Simulate processing time
-            return $"[PDF Content Placeholder for {Path.GetFileName(filePath)}]\n\nPDF extraction not yet implemented. Please install a PDF processing library like iTextSharp or PdfPig.";
+            try
+            {
+                var extractedText = new StringBuilder();
+                
+                // Run PDF extraction on background thread to avoid blocking UI
+                await Task.Run(() =>
+                {
+                    using var pdfReader = new PdfReader(filePath);
+                    using var pdfDocument = new PdfDocument(pdfReader);
+                    
+                    var strategy = new SimpleTextExtractionStrategy();
+                    
+                    for (int pageNum = 1; pageNum <= pdfDocument.GetNumberOfPages(); pageNum++)
+                    {
+                        var page = pdfDocument.GetPage(pageNum);
+                        var pageText = PdfTextExtractor.GetTextFromPage(page, strategy);
+                        
+                        if (!string.IsNullOrWhiteSpace(pageText))
+                        {
+                            extractedText.AppendLine($"=== Page {pageNum} ===");
+                            extractedText.AppendLine(pageText.Trim());
+                            extractedText.AppendLine();
+                        }
+                    }
+                });
+                
+                var result = extractedText.ToString().Trim();
+                return string.IsNullOrEmpty(result) 
+                    ? $"[PDF file '{Path.GetFileName(filePath)}' appears to be empty or contains no extractable text]"
+                    : result;
+            }
+            catch (Exception ex)
+            {
+                return $"[Error extracting PDF content from '{Path.GetFileName(filePath)}': {ex.Message}]";
+            }
         }
 
         private async Task<string> ExtractDocxContentAsync(string filePath)
