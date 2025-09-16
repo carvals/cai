@@ -315,6 +315,56 @@
                                 Click="ResetButton_Click"/>
                     </StackPanel>
 
+                    <!-- Divider -->
+                    <Border Height="1"
+                            Background="{ThemeResource MaterialOutlineVariantBrush}"
+                            Margin="0,16"/>
+
+                    <!-- Summary Instructions Section -->
+                    <StackPanel Spacing="12">
+                        <TextBlock Text="Summary Instructions"
+                                   Style="{ThemeResource SubtitleTextBlockStyle}"
+                                   Foreground="{ThemeResource MaterialOnSurfaceBrush}"
+                                   FontWeight="SemiBold"/>
+                        
+                        <TextBox x:Name="SummaryInstructionTextBox"
+                                 PlaceholderText="Enter custom instructions for AI summary..."
+                                 Background="{ThemeResource MaterialSurfaceVariantBrush}"
+                                 BorderBrush="{ThemeResource MaterialOutlineVariantBrush}"
+                                 BorderThickness="1"
+                                 CornerRadius="8"
+                                 Padding="12"
+                                 MinHeight="80"
+                                 MaxHeight="120"
+                                 TextWrapping="Wrap"
+                                 AcceptsReturn="True"
+                                 ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                 TextChanged="SummaryInstructionTextBox_TextChanged"/>
+                        
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <Button x:Name="SearchInstructionsButton"
+                                    Content="🔍 Search Instructions"
+                                    Background="{ThemeResource MaterialSurfaceVariantBrush}"
+                                    Foreground="{ThemeResource MaterialOnSurfaceVariantBrush}"
+                                    BorderBrush="{ThemeResource MaterialOutlineVariantBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="8"
+                                    Padding="20,12"
+                                    Width="140"
+                                    Click="SearchInstructionsButton_Click"/>
+                            
+                            <Button x:Name="SaveInstructionButton"
+                                    Content="💾 Save"
+                                    Background="{ThemeResource MaterialPrimaryBrush}"
+                                    Foreground="{ThemeResource MaterialOnPrimaryBrush}"
+                                    CornerRadius="8"
+                                    Padding="20,12"
+                                    Width="140"
+                                    IsEnabled="False"
+                                    Click="SaveInstructionButton_Click"/>
+                        </StackPanel>
+                    </StackPanel>
+
                     <!-- Processing Status -->
                     <Border x:Name="StatusPanel"
                             Background="{ThemeResource MaterialSurfaceVariantBrush}"

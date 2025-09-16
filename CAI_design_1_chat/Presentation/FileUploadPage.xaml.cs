@@ -19,6 +19,7 @@ namespace CAI_design_1_chat.Presentation
         private StorageFile? _selectedFile;
         private FileProcessingService _fileProcessingService;
         private DatabaseService _databaseService;
+        private IPromptInstructionService _promptService;
         private string _rawContent = string.Empty;
         private string _summaryContent = string.Empty;
         private bool _isInSummaryMode = false;
@@ -28,6 +29,7 @@ namespace CAI_design_1_chat.Presentation
             this.InitializeComponent();
             _databaseService = new DatabaseService();
             _fileProcessingService = new FileProcessingService(_databaseService);
+            _promptService = new PromptInstructionService(_databaseService);
             UpdateLLMIndicator();
         }
 
@@ -184,9 +186,13 @@ namespace CAI_design_1_chat.Presentation
             
             try
             {
-                // TODO: Implement actual AI summarization
-                // For now, create a basic summary
-                _summaryContent = GenerateBasicSummary(_rawContent);
+                // Get custom instruction from TextBox or use default
+                var customInstruction = string.IsNullOrWhiteSpace(SummaryInstructionTextBox.Text) 
+                    ? "You are an executive assistant. Make a summary of the file and keep the original language of the file."
+                    : SummaryInstructionTextBox.Text.Trim();
+
+                // Generate summary with custom instruction
+                _summaryContent = await _fileProcessingService.GenerateSummaryAsync(_rawContent, customInstruction);
                 
                 // Switch to summary view
                 ViewModeToggle.IsOn = true;
@@ -449,6 +455,91 @@ namespace CAI_design_1_chat.Presentation
             };
 
             await successDialog.ShowAsync();
+        }
+
+        // Prompt Instruction System Event Handlers
+
+        private void SummaryInstructionTextBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            // Enable/disable Save button based on text content
+            var hasText = !string.IsNullOrWhiteSpace(SummaryInstructionTextBox.Text);
+            SaveInstructionButton.IsEnabled = hasText;
+        }
+
+        private async void SearchInstructionsButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var searchDialog = new PromptSearchDialog(_promptService)
+                {
+                    XamlRoot = this.XamlRoot
+                };
+
+                var result = await searchDialog.ShowAsync();
+                
+                if (result == ContentDialogResult.Primary && searchDialog.SelectedPrompt != null)
+                {
+                    // Populate the instruction text box with selected prompt
+                    SummaryInstructionTextBox.Text = searchDialog.SelectedPrompt.Instruction;
+                    
+                    // Increment usage count
+                    await _promptService.IncrementUsageAsync(searchDialog.SelectedPrompt.Id);
+                }
+            }
+            catch (Exception ex)
+            {
+                var errorDialog = new ContentDialog
+                {
+                    Title = "Error",
+                    Content = $"Failed to open prompt search: {ex.Message}",
+                    CloseButtonText = "OK",
+                    XamlRoot = this.XamlRoot
+                };
+                await errorDialog.ShowAsync();
+            }
+        }
+
+        private async void SaveInstructionButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var instruction = SummaryInstructionTextBox.Text.Trim();
+                if (string.IsNullOrWhiteSpace(instruction))
+                {
+                    return;
+                }
+
+                var saveDialog = new SavePromptDialog(_promptService, instruction)
+                {
+                    XamlRoot = this.XamlRoot
+                };
+
+                var result = await saveDialog.ShowAsync();
+                
+                if (result == ContentDialogResult.Primary && saveDialog.SavedPrompt != null)
+                {
+                    // Show success message
+                    var successDialog = new ContentDialog
+                    {
+                        Title = "Success",
+                        Content = $"Prompt instruction '{saveDialog.SavedPrompt.Title}' saved successfully!",
+                        CloseButtonText = "OK",
+                        XamlRoot = this.XamlRoot
+                    };
+                    await successDialog.ShowAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                var errorDialog = new ContentDialog
+                {
+                    Title = "Error",
+                    Content = $"Failed to save prompt instruction: {ex.Message}",
+                    CloseButtonText = "OK",
+                    XamlRoot = this.XamlRoot
+                };
+                await errorDialog.ShowAsync();
+            }
         }
     }
 }

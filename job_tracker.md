@@ -344,17 +344,120 @@ CAI_design_1_chat/
 
 ---
 
+## Phase 9 — Prompt Instruction System (NEW) 🎯
+
+### Step 1: Enhanced FileUploadPage UI 📝
+- [ ] **9.1** Add Summary Instructions section to Processing Actions panel
+  - Steps:
+    - Add divider below Reset button in FileUploadPage.xaml
+    - Add "Summary Instructions" header with Material Design styling
+    - Add multi-line TextBox for custom instructions with placeholder text
+    - Add Search Instructions and Save buttons with proper Material Design styling
+    - Implement button enable/disable logic based on TextBox content
+  - Acceptance: New UI section displays properly with Material Design consistency
+  - References: Enhanced Processing Actions Panel design in spec.md
+
+- [ ] **9.2** Create Prompt Search Modal Dialog
+  - Steps:
+    - Create `Presentation/Dialogs/PromptSearchDialog.xaml` and code-behind
+    - Implement search TextBox for title/description filtering
+    - Add ComboBox for prompt_type filtering (All, summary, extraction, analysis, custom)
+    - Create DataGrid/ListView for displaying search results with columns: Title, Type, Language, Description, Usage
+    - Add Preview TextBox showing selected instruction
+    - Add Cancel and Select buttons with proper event handling
+  - Acceptance: Modal opens, searches database, displays results, allows selection
+  - References: Prompt Search Modal design in spec.md
+
+- [ ] **9.3** Create Save Prompt Modal Dialog
+  - Steps:
+    - Create `Presentation/Dialogs/SavePromptDialog.xaml` and code-behind
+    - Add form fields: Title* (TextBox), Type* (ComboBox), Language* (ComboBox), Description (TextBox)
+    - Add Instruction* (multi-line TextBox) pre-populated from main form
+    - Add Created by field and "Mark as System Prompt" checkbox
+    - Implement form validation for required fields
+    - Add Cancel and Save buttons with proper validation
+  - Acceptance: Modal opens, validates input, saves to database
+  - References: Save Prompt Modal design in spec.md
+
+### Step 2: Database Integration for Prompts 🗄️
+- [ ] **9.4** Create Prompt Repository Service
+  - Steps:
+    - Create `Services/IPromptInstructionService.cs` interface
+    - Create `Services/PromptInstructionService.cs` implementation
+    - Add methods: SearchPrompts(searchTerm, promptType), SavePrompt(prompt), IncrementUsage(id)
+    - Implement proper SQL queries with parameterized statements
+    - Add error handling and logging
+  - Acceptance: Service can search, save, and update prompt instructions
+  - References: Database Integration queries in spec.md
+
+- [ ] **9.5** Create Prompt Instruction Model
+  - Steps:
+    - Create `Models/PromptInstruction.cs` matching database schema
+    - Add properties: Id, PromptType, Language, Instruction, Title, Description, IsSystem, CreatedBy, CreatedAt, UpdatedAt, UsageCount
+    - Add validation attributes and proper data types
+    - Add constructor and helper methods
+  - Acceptance: Model matches database schema and supports all operations
+  - References: prompt_instructions table schema
+
+### Step 3: Enhanced AI Summarization 🤖
+- [ ] **9.6** Integrate custom instructions with AI summarization
+  - Steps:
+    - Modify FileProcessingService.GenerateSummaryAsync to accept custom instruction parameter
+    - Update AI provider calls to include custom instruction in prompt
+    - Implement default instruction fallback: "You are an executive assistant. Make a summary of the file and keep the original language of the file."
+    - Add instruction validation and sanitization
+  - Acceptance: AI summarization uses custom instructions when provided
+  - References: Enhanced AI Summarization in spec.md
+
+- [ ] **9.7** Wire up FileUploadPage event handlers
+  - Steps:
+    - Implement SearchInstructionsButton_Click to open PromptSearchDialog
+    - Implement SaveInstructionButton_Click to open SavePromptDialog
+    - Update GenerateSummaryButton_Click to use custom instruction from TextBox
+    - Add TextBox_TextChanged handler to enable/disable Save button
+    - Add proper error handling and user feedback
+  - Acceptance: All buttons work correctly with proper user feedback
+  - References: Enhanced User Experience Flow in spec.md
+
+### Step 4: Testing and Polish 🎨
+- [ ] **9.8** Add comprehensive error handling
+  - Steps:
+    - Add try-catch blocks around database operations
+    - Implement user-friendly error messages for common scenarios
+    - Add validation for instruction length and content
+    - Handle database connection failures gracefully
+  - Acceptance: System handles errors gracefully with informative messages
+
+- [ ] **9.9** Performance optimization and caching
+  - Steps:
+    - Implement caching for frequently used prompts
+    - Add pagination for large prompt search results
+    - Optimize database queries with proper indexing
+    - Add loading indicators for database operations
+  - Acceptance: System performs well with large prompt databases
+
+- [ ] **9.10** Update documentation and tutorial
+  - Steps:
+    - Update TUTORIAL.md with prompt instruction system usage
+    - Add screenshots and examples of the new feature
+    - Document best practices for creating effective prompts
+    - Update spec.md with final implementation details
+  - Acceptance: Documentation is complete and accurate
+
+---
+
 ## Phase 8 — File Processing and Context Management System
 
-### Step 1: Database Infrastructure 🗄️
-- [ ] **8.1** Add SQLite database integration
+### Step 1: Database Infrastructure 🗄️ ✅ COMPLETED
+- [x] **8.1** Add SQLite database integration ✅
   - Steps:
-    - Add `Microsoft.Data.Sqlite` NuGet package
-    - Create `Services/Data/DatabaseService.cs` for connection management
-    - Implement database initialization and schema creation
-    - Add migration system for schema updates
-  - Acceptance: Database creates successfully with all required tables
+    - Add `Microsoft.Data.Sqlite` NuGet package ✅
+    - Create `Services/Data/DatabaseService.cs` for connection management ✅
+    - Implement database initialization and schema creation ✅
+    - Add migration system for schema updates ✅
+  - Acceptance: Database creates successfully with all required tables ✅
   - References: Enhanced database schema in spec.md
+  - **Implementation**: DatabaseService with proper SQLite initialization, schema execution, and connection management
 
 - [ ] **8.2** Create data models for file processing
   - Steps:
@@ -474,13 +577,28 @@ CAI_design_1_chat/
     - Add memory management for large file content
   - Acceptance: System performs well with large files and datasets
 
-## Technical Dependencies for Phase 8
+## Technical Dependencies for Phase 8 & 9
 ```xml
 <!-- Add to CAI_design_1_chat.csproj -->
-<PackageReference Include="Microsoft.Data.Sqlite" Version="8.0.0" />
-<PackageReference Include="PdfPig" Version="0.1.8" />
-<PackageReference Include="DocumentFormat.OpenXml" Version="3.0.0" />
+<PackageReference Include="Microsoft.Data.Sqlite" Version="8.0.0" /> <!-- ✅ ADDED -->
+<PackageReference Include="iText7" Version="8.0.2" /> <!-- ✅ ADDED for PDF extraction -->
+<PackageReference Include="DocumentFormat.OpenXml" Version="3.0.0" /> <!-- TODO: For DOCX extraction -->
 ```
+
+## Current Implementation Status
+
+### ✅ Completed Features
+- **SQLite Database**: Full integration with schema execution and connection management
+- **File Upload Page**: Complete three-panel layout with Material Design
+- **PDF Text Extraction**: Using iText7 library with proper error handling
+- **AI Settings Integration**: Modal dialog connected to file upload page
+- **Manual Text Extraction**: User-controlled workflow with proper UI feedback
+- **Material Design Consistency**: Verified no Fluent Design elements
+
+### 🎯 Current Phase: Prompt Instruction System
+**Priority**: HIGH - Enhances AI summarization with customizable instructions
+**Estimated Time**: 2-3 days
+**Dependencies**: Existing SQLite database and FileUploadPage implementation
 
 ---
 

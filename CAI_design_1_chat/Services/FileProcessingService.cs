@@ -125,6 +125,23 @@ namespace CAI_design_1_chat.Services
             return $"[DOCX Content Placeholder for {Path.GetFileName(filePath)}]\n\nDOCX extraction not yet implemented. Please install DocumentFormat.OpenXml package.";
         }
 
+        public async Task<string> GenerateSummaryAsync(string content, string? customInstruction = null)
+        {
+            if (string.IsNullOrEmpty(content))
+                return "No content available for summary.";
+
+            // Use custom instruction or default
+            var instruction = string.IsNullOrWhiteSpace(customInstruction) 
+                ? "You are an executive assistant. Make a summary of the file and keep the original language of the file."
+                : customInstruction;
+
+            // TODO: Implement actual AI summarization with custom instruction
+            // For now, return enhanced basic summary with instruction context
+            var basicSummary = GenerateBasicSummary(content);
+            
+            return $"[AI Summary with instruction: \"{instruction}\"]\n\n{basicSummary}\n\nNote: This is a placeholder. AI integration will use the custom instruction to generate a proper summary.";
+        }
+
         private string GenerateBasicSummary(string content)
         {
             if (string.IsNullOrEmpty(content))

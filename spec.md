@@ -6,9 +6,39 @@ A modern, cross-platform chat application built with Uno Platform, featuring com
 ## Technology Stack
 - **.NET 9.0**: Latest framework with performance improvements
 - **Uno Platform 5.4+**: Cross-platform UI framework targeting macOS, Windows, and Linux
-- **WinUI 3**: Modern Windows UI with Material Design theming
+- **WinUI 3**: Modern Windows UI foundation
 - **SQLite**: Local database with Microsoft.Data.Sqlite 9.0.9
-- **Material Design**: Consistent theming and modern UX patterns
+- **Material Design**: Primary design system using Uno.Toolkit.UI.Material
+- **iText7**: PDF text extraction library (version 8.0.2)
+
+## Design System Guidelines
+
+### Material Design Implementation
+**CRITICAL**: This application uses **Material Design exclusively** - no Fluent Design elements.
+
+- **Theme Provider**: `Uno.Toolkit.UI.Material.MaterialToolkitTheme`
+- **Resource Naming**: All theme resources use `Material*` prefix
+- **Color Palette**: Custom color overrides in `Styles/ColorPaletteOverride.xaml`
+- **Typography**: Roboto font family (Material Design standard)
+- **Component Library**: Uno Toolkit Material components only
+
+### Material Design Resources Used
+```xml
+<!-- Primary Colors -->
+{ThemeResource MaterialPrimaryBrush}
+{ThemeResource MaterialOnPrimaryBrush}
+{ThemeResource MaterialPrimaryContainerBrush}
+
+<!-- Surface Colors -->
+{ThemeResource MaterialSurfaceBrush}
+{ThemeResource MaterialOnSurfaceBrush}
+{ThemeResource MaterialSurfaceVariantBrush}
+{ThemeResource MaterialOnSurfaceVariantBrush}
+
+<!-- Outline Colors -->
+{ThemeResource MaterialOutlineVariantBrush}
+{ThemeResource MaterialBackgroundBrush}
+```
 
 ## Architecture
 
@@ -94,18 +124,246 @@ graph TB
 ### FileUploadPage Layout (Full Screen)
 ```
 +-----------------------------------------------------------------------------------+
-| [← Back to Chat] File Processing                              [⚙️ AI Settings]   |
+| [← Back to Chat] File Processing                              [🤖 AI Settings]   |
 +-----------------------------------------------------------------------------------+
 |   File Upload Zone    |        Live Preview Editor        |  Processing Actions  |
 |  ┌─────────────────┐  |  ┌─────────────────────────────┐  |  ┌─────────────────┐ |
-|  │ Drag & Drop     │  |  │ Raw Text ↔ Summary Toggle  │  |  │ Extract Text    │ |
-|  │ Browse Files    │  |  │                             │  |  │ Generate Summary│ |
-|  │                 │  |  │ Editable Content Preview    │  |  │ Save to DB      │ |
-|  │ File Info       │  |  │                             │  |  │ Reset           │ |
-|  │ LLM Indicator   │  |  │                             │  |  │                 │ |
+|  │ 📁 Drag & Drop  │  |  │ Raw Text / Summary Toggle   │  |  │ Extract Text    │ |
+|  │ Browse Files    │  |  │ ToggleSwitch: OFF=Raw ON=Sum│  |  │ Generate Summary│ |
+|  │                 │  |  │                             │  |  │ Save to DB      │ |
+|  │ File Info:      │  |  │ Editable TextBox            │  |  │ Reset           │ |
+|  │ • Name          │  |  │ - Raw: Extracted content    │  |  │                 │ |
+|  │ • Size          │  |  │ - Summary: AI summary       │  |  │ Status Panel    │ |
+|  │ 🤖 AI Model     │  |  │ - Empty: "Click Generate"   │  |  │                 │ |
 |  └─────────────────┘  |  └─────────────────────────────┘  |  └─────────────────┘ |
 +-----------------------------------------------------------------------------------+
 ```
+
+## File Upload UX Design Principles
+
+### Layout Architecture
+- **Three-Panel Design**: 33% - 50% - 33% column distribution
+- **Material Design Cards**: Each panel uses Material surface styling
+- **Consistent Spacing**: 24px margins, 16px internal padding
+- **Rounded Corners**: 12px border radius for main containers, 8px for buttons
+
+### Enhanced Processing Actions Panel
+**NEW FEATURE**: Prompt Instruction System for AI Summarization
+
+```
+Processing Actions Panel (Right Side):
+┌─────────────────────────────────────┐
+│ Extract Text                        │
+│ Generate Summary                    │
+│ Save to Database                    │
+│ Reset                              │
+├─────────────────────────────────────┤ ← Divider
+│ Summary Instructions                │
+│ ┌─────────────────────────────────┐ │
+│ │ [Free text instruction box]     │ │
+│ │ Multi-line TextBox              │ │
+│ │ Placeholder: "Enter custom      │ │
+│ │ instructions for AI summary..." │ │
+│ └─────────────────────────────────┘ │
+│ [🔍 Search Instructions] [💾 Save]  │
+│                                     │
+│ Status Panel                        │
+└─────────────────────────────────────┘
+```
+
+### Enhanced User Experience Flow with Prompt Instructions
+```mermaid
+flowchart TD
+    A[User arrives at FileUploadPage] --> B[Empty state with drag zone]
+    B --> C{File selected?}
+    C -->|Drag & Drop| D[File info displayed]
+    C -->|Browse button| D
+    D --> E[Manual action required]
+    E --> F{User clicks Extract Text?}
+    F -->|Yes| G[Text extraction with loading]
+    F -->|No| E
+    G --> H[Raw text displayed]
+    H --> I{Toggle to Summary?}
+    I -->|Yes| J{Summary exists?}
+    J -->|No| K["Click Generate Summary" message]
+    J -->|Yes| L[Show existing summary]
+    I -->|No| H
+    
+    K --> M{Custom instruction needed?}
+    M -->|Search existing| N[Click 🔍 Search Instructions]
+    M -->|Type custom| O[Type in instruction TextBox]
+    M -->|Use default| P[Click Generate Summary]
+    
+    N --> Q[Prompt Search Modal opens]
+    Q --> R[Search in title/description fields]
+    R --> S[Filter by prompt_type dropdown]
+    S --> T[Select prompt from table]
+    T --> U[Preview shows instruction text]
+    U --> V[Click Select button]
+    V --> W[Modal closes, instruction populated]
+    
+    O --> X{Save button enabled?}
+    X -->|Text modified| Y[Save button enabled]
+    X -->|No changes| P
+    
+    Y --> Z[Click 💾 Save button]
+    Z --> AA[Save Prompt Modal opens]
+    AA --> BB[Fill required fields]
+    BB --> CC[Click Save in modal]
+    CC --> DD[New prompt saved to database]
+    DD --> EE[Modal closes, instruction remains]
+    
+    W --> P
+    EE --> P
+    P --> FF[AI generates summary with custom instruction]
+    FF --> L
+    L --> GG[User can edit content]
+    GG --> HH[Save to database]
+```
+
+### Material Design Implementation Details
+
+#### Visual Hierarchy
+- **Primary Actions**: Material Primary color (`MaterialPrimaryBrush`)
+- **Secondary Actions**: Material Surface Variant (`MaterialSurfaceVariantBrush`)
+- **Surfaces**: Material Surface with proper elevation (`MaterialSurfaceBrush`)
+- **Borders**: Material Outline Variant for subtle separation
+
+#### Interactive States
+- **Drag Over**: Border changes to `MaterialPrimaryBrush` with 3px thickness
+- **Default**: Border uses `MaterialOutlineVariantBrush` with 2px thickness
+- **Loading States**: Progress indicators with Material Primary color
+- **Disabled States**: Reduced opacity following Material guidelines
+
+#### Typography Scale
+- **Page Title**: `TitleTextBlockStyle` with SemiBold weight
+- **Section Headers**: `SubtitleTextBlockStyle` with SemiBold weight
+- **Body Text**: `BodyTextBlockStyle` with Regular weight
+- **Captions**: `CaptionTextBlockStyle` for secondary information
+
+#### Component Specifications
+
+**Drop Zone**:
+- Height: 200px
+- Background: `MaterialSurfaceVariantBrush`
+- Border: 2px `MaterialOutlineVariantBrush`, 3px `MaterialPrimaryBrush` on hover
+- Corner Radius: 12px
+- Icon: 48px FontIcon with folder glyph
+
+**Action Buttons**:
+- Primary: `MaterialPrimaryBrush` background, `MaterialOnPrimaryBrush` text
+- Secondary: `MaterialSurfaceVariantBrush` background with outline
+- Padding: 20px horizontal, 12px vertical
+- Corner Radius: 8px
+- Margin: 8px vertical spacing
+
+**Content Preview**:
+- Background: `MaterialSurfaceBrush`
+- Border: 1px `MaterialOutlineVariantBrush`
+- Corner Radius: 12px
+- Min Height: 400px
+- Scrollable with Material scrollbar styling
+
+**Summary Instructions TextBox**:
+- Background: `MaterialSurfaceVariantBrush`
+- Border: 1px `MaterialOutlineVariantBrush`
+- Corner Radius: 8px
+- Min Height: 80px
+- Placeholder: "Enter custom instructions for AI summary..."
+- Font: `BodyTextBlockStyle`
+
+**Instruction Action Buttons**:
+- Search: `MaterialSurfaceVariantBrush` background with `🔍` icon
+- Save: `MaterialPrimaryBrush` background when enabled, disabled when empty
+- Width: 140px each, 8px margin between
+- Corner Radius: 8px
+
+## Prompt Instruction System
+
+### Modal Dialog Designs
+
+#### Prompt Search Modal
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│ Select Prompt Instruction                                          [✕]  │
+├─────────────────────────────────────────────────────────────────────────┤
+│ Search (Title/Description): [________________________]                  │
+│ Filter by Type: [All Types ▼] [summary|extraction|analysis|custom]     │
+├─────────────────────────────────────────────────────────────────────────┤
+│ Title                │ Type      │ Lang │ Description        │ Usage    │
+├─────────────────────────────────────────────────────────────────────────┤
+│ ● Résumé Standard    │ summary   │ fr   │ Prompt par défaut  │ 15 uses │
+│ ● Document Analysis  │ analysis  │ en   │ Detailed analysis  │ 8 uses  │
+│ ● Text Extraction    │ extraction│ fr   │ Extraction de...   │ 23 uses │
+│ ● Custom Business    │ custom    │ fr   │ Business context   │ 3 uses  │
+├─────────────────────────────────────────────────────────────────────────┤
+│ Preview: [Selected instruction text preview...]                         │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                          [Cancel] [Select] 🎯           │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+#### Save Prompt Modal
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│ Save Prompt Instruction                                            [✕]  │
+├─────────────────────────────────────────────────────────────────────────┤
+│ Title*: [_________________________________________________]             │
+│ Type*: [summary ▼] [summary|extraction|analysis|custom]               │
+│ Language*: [fr ▼] [fr|en|es|...]                                      │
+│ Description: [_______________________________________________]          │
+│                                                                         │
+│ Instruction*: ┌─────────────────────────────────────────────────────┐  │
+│               │ [Current instruction text from main form]           │  │
+│               │                                                     │  │
+│               │                                                     │  │
+│               └─────────────────────────────────────────────────────┘  │
+│                                                                         │
+│ Created by: [Current User/System]                                      │
+│ □ Mark as System Prompt                                                │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                          [Cancel] [Save] 💾             │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+### Database Integration
+
+#### Search Query Implementation
+```sql
+-- Search in title AND description with prompt_type filter
+SELECT * FROM prompt_instructions 
+WHERE (title LIKE '%search_term%' OR description LIKE '%search_term%')
+  AND (prompt_type = 'selected_type' OR 'selected_type' = 'all')
+ORDER BY usage_count DESC, created_at DESC;
+```
+
+#### Save Implementation
+```sql
+-- Insert new prompt instruction
+INSERT INTO prompt_instructions (
+    prompt_type, language, instruction, title, description, 
+    is_system, created_by, usage_count
+) VALUES (?, ?, ?, ?, ?, ?, ?, 0);
+```
+
+#### Usage Tracking
+```sql
+-- Increment usage_count when prompt is selected
+UPDATE prompt_instructions 
+SET usage_count = usage_count + 1, updated_at = CURRENT_TIMESTAMP 
+WHERE id = ?;
+```
+
+### Enhanced AI Summarization
+
+**Default Instruction**: "You are an executive assistant. Make a summary of the file and keep the original language of the file."
+
+**Custom Instruction Flow**:
+1. User types custom instruction in TextBox
+2. OR user searches and selects from database
+3. Generate Summary button uses: `raw_text + custom_instruction`
+4. AI provider processes with enhanced context
+5. Result displayed in summary toggle view
 
 ## Implementation Details & Lessons Learned
 
@@ -164,6 +422,21 @@ CREATE TRIGGER update_file_data_timestamp
     BEGIN
         UPDATE file_data SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
     END;
+```
+
+### Database Location
+**Development/Debug Path**:
+- **macOS**: `~/Library/Application Support/CAI_design_1_chat/cai_chat.db`
+- **Windows**: `%LOCALAPPDATA%\CAI_design_1_chat\cai_chat.db`
+- **Linux**: `~/.local/share/CAI_design_1_chat/cai_chat.db`
+
+**Access Pattern**:
+```csharp
+var appDataPath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+var appFolder = Path.Combine(appDataPath, "CAI_design_1_chat");
+_databasePath = Path.Combine(appFolder, "cai_chat.db");
+```
+
 ## Development Commands & Workflow
 
 ### Essential Commands
