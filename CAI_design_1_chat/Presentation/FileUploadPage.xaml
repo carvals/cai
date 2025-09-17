@@ -265,6 +265,30 @@
                                     Click="SaveInstructionButton_Click"/>
                         </StackPanel>
                     </StackPanel>
+
+                    <!-- Processing Status -->
+                    <Border x:Name="StatusPanel"
+                            Background="{ThemeResource MaterialSurfaceVariantBrush}"
+                            BorderBrush="{ThemeResource MaterialOutlineVariantBrush}"
+                            BorderThickness="1"
+                            CornerRadius="8"
+                            Padding="16"
+                            Margin="0,16,0,0"
+                            Visibility="Collapsed">
+                        <StackPanel Spacing="8">
+                            <TextBlock Text="Processing Status"
+                                       Style="{ThemeResource CaptionTextBlockStyle}"
+                                       Foreground="{ThemeResource MaterialOnSurfaceVariantBrush}"
+                                       FontWeight="SemiBold"/>
+                            <ProgressBar x:Name="ProcessingProgress"
+                                         IsIndeterminate="True"
+                                         Foreground="{ThemeResource MaterialPrimaryBrush}"/>
+                            <TextBlock x:Name="StatusText"
+                                       Text="Processing file..."
+                                       Style="{ThemeResource CaptionTextBlockStyle}"
+                                       Foreground="{ThemeResource MaterialOnSurfaceVariantBrush}"/>
+                        </StackPanel>
+                    </Border>
                 </StackPanel>
             </Border>
 
@@ -330,7 +354,7 @@
                 </Grid>
             </Border>
 
-            <!-- Right Panel: Empty (Processing Actions moved to left) -->
+            <!-- Right Panel: Empty (Processing Actions and Status moved to left) -->
             <Border Grid.Column="4"
                     Background="{ThemeResource MaterialSurfaceBrush}"
                     BorderBrush="{ThemeResource MaterialOutlineVariantBrush}"
@@ -338,28 +362,7 @@
                     CornerRadius="12"
                     Padding="24">
                 <StackPanel Spacing="24">
-                    <!-- Processing Status -->
-                    <Border x:Name="StatusPanel"
-                            Background="{ThemeResource MaterialSurfaceVariantBrush}"
-                            BorderBrush="{ThemeResource MaterialOutlineVariantBrush}"
-                            BorderThickness="1"
-                            CornerRadius="8"
-                            Padding="16"
-                            Visibility="Collapsed">
-                        <StackPanel Spacing="8">
-                            <TextBlock Text="Processing Status"
-                                       Style="{ThemeResource CaptionTextBlockStyle}"
-                                       Foreground="{ThemeResource MaterialOnSurfaceVariantBrush}"
-                                       FontWeight="SemiBold"/>
-                            <ProgressBar x:Name="ProcessingProgress"
-                                         IsIndeterminate="True"
-                                         Foreground="{ThemeResource MaterialPrimaryBrush}"/>
-                            <TextBlock x:Name="StatusText"
-                                       Text="Processing file..."
-                                       Style="{ThemeResource CaptionTextBlockStyle}"
-                                       Foreground="{ThemeResource MaterialOnSurfaceVariantBrush}"/>
-                        </StackPanel>
-                    </Border>
+                    <!-- Empty - all content moved to left panel -->
                 </StackPanel>
             </Border>
         </Grid>
