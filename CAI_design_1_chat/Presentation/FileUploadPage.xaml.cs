@@ -386,9 +386,7 @@ namespace CAI_design_1_chat.Presentation
             GenerateSummaryButton.IsEnabled = false;
             SaveButton.IsEnabled = false;
             
-            // Reset drop zone visual state
-            DropZone.BorderBrush = App.Current.Resources["MaterialOutlineVariantBrush"] as Microsoft.UI.Xaml.Media.Brush;
-            DropZone.BorderThickness = new Thickness(2);
+            // Drop zone removed in redesign - no visual state to reset
         }
 
         private void UpdateLLMIndicator()

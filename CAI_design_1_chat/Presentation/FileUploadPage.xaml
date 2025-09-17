@@ -9,12 +9,12 @@
             <Setter Property="Background" Value="{ThemeResource MaterialPrimaryBrush}"/>
             <Setter Property="Foreground" Value="{ThemeResource MaterialOnPrimaryBrush}"/>
             <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="CornerRadius" Value="8"/>
-            <Setter Property="Padding" Value="20,12"/>
-            <Setter Property="Margin" Value="0,8"/>
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="Padding" Value="16,8"/>
+            <Setter Property="Margin" Value="0,4"/>
             <Setter Property="HorizontalAlignment" Value="Stretch"/>
             <Setter Property="FontWeight" Value="Medium"/>
-            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontSize" Value="13"/>
         </Style>
         
         <Style x:Key="SecondaryButtonStyle" TargetType="Button">
@@ -109,91 +109,161 @@
                 <ColumnDefinition Width="1*"/>
             </Grid.ColumnDefinitions>
 
-            <!-- Left Panel: File Upload Zone -->
+            <!-- Left Panel: Redesigned Layout -->
             <Border Grid.Column="0"
                     Background="{ThemeResource MaterialSurfaceBrush}"
                     BorderBrush="{ThemeResource MaterialOutlineVariantBrush}"
                     BorderThickness="1"
                     CornerRadius="12"
                     Padding="24">
-                <StackPanel Spacing="24">
-                    <!-- Upload Zone Header -->
+                <StackPanel Spacing="8">
+                    <!-- Upload File Header -->
                     <TextBlock Text="Upload File"
                                Style="{ThemeResource SubtitleTextBlockStyle}"
                                Foreground="{ThemeResource MaterialOnSurfaceBrush}"
                                FontWeight="SemiBold"
-                               HorizontalAlignment="Center"/>
+                               HorizontalAlignment="Center"
+                               Margin="0,0,0,4"/>
 
-                    <!-- Drop Zone -->
-                    <Border x:Name="DropZone"
-                            Height="200"
-                            Background="{ThemeResource MaterialSurfaceVariantBrush}"
-                            BorderBrush="{ThemeResource MaterialOutlineVariantBrush}"
-                            BorderThickness="2"
-                            CornerRadius="12"
-                            AllowDrop="True"
-                            DragOver="DropZone_DragOver"
-                            Drop="DropZone_Drop">
-                        <StackPanel HorizontalAlignment="Center" 
-                                    VerticalAlignment="Center"
-                                    Spacing="16">
-                            <FontIcon Glyph="&#xE8B7;" 
-                                      FontSize="48"
-                                      Foreground="{ThemeResource MaterialOnSurfaceVariantBrush}"/>
-                            <TextBlock Text="Drag &amp; drop your file here"
-                                       Style="{ThemeResource BodyTextBlockStyle}"
-                                       Foreground="{ThemeResource MaterialOnSurfaceVariantBrush}"
-                                       HorizontalAlignment="Center"
-                                       FontWeight="Medium"/>
-                            <TextBlock Text="or click to browse"
-                                       Style="{ThemeResource CaptionTextBlockStyle}"
-                                       Foreground="{ThemeResource MaterialOnSurfaceVariantBrush}"
-                                       HorizontalAlignment="Center"/>
-                            <Button x:Name="BrowseButton"
-                                    Content="Browse Files"
-                                    Style="{StaticResource SecondaryButtonStyle}"
-                                    Click="BrowseButton_Click"
-                                    HorizontalAlignment="Center"
-                                    MinWidth="140"/>
-                        </StackPanel>
-                    </Border>
+                    <!-- Browse Files Button -->
+                    <Button x:Name="BrowseButton"
+                            Content="Browse Files"
+                            Style="{StaticResource ActionButtonStyle}"
+                            Click="BrowseButton_Click"
+                            HorizontalAlignment="Stretch"
+                            Margin="0,0,0,8"/>
 
-                    <!-- File Info Panel -->
-                    <StackPanel x:Name="FileInfoPanel" Visibility="Collapsed" Spacing="16">
+                    <!-- File Information Panel -->
+                    <StackPanel x:Name="FileInfoPanel" Visibility="Collapsed" Spacing="12">
                         <TextBlock Text="File Information"
                                    Style="{ThemeResource BodyTextBlockStyle}"
                                    Foreground="{ThemeResource MaterialOnSurfaceBrush}"
                                    FontWeight="SemiBold"/>
                         
                         <StackPanel Spacing="8">
-                            <TextBlock x:Name="SelectedFileText"
-                                       Text="Selected File: document.pdf"
-                                       Style="{ThemeResource CaptionTextBlockStyle}"
-                                       Foreground="{ThemeResource MaterialOnSurfaceBrush}"
-                                       TextWrapping="Wrap"/>
-                            <TextBlock x:Name="FileSizeText"
-                                       Text="Size: 2.3 MB"
-                                       Style="{ThemeResource CaptionTextBlockStyle}"
-                                       Foreground="{ThemeResource MaterialOnSurfaceVariantBrush}"/>
-                        </StackPanel>
-
-                        <!-- LLM Indicator -->
-                        <Border Background="{ThemeResource MaterialPrimaryContainerBrush}"
-                                BorderBrush="{ThemeResource MaterialPrimaryBrush}"
-                                BorderThickness="1"
-                                CornerRadius="8"
-                                Padding="12">
                             <StackPanel Orientation="Horizontal" Spacing="8">
-                                <FontIcon Glyph="🤖" 
-                                          FontSize="16"
-                                          Foreground="{ThemeResource MaterialPrimaryBrush}"/>
+                                <TextBlock Text="📄" FontSize="16" VerticalAlignment="Center"/>
+                                <TextBlock x:Name="SelectedFileText"
+                                           Text="CAI-TUI-Spec.summary.md"
+                                           Style="{ThemeResource CaptionTextBlockStyle}"
+                                           Foreground="{ThemeResource MaterialOnSurfaceBrush}"
+                                           TextWrapping="Wrap"
+                                           VerticalAlignment="Center"/>
+                            </StackPanel>
+                            <TextBlock x:Name="FileSizeText"
+                                       Text="Size: 1.42 KB"
+                                       Style="{ThemeResource CaptionTextBlockStyle}"
+                                       Foreground="{ThemeResource MaterialOnSurfaceVariantBrush}"
+                                       Margin="24,0,0,0"/>
+                            
+                            <!-- AI Model Indicator -->
+                            <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,8,0,0">
+                                <TextBlock Text="🤖" FontSize="16" VerticalAlignment="Center"/>
                                 <TextBlock x:Name="LLMIndicatorText"
-                                           Text="AI Model: OpenAI GPT-4"
+                                           Text="AI Model: OpenAI - gpt-4.1"
                                            Style="{ThemeResource CaptionTextBlockStyle}"
                                            Foreground="{ThemeResource MaterialPrimaryBrush}"
-                                           FontWeight="Medium"/>
+                                           FontWeight="Medium"
+                                           VerticalAlignment="Center"/>
                             </StackPanel>
-                        </Border>
+                        </StackPanel>
+                    </StackPanel>
+
+                    <!-- First Divider -->
+                    <Border Height="2"
+                            Background="{ThemeResource MaterialOutlineBrush}"
+                            Margin="0,12,0,8"
+                            CornerRadius="1"/>
+
+                    <!-- Processing Actions -->
+                    <StackPanel Spacing="4">
+                        <Button x:Name="ConvertToTextButton"
+                                Content="Extract Text"
+                                Style="{StaticResource ActionButtonStyle}"
+                                Click="ConvertToTextButton_Click"
+                                IsEnabled="False">
+                            <Button.Resources>
+                                <Style TargetType="Button" BasedOn="{StaticResource ActionButtonStyle}">
+                                    <Setter Property="Background" Value="{ThemeResource MaterialSecondaryBrush}"/>
+                                    <Setter Property="Foreground" Value="{ThemeResource MaterialOnSecondaryBrush}"/>
+                                </Style>
+                            </Button.Resources>
+                        </Button>
+
+                        <Button x:Name="GenerateSummaryButton"
+                                Content="Generate Summary"
+                                Style="{StaticResource ActionButtonStyle}"
+                                Click="GenerateSummaryButton_Click"
+                                IsEnabled="False"/>
+
+                        <Button x:Name="SaveButton"
+                                Content="Save to Database"
+                                Style="{StaticResource ActionButtonStyle}"
+                                Click="SaveButton_Click"
+                                IsEnabled="False">
+                            <Button.Resources>
+                                <Style TargetType="Button" BasedOn="{StaticResource ActionButtonStyle}">
+                                    <Setter Property="Background" Value="{ThemeResource MaterialTertiaryBrush}"/>
+                                    <Setter Property="Foreground" Value="{ThemeResource MaterialOnTertiaryBrush}"/>
+                                </Style>
+                            </Button.Resources>
+                        </Button>
+
+                        <Button x:Name="ResetButton"
+                                Content="Reset"
+                                Style="{StaticResource SecondaryButtonStyle}"
+                                Click="ResetButton_Click"/>
+                    </StackPanel>
+
+                    <!-- Second Divider -->
+                    <Border Height="2"
+                            Background="{ThemeResource MaterialOutlineBrush}"
+                            Margin="0,8,0,12"
+                            CornerRadius="1"/>
+
+                    <!-- Summary Instructions Section -->
+                    <StackPanel Spacing="12">
+                        <TextBlock Text="Summary Instructions"
+                                   Style="{ThemeResource BodyTextBlockStyle}"
+                                   Foreground="{ThemeResource MaterialOnSurfaceBrush}"
+                                   FontWeight="SemiBold"/>
+                        
+                        <TextBox x:Name="SummaryInstructionTextBox"
+                                 PlaceholderText="Enter custom instructions for AI summary..."
+                                 Background="{ThemeResource MaterialSurfaceVariantBrush}"
+                                 BorderBrush="{ThemeResource MaterialOutlineVariantBrush}"
+                                 BorderThickness="1"
+                                 CornerRadius="8"
+                                 Padding="12"
+                                 MinHeight="60"
+                                 MaxHeight="100"
+                                 TextWrapping="Wrap"
+                                 AcceptsReturn="True"
+                                 ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                 TextChanged="SummaryInstructionTextBox_TextChanged"/>
+                        
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <Button x:Name="SearchInstructionsButton"
+                                    Content="🔍 Search"
+                                    Background="{ThemeResource MaterialSurfaceVariantBrush}"
+                                    Foreground="{ThemeResource MaterialOnSurfaceVariantBrush}"
+                                    BorderBrush="{ThemeResource MaterialOutlineVariantBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="8"
+                                    Padding="16,8"
+                                    HorizontalAlignment="Stretch"
+                                    Click="SearchInstructionsButton_Click"/>
+                            
+                            <Button x:Name="SaveInstructionButton"
+                                    Content="💾 Save"
+                                    Background="{ThemeResource MaterialPrimaryBrush}"
+                                    Foreground="{ThemeResource MaterialOnPrimaryBrush}"
+                                    CornerRadius="8"
+                                    Padding="16,8"
+                                    HorizontalAlignment="Stretch"
+                                    IsEnabled="False"
+                                    Click="SaveInstructionButton_Click"/>
+                        </StackPanel>
                     </StackPanel>
                 </StackPanel>
             </Border>
@@ -260,7 +330,7 @@
                 </Grid>
             </Border>
 
-            <!-- Right Panel: Processing Actions -->
+            <!-- Right Panel: Empty (Processing Actions moved to left) -->
             <Border Grid.Column="4"
                     Background="{ThemeResource MaterialSurfaceBrush}"
                     BorderBrush="{ThemeResource MaterialOutlineVariantBrush}"
@@ -268,103 +338,6 @@
                     CornerRadius="12"
                     Padding="24">
                 <StackPanel Spacing="24">
-                    <!-- Actions Header -->
-                    <TextBlock Text="Processing Actions"
-                               Style="{ThemeResource SubtitleTextBlockStyle}"
-                               Foreground="{ThemeResource MaterialOnSurfaceBrush}"
-                               FontWeight="SemiBold"
-                               HorizontalAlignment="Center"/>
-
-                    <!-- Action Buttons -->
-                    <StackPanel Spacing="12">
-                        <Button x:Name="ConvertToTextButton"
-                                Content="Extract Text"
-                                Style="{StaticResource ActionButtonStyle}"
-                                Click="ConvertToTextButton_Click"
-                                IsEnabled="False">
-                            <Button.Resources>
-                                <Style TargetType="Button" BasedOn="{StaticResource ActionButtonStyle}">
-                                    <Setter Property="Background" Value="{ThemeResource MaterialSecondaryBrush}"/>
-                                    <Setter Property="Foreground" Value="{ThemeResource MaterialOnSecondaryBrush}"/>
-                                </Style>
-                            </Button.Resources>
-                        </Button>
-
-                        <Button x:Name="GenerateSummaryButton"
-                                Content="Generate Summary"
-                                Style="{StaticResource ActionButtonStyle}"
-                                Click="GenerateSummaryButton_Click"
-                                IsEnabled="False"/>
-
-                        <Button x:Name="SaveButton"
-                                Content="Save to Database"
-                                Style="{StaticResource ActionButtonStyle}"
-                                Click="SaveButton_Click"
-                                IsEnabled="False">
-                            <Button.Resources>
-                                <Style TargetType="Button" BasedOn="{StaticResource ActionButtonStyle}">
-                                    <Setter Property="Background" Value="{ThemeResource MaterialTertiaryBrush}"/>
-                                    <Setter Property="Foreground" Value="{ThemeResource MaterialOnTertiaryBrush}"/>
-                                </Style>
-                            </Button.Resources>
-                        </Button>
-
-                        <Button x:Name="ResetButton"
-                                Content="Reset"
-                                Style="{StaticResource SecondaryButtonStyle}"
-                                Click="ResetButton_Click"/>
-                    </StackPanel>
-
-                    <!-- Divider -->
-                    <Border Height="1"
-                            Background="{ThemeResource MaterialOutlineVariantBrush}"
-                            Margin="0,16"/>
-
-                    <!-- Summary Instructions Section -->
-                    <StackPanel Spacing="12">
-                        <TextBlock Text="Summary Instructions"
-                                   Style="{ThemeResource SubtitleTextBlockStyle}"
-                                   Foreground="{ThemeResource MaterialOnSurfaceBrush}"
-                                   FontWeight="SemiBold"/>
-                        
-                        <TextBox x:Name="SummaryInstructionTextBox"
-                                 PlaceholderText="Enter custom instructions for AI summary..."
-                                 Background="{ThemeResource MaterialSurfaceVariantBrush}"
-                                 BorderBrush="{ThemeResource MaterialOutlineVariantBrush}"
-                                 BorderThickness="1"
-                                 CornerRadius="8"
-                                 Padding="12"
-                                 MinHeight="80"
-                                 MaxHeight="120"
-                                 TextWrapping="Wrap"
-                                 AcceptsReturn="True"
-                                 ScrollViewer.VerticalScrollBarVisibility="Auto"
-                                 TextChanged="SummaryInstructionTextBox_TextChanged"/>
-                        
-                        <StackPanel Orientation="Horizontal" Spacing="8">
-                            <Button x:Name="SearchInstructionsButton"
-                                    Content="🔍 Search Instructions"
-                                    Background="{ThemeResource MaterialSurfaceVariantBrush}"
-                                    Foreground="{ThemeResource MaterialOnSurfaceVariantBrush}"
-                                    BorderBrush="{ThemeResource MaterialOutlineVariantBrush}"
-                                    BorderThickness="1"
-                                    CornerRadius="8"
-                                    Padding="20,12"
-                                    Width="140"
-                                    Click="SearchInstructionsButton_Click"/>
-                            
-                            <Button x:Name="SaveInstructionButton"
-                                    Content="💾 Save"
-                                    Background="{ThemeResource MaterialPrimaryBrush}"
-                                    Foreground="{ThemeResource MaterialOnPrimaryBrush}"
-                                    CornerRadius="8"
-                                    Padding="20,12"
-                                    Width="140"
-                                    IsEnabled="False"
-                                    Click="SaveInstructionButton_Click"/>
-                        </StackPanel>
-                    </StackPanel>
-
                     <!-- Processing Status -->
                     <Border x:Name="StatusPanel"
                             Background="{ThemeResource MaterialSurfaceVariantBrush}"
