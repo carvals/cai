@@ -59,21 +59,6 @@ namespace CAI_design_1_chat.Presentation
             Frame.GoBack();
         }
 
-        private async void AISettingsButton_Click(object sender, RoutedEventArgs e)
-        {
-            var dialog = new AISettingsDialog
-            {
-                XamlRoot = this.XamlRoot
-            };
-            
-            var result = await dialog.ShowAsync();
-            
-            if (result == ContentDialogResult.Primary)
-            {
-                dialog.SaveSettings();
-                UpdateLLMIndicator();
-            }
-        }
 
         private async void BrowseButton_Click(object sender, RoutedEventArgs e)
         {
