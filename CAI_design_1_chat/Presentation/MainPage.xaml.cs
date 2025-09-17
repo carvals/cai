@@ -51,6 +51,7 @@ public sealed partial class MainPage : Page
 
     private void MainPage_Loaded(object sender, RoutedEventArgs e)
     {
+        UpdateAIModelIndicator();
         RestoreLeftPanelState();
     }
 
@@ -216,6 +217,8 @@ public sealed partial class MainPage : Page
             dialog.SaveSettings();
             // Reload OpenAI service configuration after settings are saved
             _openAIService.ReloadConfiguration();
+            // Update AI model indicator to reflect new settings
+            UpdateAIModelIndicator();
         }
     }
 
@@ -983,6 +986,62 @@ public sealed partial class MainPage : Page
             ChatTabButton.Foreground = (Brush)Application.Current.Resources["MaterialOnSurfaceBrush"];
             ChatTabButton.BorderBrush = (Brush)Application.Current.Resources["MaterialOutlineBrush"];
             ChatTabButton.BorderThickness = new Thickness(1);
+        }
+    }
+
+    #endregion
+
+    #region AI Model Indicator
+
+    private void UpdateAIModelIndicator()
+    {
+        try
+        {
+            var localSettings = ApplicationData.Current.LocalSettings;
+            var currentProvider = localSettings.Values["CurrentAIProvider"]?.ToString();
+
+            if (string.IsNullOrEmpty(currentProvider))
+            {
+                AIModelIndicator.Text = "Select an AI provider";
+                AIModelIndicator.Foreground = new SolidColorBrush(Color.FromArgb(255, 255, 255, 255));
+                return;
+            }
+
+            string modelText = "";
+            switch (currentProvider.ToLower())
+            {
+                case "openai":
+                    var openAIModel = localSettings.Values["OpenAIModel"]?.ToString() ?? "gpt-3.5-turbo";
+                    modelText = $"OpenAI - {openAIModel}";
+                    break;
+                case "ollama":
+                    var ollamaModel = localSettings.Values["OllamaModel"]?.ToString() ?? "llama2";
+                    modelText = $"Ollama - {ollamaModel}";
+                    break;
+                case "anthropic":
+                    var anthropicModel = localSettings.Values["AnthropicModel"]?.ToString() ?? "claude-3-sonnet";
+                    modelText = $"Anthropic - {anthropicModel}";
+                    break;
+                case "gemini":
+                    var geminiModel = localSettings.Values["GeminiModel"]?.ToString() ?? "gemini-pro";
+                    modelText = $"Gemini - {geminiModel}";
+                    break;
+                case "mistral":
+                    var mistralModel = localSettings.Values["MistralModel"]?.ToString() ?? "mistral-medium";
+                    modelText = $"Mistral - {mistralModel}";
+                    break;
+                default:
+                    modelText = $"{currentProvider} - Unknown Model";
+                    break;
+            }
+
+            AIModelIndicator.Text = modelText;
+            AIModelIndicator.Foreground = new SolidColorBrush(Color.FromArgb(255, 255, 255, 255));
+        }
+        catch (Exception)
+        {
+            AIModelIndicator.Text = "Select an AI provider";
+            AIModelIndicator.Foreground = new SolidColorBrush(Color.FromArgb(255, 255, 255, 255));
         }
     }
 

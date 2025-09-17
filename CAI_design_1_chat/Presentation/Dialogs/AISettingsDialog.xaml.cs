@@ -34,7 +34,8 @@ public sealed partial class AISettingsDialog : ContentDialog
         var localSettings = Windows.Storage.ApplicationData.Current.LocalSettings;
         
         // Load provider selection
-        var selectedProvider = localSettings.Values["SelectedAIProvider"] as string ?? "Ollama";
+        var selectedProvider = localSettings.Values["SelectedAIProvider"] as string ?? 
+                              localSettings.Values["CurrentAIProvider"] as string ?? "Ollama";
         switch (selectedProvider)
         {
             case "Ollama":
@@ -148,6 +149,7 @@ public sealed partial class AISettingsDialog : ContentDialog
         else if (MistralRadio.IsChecked == true) selectedProvider = "Mistral";
         
         localSettings.Values["SelectedAIProvider"] = selectedProvider;
+        localSettings.Values["CurrentAIProvider"] = selectedProvider;
 
         // Save Ollama settings
         localSettings.Values["OllamaUrl"] = OllamaUrlBox.Text;

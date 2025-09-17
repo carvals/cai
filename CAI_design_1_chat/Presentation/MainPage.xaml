@@ -55,7 +55,17 @@
         <StackPanel Grid.Column="1" 
                     Orientation="Horizontal" 
                     Margin="16,8"
-                    Spacing="8">
+                    Spacing="5">
+          <!-- AI Model Indicator -->
+          <TextBlock x:Name="AIModelIndicator"
+                     Text="Select an AI provider"
+                     Foreground="White"
+                     VerticalAlignment="Center"
+                     FontSize="14"
+                     FontWeight="Medium"
+                     MaxWidth="200"
+                     TextTrimming="CharacterEllipsis" />
+          
           <!-- AI Settings Button -->
           <Button x:Name="GlobalAISettingsButton"
                   Click="AISettingsButton_Click"
