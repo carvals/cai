@@ -40,14 +40,39 @@ A modern, cross-platform chat application built with Uno Platform, featuring com
 {ThemeResource MaterialBackgroundBrush}
 ```
 
+## Layout Update Requirements (Phase 11)
+
+### Navigation Bar Enhancement
+- **Horizontal Tab Navigation**: Replace "Chat" header with tabbed navigation containing "Chat" and "Macro" tabs
+- **Global AI Settings**: Move AI Settings button to top-right navigation bar (persistent across all pages)
+- **AI Model Indicator**: Display current AI provider and model (e.g., "OpenAI - GPT-4") next to AI Settings button
+- **Error State**: Show "No AI supplier/model selected" in red when unconfigured
+
+### Page Layout System
+- **Right Panel System**: All non-modal pages use consistent right panel layout like Chat page
+- **Overlay Navigation**: Replace file upload modal with full-cover overlay system
+- **Back Navigation**: Add "Back" button at top-left of overlays (not "Back to Chat")
+
+### File Upload Page Redesign
+- **Compact Upload**: Simplify to label + icon + browse button (remove drag & drop visual complexity)
+- **Left Panel Layout**: Move Processing Actions and Summary Instructions to left panel below upload section
+- **Content Preview**: Use remaining space for file content preview
+- **Macro Tab**: Empty container for future action/task boxes
+
+### Material Design Compliance
+- Use Material Design tabs, buttons, and navigation components
+- Maintain consistent elevation, shadows, and color scheme
+- Preserve Material Design typography and iconography
+
 ## Architecture
 
 ```mermaid
 graph TB
     subgraph "Presentation Layer"
-        A[MainPage - Chat Interface]
-        B[FileUploadPage - File Processing]
-        C[Settings - AI Configuration]
+        A[MainPage - Chat Interface with Tabs]
+        B[FileUploadPage - Overlay System]
+        C[MacroPage - Future Actions Container]
+        D[Global AI Settings Navigation]
     end
     
     subgraph "Services Layer"

@@ -768,6 +768,83 @@ The CAI Design 1 Chat application is now production-ready with a robust, maintai
 
 ---
 
+## Phase 11 — Layout Update (Navigation & UI Redesign)
+
+### 11.1) Add Horizontal Tab Navigation
+- **Prereqs**: Current MainPage.xaml structure
+- **Steps**:
+  - Replace "Chat" header with Material Design TabView
+  - Add "Chat" and "Macro" tabs
+  - Implement tab switching functionality
+  - Style with Material Design theme resources
+- **Acceptance**: Tab navigation visible and functional
+- **References**: Material Design tabs, Uno.Toolkit.UI.Material
+
+### 11.2) Move AI Settings to Global Navigation
+- **Prereqs**: Existing AI Settings dialog
+- **Steps**:
+  - Add AI Settings button to top-right navigation bar
+  - Make button persistent across all pages
+  - Update button styling for navigation bar context
+  - Ensure dialog accessibility from all pages
+- **Acceptance**: AI Settings always accessible from top-right
+- **References**: Global navigation pattern
+
+### 11.3) Add AI Model Indicator
+- **Prereqs**: AI configuration system
+- **Steps**:
+  - Create AI model display component
+  - Show "Provider - Model" format (e.g., "OpenAI - GPT-4")
+  - Display "No AI supplier/model selected" in red when unconfigured
+  - Position next to AI Settings button
+  - Update indicator when settings change
+- **Acceptance**: Current AI configuration always visible
+- **References**: Status indicator patterns
+
+### 11.4) Convert File Upload to Overlay System
+- **Prereqs**: Current FileUploadPage modal
+- **Steps**:
+  - Replace modal with full-cover overlay
+  - Add "Back" button at top-left of overlay
+  - Implement overlay dismiss functionality
+  - Ensure overlay covers entire main content area
+  - Maintain existing file upload functionality
+- **Acceptance**: File upload opens as full overlay with back navigation
+- **References**: Overlay navigation pattern
+
+### 11.5) Redesign Compact Upload Interface
+- **Prereqs**: Current file upload UI
+- **Steps**:
+  - Simplify upload area to: label + icon + browse button
+  - Remove drag & drop visual complexity (keep functionality)
+  - Reduce visual footprint while maintaining usability
+  - Apply Material Design styling
+- **Acceptance**: Upload interface is compact but fully functional
+- **References**: Compact UI patterns
+
+### 11.6) Move Processing Actions to Left Panel
+- **Prereqs**: Current file upload layout
+- **Steps**:
+  - Move "Processing Actions" section to left panel below upload
+  - Move "Summary Instructions" to left panel below processing actions
+  - Remove right panel from file upload page
+  - Adjust content preview to use available space
+  - Maintain all existing functionality
+- **Acceptance**: Left panel contains upload, processing, and instructions; right area shows content preview
+- **References**: Left panel layout system
+
+### 11.7) Create Macro Page Container
+- **Prereqs**: Tab navigation system
+- **Steps**:
+  - Create MacroPage.xaml and MacroPage.xaml.cs
+  - Add empty container with Material Design styling
+  - Prepare structure for future action/task boxes
+  - Integrate with tab navigation system
+- **Acceptance**: Macro tab shows empty container ready for future content
+- **References**: Container patterns for future expansion
+
+---
+
 ## Work Breakdown (Suggested Order & Ownership)
 
 - **Phase 1-6**: Core UI and file handling (completed)

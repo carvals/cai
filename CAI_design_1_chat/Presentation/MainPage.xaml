@@ -14,8 +14,70 @@
       <RowDefinition Height="*" />
     </Grid.RowDefinitions>
     
-    <!-- Navigation Bar -->
-    <utu:NavigationBar Grid.Row="0" Content="Chat" />
+    <!-- Navigation Bar with Tabs -->
+    <Border Grid.Row="0" 
+            Background="{ThemeResource MaterialSurfaceBrush}"
+            BorderBrush="{ThemeResource MaterialOutlineBrush}"
+            BorderThickness="0,0,0,1">
+      <Grid>
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="*" />
+          <ColumnDefinition Width="Auto" />
+        </Grid.ColumnDefinitions>
+        
+        <!-- Tab Navigation -->
+        <StackPanel Grid.Column="0" 
+                    Orientation="Horizontal" 
+                    Margin="16,8">
+          <Button x:Name="ChatTabButton"
+                  Content="Chat"
+                  Click="ChatTabButton_Click"
+                  Background="{ThemeResource MaterialPrimaryBrush}"
+                  Foreground="{ThemeResource MaterialOnPrimaryBrush}"
+                  BorderThickness="0"
+                  CornerRadius="20"
+                  Padding="16,8"
+                  Margin="0,0,8,0"
+                  FontWeight="Medium" />
+          <Button x:Name="MacroTabButton"
+                  Content="Macro"
+                  Click="MacroTabButton_Click"
+                  Background="Transparent"
+                  Foreground="{ThemeResource MaterialOnSurfaceBrush}"
+                  BorderBrush="{ThemeResource MaterialOutlineBrush}"
+                  BorderThickness="1"
+                  CornerRadius="20"
+                  Padding="16,8"
+                  FontWeight="Medium" />
+        </StackPanel>
+        
+        <!-- Right side navigation with AI settings -->
+        <StackPanel Grid.Column="1" 
+                    Orientation="Horizontal" 
+                    Margin="16,8"
+                    Spacing="8">
+          <!-- AI Settings Button -->
+          <Button x:Name="GlobalAISettingsButton"
+                  Click="AISettingsButton_Click"
+                  Background="{ThemeResource MaterialPrimaryContainerBrush}"
+                  BorderBrush="{ThemeResource MaterialPrimaryBrush}"
+                  BorderThickness="1"
+                  CornerRadius="20"
+                  Padding="12,6"
+                  ToolTipService.ToolTip="AI Settings">
+            <StackPanel Orientation="Horizontal" Spacing="6">
+              <FontIcon Glyph="🤖" 
+                        Foreground="{ThemeResource MaterialPrimaryBrush}"
+                        FontSize="16" />
+              <TextBlock Text="AI Settings"
+                         Foreground="{ThemeResource MaterialPrimaryBrush}"
+                         FontSize="14"
+                         FontWeight="Medium" />
+            </StackPanel>
+          </Button>
+        </StackPanel>
+      </Grid>
+    </Border>
     
     <!-- Main Content Grid -->
     <Grid Grid.Row="1">
@@ -128,20 +190,6 @@
                           FontSize="18" />
               </Button>
               
-              <!-- AI Settings -->
-              <Button x:Name="AISettingsButton"
-                      Click="AISettingsButton_Click"
-                      Background="{ThemeResource MaterialPrimaryContainerBrush}"
-                      BorderBrush="{ThemeResource MaterialPrimaryBrush}"
-                      BorderThickness="1"
-                      CornerRadius="6"
-                      Width="48"
-                      Height="48"
-                      ToolTipService.ToolTip="AI Settings">
-                <FontIcon Glyph="🤖" 
-                          Foreground="{ThemeResource MaterialPrimaryBrush}"
-                          FontSize="18" />
-              </Button>
               
             </StackPanel>
           </StackPanel>

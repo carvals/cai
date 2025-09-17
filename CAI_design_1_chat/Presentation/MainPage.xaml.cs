@@ -31,6 +31,9 @@ public sealed partial class MainPage : Page
     private bool _isUserScrolling = false;
     private bool _shouldAutoScroll = true;
     private const double SCROLL_THRESHOLD = 50.0; // pixels from bottom to trigger auto-scroll
+    
+    // Tab navigation state
+    private bool _isChatTabActive = true;
 
     public MainPage()
     {
@@ -928,4 +931,60 @@ public sealed partial class MainPage : Page
         public string? response { get; set; }
         public bool done { get; set; }
     }
+
+    #region Tab Navigation Event Handlers
+
+    private void ChatTabButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (!_isChatTabActive)
+        {
+            _isChatTabActive = true;
+            UpdateTabStyles();
+            // Show chat content, hide macro content
+            // Content switching will be implemented when macro tab content is added
+        }
+    }
+
+    private void MacroTabButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_isChatTabActive)
+        {
+            _isChatTabActive = false;
+            UpdateTabStyles();
+            // Show macro content, hide chat content
+            // Content switching will be implemented when macro tab content is added
+        }
+    }
+
+    private void UpdateTabStyles()
+    {
+        if (_isChatTabActive)
+        {
+            // Chat tab active style
+            ChatTabButton.Background = (Brush)Application.Current.Resources["MaterialPrimaryBrush"];
+            ChatTabButton.Foreground = (Brush)Application.Current.Resources["MaterialOnPrimaryBrush"];
+            ChatTabButton.BorderThickness = new Thickness(0);
+
+            // Macro tab inactive style
+            MacroTabButton.Background = new SolidColorBrush(Color.FromArgb(0, 0, 0, 0));
+            MacroTabButton.Foreground = (Brush)Application.Current.Resources["MaterialOnSurfaceBrush"];
+            MacroTabButton.BorderBrush = (Brush)Application.Current.Resources["MaterialOutlineBrush"];
+            MacroTabButton.BorderThickness = new Thickness(1);
+        }
+        else
+        {
+            // Macro tab active style
+            MacroTabButton.Background = (Brush)Application.Current.Resources["MaterialPrimaryBrush"];
+            MacroTabButton.Foreground = (Brush)Application.Current.Resources["MaterialOnPrimaryBrush"];
+            MacroTabButton.BorderThickness = new Thickness(0);
+
+            // Chat tab inactive style
+            ChatTabButton.Background = new SolidColorBrush(Color.FromArgb(0, 0, 0, 0));
+            ChatTabButton.Foreground = (Brush)Application.Current.Resources["MaterialOnSurfaceBrush"];
+            ChatTabButton.BorderBrush = (Brush)Application.Current.Resources["MaterialOutlineBrush"];
+            ChatTabButton.BorderThickness = new Thickness(1);
+        }
+    }
+
+    #endregion
 }
