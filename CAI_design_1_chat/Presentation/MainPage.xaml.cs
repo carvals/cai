@@ -182,8 +182,8 @@ public sealed partial class MainPage : Page
 
     private void BtnAddFile_Click(object sender, RoutedEventArgs e)
     {
-        // Navigate to the full-screen file upload page
-        Frame.Navigate(typeof(FileUploadPage));
+        // Show the file upload overlay instead of navigating to separate page
+        ShowFileUploadOverlay();
     }
 
 
@@ -1043,6 +1043,325 @@ public sealed partial class MainPage : Page
             AIModelIndicator.Text = "Select an AI provider";
             AIModelIndicator.Foreground = new SolidColorBrush(Color.FromArgb(255, 255, 255, 255));
         }
+    }
+
+    #endregion
+
+    #region File Upload Overlay
+
+    private void ShowFileUploadOverlay()
+    {
+        FileUploadOverlay.Visibility = Visibility.Visible;
+        ResetOverlayState();
+    }
+
+    private void HideFileUploadOverlay()
+    {
+        FileUploadOverlay.Visibility = Visibility.Collapsed;
+    }
+
+    private void ResetOverlayState()
+    {
+        // Reset all overlay controls
+        OverlayPreviewTextBox.Text = "";
+        OverlayLoadingOverlay.Visibility = Visibility.Collapsed;
+        
+        // Reset button states
+        OverlayConvertToTextButton.IsEnabled = false;
+        OverlayGenerateSummaryButton.IsEnabled = false;
+        OverlaySaveButton.IsEnabled = false;
+        OverlaySaveInstructionButton.IsEnabled = false;
+        
+        // Reset toggle
+        OverlayViewModeToggle.IsOn = false;
+    }
+
+    private void BackToChatButton_Click(object sender, RoutedEventArgs e)
+    {
+        HideFileUploadOverlay();
+    }
+
+    // File Upload Overlay Event Handlers
+    private async void OverlayBrowseButton_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var picker = new Windows.Storage.Pickers.FileOpenPicker();
+            
+            // Initialize the picker with cross-platform approach
+#if WINDOWS
+            try
+            {
+                var window = Microsoft.UI.Xaml.Window.Current;
+                if (window != null)
+                {
+                    var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(window);
+                    WinRT.Interop.InitializeWithWindow.Initialize(picker, hwnd);
+                }
+            }
+            catch
+            {
+                // Windows-specific initialization failed, continue without it
+            }
+#endif
+            
+            picker.ViewMode = Windows.Storage.Pickers.PickerViewMode.List;
+            picker.SuggestedStartLocation = Windows.Storage.Pickers.PickerLocationId.DocumentsLibrary;
+            picker.FileTypeFilter.Add(".pdf");
+            picker.FileTypeFilter.Add(".txt");
+            picker.FileTypeFilter.Add(".md");
+            picker.FileTypeFilter.Add(".docx");
+
+            var file = await picker.PickSingleFileAsync();
+            if (file != null)
+            {
+                _currentOverlayFile = file;
+                
+                // Enable extract text button
+                OverlayConvertToTextButton.IsEnabled = true;
+            }
+        }
+        catch (Exception ex)
+        {
+            await ShowErrorDialog("File Load Error", $"Failed to load file: {ex.Message}");
+        }
+    }
+
+    private string FormatFileSize(ulong bytes)
+    {
+        string[] sizes = { "B", "KB", "MB", "GB" };
+        double len = bytes;
+        int order = 0;
+        while (len >= 1024 && order < sizes.Length - 1)
+        {
+            order++;
+            len = len / 1024;
+        }
+        return $"{len:0.##} {sizes[order]}";
+    }
+
+    private async void OverlayConvertToTextButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_currentOverlayFile == null) return;
+
+        try
+        {
+            ShowOverlayLoading("Extracting text from file...");
+            
+            var databaseService = new DatabaseService();
+            var fileProcessingService = new FileProcessingService(databaseService);
+            var fileData = await fileProcessingService.ProcessFileAsync(_currentOverlayFile.Path);
+            
+            if (fileData != null && !string.IsNullOrEmpty(fileData.Content))
+            {
+                OverlayPreviewTextBox.Text = fileData.Content;
+                OverlayGenerateSummaryButton.IsEnabled = true;
+                OverlaySaveButton.IsEnabled = true;
+                _currentOverlayFileData = fileData;
+            }
+            else
+            {
+                await ShowErrorDialog("Extraction Error", "Failed to extract text from the file.");
+            }
+        }
+        catch (Exception ex)
+        {
+            await ShowErrorDialog("Processing Error", $"Failed to process file: {ex.Message}");
+        }
+        finally
+        {
+            HideOverlayLoading();
+        }
+    }
+
+    private async void OverlayGenerateSummaryButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_currentOverlayFileData == null) return;
+
+        try
+        {
+            ShowOverlayLoading("Generating AI summary...");
+            
+            var instruction = string.IsNullOrWhiteSpace(OverlaySummaryInstructionTextBox.Text) 
+                ? "You are an executive assistant. Make a summary of the file and keep the original language of the file."
+                : OverlaySummaryInstructionTextBox.Text;
+
+            var databaseService = new DatabaseService();
+            var fileProcessingService = new FileProcessingService(databaseService);
+            var summary = await fileProcessingService.GenerateSummaryAsync(_currentOverlayFileData.Content, instruction);
+            
+            if (!string.IsNullOrEmpty(summary))
+            {
+                _currentOverlayFileData.Summary = summary;
+                
+                // Switch to summary view if toggle is on
+                if (OverlayViewModeToggle.IsOn)
+                {
+                    OverlayPreviewTextBox.Text = summary;
+                }
+            }
+            else
+            {
+                await ShowErrorDialog("Summary Error", "Failed to generate summary.");
+            }
+        }
+        catch (Exception ex)
+        {
+            await ShowErrorDialog("Summary Error", $"Failed to generate summary: {ex.Message}");
+        }
+        finally
+        {
+            HideOverlayLoading();
+        }
+    }
+
+    private async void OverlaySaveButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_currentOverlayFileData == null) return;
+
+        try
+        {
+            ShowOverlayLoading("Saving to database...");
+            
+            var databaseService = new DatabaseService();
+            var fileProcessingService = new FileProcessingService(databaseService);
+            
+            if (_currentOverlayFileData.Id > 0)
+            {
+                await fileProcessingService.UpdateFileDataAsync(_currentOverlayFileData);
+            }
+            else
+            {
+                await fileProcessingService.SaveFileDataAsync(_currentOverlayFileData);
+            }
+            
+            await ShowSuccessDialog("Save Complete", "File has been saved to the database successfully.");
+        }
+        catch (Exception ex)
+        {
+            await ShowErrorDialog("Save Error", $"Failed to save file: {ex.Message}");
+        }
+        finally
+        {
+            HideOverlayLoading();
+        }
+    }
+
+    private void OverlayResetButton_Click(object sender, RoutedEventArgs e)
+    {
+        ResetOverlayState();
+        _currentOverlayFile = null;
+        _currentOverlayFileData = null;
+    }
+
+    private void OverlayViewModeToggle_Toggled(object sender, RoutedEventArgs e)
+    {
+        if (_currentOverlayFileData == null) return;
+
+        if (OverlayViewModeToggle.IsOn)
+        {
+            // Show summary if available
+            if (!string.IsNullOrEmpty(_currentOverlayFileData.Summary))
+            {
+                OverlayPreviewTextBox.Text = _currentOverlayFileData.Summary;
+            }
+            else
+            {
+                OverlayPreviewTextBox.Text = "No summary available. Click 'Generate Summary' to create one.";
+            }
+        }
+        else
+        {
+            // Show raw text
+            OverlayPreviewTextBox.Text = _currentOverlayFileData.Content ?? "";
+        }
+    }
+
+    private void OverlaySummaryInstructionTextBox_TextChanged(object sender, TextChangedEventArgs e)
+    {
+        OverlaySaveInstructionButton.IsEnabled = !string.IsNullOrWhiteSpace(OverlaySummaryInstructionTextBox.Text);
+    }
+
+    private async void OverlaySearchInstructionsButton_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var databaseService = new DatabaseService();
+            var promptService = new PromptInstructionService(databaseService);
+            var dialog = new Dialogs.PromptSearchDialog(promptService);
+            dialog.XamlRoot = this.XamlRoot;
+            
+            var result = await dialog.ShowAsync();
+            if (result == ContentDialogResult.Primary && dialog.SelectedPrompt != null)
+            {
+                OverlaySummaryInstructionTextBox.Text = dialog.SelectedPrompt.Instruction;
+            }
+        }
+        catch (Exception ex)
+        {
+            await ShowErrorDialog("Search Error", $"Failed to search instructions: {ex.Message}");
+        }
+    }
+
+    private async void OverlaySaveInstructionButton_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var databaseService = new DatabaseService();
+            var promptService = new PromptInstructionService(databaseService);
+            var dialog = new Dialogs.SavePromptDialog(promptService, OverlaySummaryInstructionTextBox.Text);
+            dialog.XamlRoot = this.XamlRoot;
+            
+            var result = await dialog.ShowAsync();
+            if (result == ContentDialogResult.Primary)
+            {
+                await ShowSuccessDialog("Instruction Saved", "Custom instruction has been saved successfully.");
+            }
+        }
+        catch (Exception ex)
+        {
+            await ShowErrorDialog("Save Error", $"Failed to save instruction: {ex.Message}");
+        }
+    }
+
+    private void ShowOverlayLoading(string message)
+    {
+        OverlayLoadingText.Text = message;
+        OverlayLoadingOverlay.Visibility = Visibility.Visible;
+    }
+
+    private void HideOverlayLoading()
+    {
+        OverlayLoadingOverlay.Visibility = Visibility.Collapsed;
+    }
+
+    // File state tracking for overlay
+    private Windows.Storage.StorageFile? _currentOverlayFile;
+    private Models.FileData? _currentOverlayFileData;
+
+    // Helper methods for dialogs
+    private async Task ShowErrorDialog(string title, string message)
+    {
+        var dialog = new ContentDialog()
+        {
+            Title = title,
+            Content = message,
+            CloseButtonText = "OK",
+            XamlRoot = this.XamlRoot
+        };
+        await dialog.ShowAsync();
+    }
+
+    private async Task ShowSuccessDialog(string title, string message)
+    {
+        var dialog = new ContentDialog()
+        {
+            Title = title,
+            Content = message,
+            CloseButtonText = "OK",
+            XamlRoot = this.XamlRoot
+        };
+        await dialog.ShowAsync();
     }
 
     #endregion

@@ -325,6 +325,296 @@
             <RowDefinition Height="Auto" />
           </Grid.RowDefinitions>
           
+          <!-- FileUpload Overlay - Positioned within chat content area -->
+          <Grid x:Name="FileUploadOverlay" 
+                Grid.RowSpan="3"
+                Visibility="Collapsed" 
+                Canvas.ZIndex="1000"
+                Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+            
+            <Grid.RowDefinitions>
+              <RowDefinition Height="Auto"/>
+              <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <!-- Header Navigation Bar -->
+            <Border Grid.Row="0" 
+                    Background="{ThemeResource MaterialSurfaceBrush}"
+                    BorderBrush="{ThemeResource MaterialOutlineVariantBrush}"
+                    BorderThickness="0,0,0,1"
+                    Padding="24,16">
+              <Grid>
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="Auto"/>
+                  <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Back Button -->
+                <Button Grid.Column="0"
+                        x:Name="BackToChatButton"
+                        Click="BackToChatButton_Click"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        Padding="8"
+                        ToolTipService.ToolTip="Back to Chat">
+                  <StackPanel Orientation="Horizontal" Spacing="8">
+                    <FontIcon Glyph="&#xE72B;" 
+                              FontSize="16" 
+                              Foreground="{ThemeResource MaterialOnSurfaceBrush}"/>
+                    <TextBlock Text="Back to Chat"
+                               Foreground="{ThemeResource MaterialOnSurfaceBrush}"
+                               FontWeight="Medium"/>
+                  </StackPanel>
+                </Button>
+
+                <!-- Page Title -->
+                <TextBlock Grid.Column="1"
+                           Text="File Processing"
+                           Style="{ThemeResource TitleTextBlockStyle}"
+                           Foreground="{ThemeResource MaterialOnSurfaceBrush}"
+                           VerticalAlignment="Center"
+                           HorizontalAlignment="Center"
+                           FontWeight="SemiBold"/>
+              </Grid>
+            </Border>
+
+            <!-- Main Content Area -->
+            <Grid Grid.Row="1" Margin="24">
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="1*"/>
+                <ColumnDefinition Width="20"/>
+                <ColumnDefinition Width="2*"/>
+              </Grid.ColumnDefinitions>
+
+              <!-- Left Panel: Redesigned Layout -->
+              <Border Grid.Column="0"
+                      Background="{ThemeResource MaterialSurfaceBrush}"
+                      BorderBrush="{ThemeResource MaterialOutlineVariantBrush}"
+                      BorderThickness="1"
+                      CornerRadius="12"
+                      Padding="24">
+                <StackPanel Spacing="8">
+                  <!-- Upload File Header -->
+                  <TextBlock Text="Upload File"
+                             Style="{ThemeResource SubtitleTextBlockStyle}"
+                             Foreground="{ThemeResource MaterialOnSurfaceBrush}"
+                             FontWeight="SemiBold"
+                             HorizontalAlignment="Center"
+                             Margin="0,0,0,4"/>
+
+                  <!-- Browse Files Button -->
+                  <Button x:Name="OverlayBrowseButton"
+                          Content="Browse Files"
+                          Background="{ThemeResource MaterialPrimaryBrush}"
+                          Foreground="{ThemeResource MaterialOnPrimaryBrush}"
+                          BorderThickness="0"
+                          CornerRadius="8"
+                          Padding="16,12"
+                          HorizontalAlignment="Stretch"
+                          FontWeight="Medium"
+                          Click="OverlayBrowseButton_Click"/>
+
+                  <!-- Divider -->
+                  <Border Height="1" 
+                          Background="{ThemeResource MaterialOutlineVariantBrush}" 
+                          Margin="0,8"/>
+
+                  <!-- File Processing Actions -->
+                  <TextBlock Text="Créer un document"
+                             Style="{ThemeResource CaptionTextBlockStyle}"
+                             Foreground="{ThemeResource MaterialOnSurfaceVariantBrush}"
+                             FontWeight="Medium"
+                             Margin="0,4,0,8"/>
+
+                  <!-- Extract Text Button -->
+                  <Button x:Name="OverlayConvertToTextButton"
+                          Content="Extract Text"
+                          Background="{ThemeResource MaterialSecondaryBrush}"
+                          Foreground="{ThemeResource MaterialOnSecondaryBrush}"
+                          BorderThickness="0"
+                          CornerRadius="8"
+                          Padding="16,12"
+                          HorizontalAlignment="Stretch"
+                          FontWeight="Medium"
+                          IsEnabled="False"
+                          Click="OverlayConvertToTextButton_Click"/>
+
+                  <!-- Generate Summary Button -->
+                  <Button x:Name="OverlayGenerateSummaryButton"
+                          Content="Generate Summary"
+                          Background="{ThemeResource MaterialTertiaryBrush}"
+                          Foreground="{ThemeResource MaterialOnTertiaryBrush}"
+                          BorderThickness="0"
+                          CornerRadius="8"
+                          Padding="16,12"
+                          HorizontalAlignment="Stretch"
+                          FontWeight="Medium"
+                          IsEnabled="False"
+                          Click="OverlayGenerateSummaryButton_Click"/>
+
+                  <!-- Save to Database Button -->
+                  <Button x:Name="OverlaySaveButton"
+                          Content="Save to Database"
+                          Background="{ThemeResource MaterialSuccessBrush}"
+                          Foreground="White"
+                          BorderThickness="0"
+                          CornerRadius="8"
+                          Padding="16,12"
+                          HorizontalAlignment="Stretch"
+                          FontWeight="Medium"
+                          IsEnabled="False"
+                          Click="OverlaySaveButton_Click"/>
+
+                  <!-- Reset Button -->
+                  <Button x:Name="OverlayResetButton"
+                          Content="Reset"
+                          Background="Transparent"
+                          Foreground="{ThemeResource MaterialErrorBrush}"
+                          BorderBrush="{ThemeResource MaterialErrorBrush}"
+                          BorderThickness="1"
+                          CornerRadius="8"
+                          Padding="16,12"
+                          HorizontalAlignment="Stretch"
+                          FontWeight="Medium"
+                          Click="OverlayResetButton_Click"/>
+
+                  <!-- Divider -->
+                  <Border Height="1" 
+                          Background="{ThemeResource MaterialOutlineVariantBrush}" 
+                          Margin="0,16,0,8"/>
+
+                  <!-- Summary Instructions -->
+                  <TextBlock Text="Summary Instructions"
+                             Style="{ThemeResource CaptionTextBlockStyle}"
+                             Foreground="{ThemeResource MaterialOnSurfaceVariantBrush}"
+                             FontWeight="Medium"
+                             Margin="0,0,0,8"/>
+
+                  <!-- Custom Instructions TextBox -->
+                  <TextBox x:Name="OverlaySummaryInstructionTextBox"
+                           PlaceholderText="Enter custom instructions for AI summary..."
+                           Background="{ThemeResource MaterialSurfaceVariantBrush}"
+                           BorderBrush="{ThemeResource MaterialOutlineVariantBrush}"
+                           BorderThickness="1"
+                           CornerRadius="8"
+                           Padding="12"
+                           MinHeight="80"
+                           TextWrapping="Wrap"
+                           AcceptsReturn="True"
+                           ScrollViewer.VerticalScrollBarVisibility="Auto"
+                           TextChanged="OverlaySummaryInstructionTextBox_TextChanged"/>
+
+                  <!-- Instruction Buttons -->
+                  <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,8,0,0">
+                    <Button x:Name="OverlaySearchInstructionsButton"
+                            Content="🔍 Search"
+                            Background="{ThemeResource MaterialSurfaceVariantBrush}"
+                            Foreground="{ThemeResource MaterialOnSurfaceVariantBrush}"
+                            BorderThickness="0"
+                            CornerRadius="6"
+                            Padding="12,8"
+                            FontSize="12"
+                            Click="OverlaySearchInstructionsButton_Click"/>
+                    
+                    <Button x:Name="OverlaySaveInstructionButton"
+                            Content="💾 Save"
+                            Background="{ThemeResource MaterialSurfaceVariantBrush}"
+                            Foreground="{ThemeResource MaterialOnSurfaceVariantBrush}"
+                            BorderThickness="0"
+                            CornerRadius="6"
+                            Padding="12,8"
+                            FontSize="12"
+                            IsEnabled="False"
+                            Click="OverlaySaveInstructionButton_Click"/>
+                  </StackPanel>
+                </StackPanel>
+              </Border>
+
+              <!-- Right Panel: Preview Editor -->
+              <Border Grid.Column="2"
+                      Background="{ThemeResource MaterialSurfaceBrush}"
+                      BorderBrush="{ThemeResource MaterialOutlineVariantBrush}"
+                      BorderThickness="1"
+                      CornerRadius="12"
+                      Padding="24">
+                <Grid>
+                  <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                  </Grid.RowDefinitions>
+
+                  <!-- Header with Toggle -->
+                  <Grid Grid.Row="0" Margin="0,0,0,16">
+                    <Grid.ColumnDefinitions>
+                      <ColumnDefinition Width="*"/>
+                      <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <TextBlock Grid.Column="0"
+                               Text="Content Preview"
+                               Style="{ThemeResource SubtitleTextBlockStyle}"
+                               Foreground="{ThemeResource MaterialOnSurfaceBrush}"
+                               FontWeight="SemiBold"
+                               VerticalAlignment="Center"/>
+
+                    <!-- View Mode Toggle -->
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                      <TextBlock Text="Raw Text / Summary"
+                                 Style="{ThemeResource CaptionTextBlockStyle}"
+                                 Foreground="{ThemeResource MaterialOnSurfaceVariantBrush}"
+                                 VerticalAlignment="Center"/>
+                      <ToggleSwitch x:Name="OverlayViewModeToggle"
+                                    OnContent="Summary"
+                                    OffContent="Raw Text"
+                                    Toggled="OverlayViewModeToggle_Toggled"/>
+                    </StackPanel>
+                  </Grid>
+
+                  <!-- Content TextBox -->
+                  <ScrollViewer Grid.Row="1" 
+                                VerticalScrollBarVisibility="Auto"
+                                HorizontalScrollBarVisibility="Auto">
+                    <TextBox x:Name="OverlayPreviewTextBox"
+                             Background="{ThemeResource MaterialSurfaceVariantBrush}"
+                             BorderBrush="{ThemeResource MaterialOutlineVariantBrush}"
+                             BorderThickness="1"
+                             CornerRadius="8"
+                             Padding="16"
+                             MinHeight="300"
+                             TextWrapping="Wrap"
+                             AcceptsReturn="True"
+                             IsReadOnly="True"
+                             PlaceholderText="No content loaded. Upload a file to see its content here..."
+                             FontFamily="Consolas, Courier New, monospace"
+                             FontSize="12"/>
+                  </ScrollViewer>
+                </Grid>
+              </Border>
+            </Grid>
+
+            <!-- Loading Overlay -->
+            <Border x:Name="OverlayLoadingOverlay"
+                    Grid.RowSpan="2"
+                    Background="{ThemeResource MaterialScrimBrush}"
+                    Visibility="Collapsed">
+              <StackPanel HorizontalAlignment="Center"
+                          VerticalAlignment="Center"
+                          Spacing="16">
+                <ProgressRing IsActive="True"
+                              Width="48"
+                              Height="48"
+                              Foreground="{ThemeResource MaterialPrimaryBrush}"/>
+                <TextBlock x:Name="OverlayLoadingText"
+                           Text="Processing file..."
+                           Style="{ThemeResource SubtitleTextBlockStyle}"
+                           Foreground="{ThemeResource MaterialOnSurfaceBrush}"
+                           HorizontalAlignment="Center"
+                           FontWeight="Medium"/>
+              </StackPanel>
+            </Border>
+          </Grid>
+          
           <!-- Chat Header -->
           <Border Grid.Row="0"
                   Background="{ThemeResource LayerFillColorDefaultBrush}"

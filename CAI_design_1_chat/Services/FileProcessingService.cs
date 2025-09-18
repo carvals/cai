@@ -278,7 +278,7 @@ namespace CAI_design_1_chat.Services
             return $"Document contains {wordCount} words across {lineCount} lines.\n\nPreview: {summary}";
         }
 
-        private async Task SaveFileDataAsync(FileData fileData)
+        public async Task SaveFileDataAsync(FileData fileData)
         {
             using var connection = new SqliteConnection(_databaseService.GetConnectionString());
             await connection.OpenAsync();

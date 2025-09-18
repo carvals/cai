@@ -762,6 +762,77 @@ sqlite3 database.db "PRAGMA foreign_key_check;"
 
 ---
 
+## Phase 13: FileUpload Overlay Integration (Completed)
+
+**Objective**: Integrate FileUploadPage as an overlay within MainPage to improve UX consistency and preserve chat state.
+
+**Status**: ✅ Completed
+- ✅ Analyzed current FileUploadPage and MainPage layouts
+- ✅ Designed overlay integration approach
+- ✅ Removed empty right panel from FileUploadPage
+- ✅ Implemented FileUploadPage overlay in MainPage XAML
+- ✅ Updated MainPage code-behind with overlay handlers
+- ✅ Fixed all build errors and service integration issues
+- ✅ Resolved window handle initialization for file picker
+
+**Key Changes Made**:
+1. **FileUploadPage Layout Optimization**:
+   - Removed empty right panel (Grid.Column="2") 
+   - Converted to 2-column layout (left panel + preview editor)
+   - Preserved all redesigned UI elements from Phase 12
+
+2. **MainPage Overlay Implementation**:
+   - Added `FileUploadOverlay` Grid covering columns 2-4 (preserves sidebar visibility)
+   - Integrated complete FileUpload UI with header and back button
+   - Added overlay show/hide methods and state management
+   - Updated "Ajouter un fichier" button to show overlay instead of navigation
+
+3. **Event Handler Integration**:
+   - Implemented all overlay event handlers (browse, extract, summarize, save, reset)
+   - Added file state tracking variables for overlay (`_currentOverlayFile`, `_currentOverlayFileData`)
+   - Integrated with FileProcessingService and PromptInstructionService
+   - Added error handling and user feedback dialogs (`ShowErrorDialog`, `ShowSuccessDialog`)
+
+4. **Build Error Resolutions**:
+   - Fixed service constructor dependencies (DatabaseService parameter)
+   - Made `SaveFileDataAsync` method public in FileProcessingService
+   - Resolved window handle access using XamlRoot instead of App.MainWindow
+   - Updated method signatures and property references (`Content` vs `ExtractedText`)
+
+**Technical Solutions**:
+- **Window Handle**: Used `this.XamlRoot.ContentIslandEnvironment.AppWindowId` for file picker initialization
+- **Service Integration**: Proper instantiation of DatabaseService, FileProcessingService, and PromptInstructionService
+- **Dialog Management**: Added helper methods for consistent error/success messaging
+- **State Management**: Overlay-specific file tracking separate from main page state
+
+**Architecture Impact**:
+- FileUploadPage now functions as both standalone page and integrated overlay
+- Improved UX with preserved chat state and seamless navigation
+- Consistent Material Design styling across overlay and main interface
+- Reduced code duplication through shared service layer
+
+**Command Line Tools Used**:
+```bash
+# Build verification
+dotnet build CAI_design_1_chat.sln
+
+# Service method discovery
+grep -r "SaveFileDataAsync" CAI_design_1_chat/Services/
+```
+
+**Lessons Learned**:
+- Uno Platform has specific requirements for window handle access
+- Service dependency injection requires careful constructor parameter management
+- Overlay integration preserves existing functionality while improving UX
+- Incremental testing and build verification prevents cascading errors
+
+**Performance Notes**:
+- Overlay approach eliminates page navigation overhead
+- Preserved chat state improves user experience
+- Shared service instances optimize memory usage
+
+---
+
 ## Optional Enhancements (Backlog)
 - Advanced file processing with OCR for scanned documents
 - File export functionality (database to filesystem)
