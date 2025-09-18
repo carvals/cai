@@ -599,23 +599,22 @@
                   </Grid>
 
                   <!-- Content TextBox -->
-                  <ScrollViewer Grid.Row="1" 
-                                VerticalScrollBarVisibility="Auto"
-                                HorizontalScrollBarVisibility="Auto">
-                    <TextBox x:Name="OverlayPreviewTextBox"
-                             Background="{ThemeResource MaterialSurfaceVariantBrush}"
-                             BorderBrush="{ThemeResource MaterialOutlineVariantBrush}"
-                             BorderThickness="1"
-                             CornerRadius="8"
-                             Padding="16"
-                             MinHeight="300"
-                             TextWrapping="Wrap"
-                             AcceptsReturn="True"
-                             IsReadOnly="True"
-                             PlaceholderText="No content loaded. Upload a file to see its content here..."
-                             FontFamily="Consolas, Courier New, monospace"
-                             FontSize="12"/>
-                  </ScrollViewer>
+                  <TextBox x:Name="OverlayPreviewTextBox"
+                           Grid.Row="1"
+                           Background="{ThemeResource MaterialSurfaceVariantBrush}"
+                           BorderBrush="{ThemeResource MaterialOutlineVariantBrush}"
+                           BorderThickness="1"
+                           CornerRadius="8"
+                           Padding="16"
+                           MinHeight="300"
+                           TextWrapping="Wrap"
+                           AcceptsReturn="True"
+                           IsReadOnly="True"
+                           ScrollViewer.VerticalScrollBarVisibility="Auto"
+                           ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                           PlaceholderText="No content loaded. Upload a file to see its content here..."
+                           FontFamily="Consolas, Courier New, monospace"
+                           FontSize="12"/>
                 </Grid>
               </Border>
             </Grid>

@@ -1203,11 +1203,9 @@ public sealed partial class MainPage : Page
             {
                 _currentOverlayFileData.Summary = summary;
                 
-                // Switch to summary view if toggle is on
-                if (OverlayViewModeToggle.IsOn)
-                {
-                    OverlayPreviewTextBox.Text = summary;
-                }
+                // Auto-switch to summary view and update toggle
+                OverlayViewModeToggle.IsOn = true;
+                OverlayPreviewTextBox.Text = summary;
             }
             else
             {
