@@ -414,6 +414,33 @@
                           FontWeight="Medium"
                           Click="OverlayBrowseButton_Click"/>
 
+                  <!-- Selected File Info -->
+                  <Border x:Name="OverlaySelectedFilePanel"
+                          Background="{ThemeResource MaterialSurfaceVariantBrush}"
+                          BorderBrush="{ThemeResource MaterialOutlineVariantBrush}"
+                          BorderThickness="1"
+                          CornerRadius="8"
+                          Padding="12"
+                          Margin="0,8,0,0"
+                          Visibility="Collapsed">
+                    <StackPanel Spacing="4">
+                      <TextBlock Text="Selected File:"
+                                 Style="{ThemeResource CaptionTextBlockStyle}"
+                                 Foreground="{ThemeResource MaterialOnSurfaceVariantBrush}"
+                                 FontWeight="Medium"/>
+                      <TextBlock x:Name="OverlaySelectedFileName"
+                                 Text=""
+                                 Style="{ThemeResource BodyTextBlockStyle}"
+                                 Foreground="{ThemeResource MaterialOnSurfaceBrush}"
+                                 FontWeight="Medium"
+                                 TextWrapping="Wrap"/>
+                      <TextBlock x:Name="OverlaySelectedFileSize"
+                                 Text=""
+                                 Style="{ThemeResource CaptionTextBlockStyle}"
+                                 Foreground="{ThemeResource MaterialOnSurfaceVariantBrush}"/>
+                    </StackPanel>
+                  </Border>
+
                   <!-- Divider -->
                   <Border Height="1" 
                           Background="{ThemeResource MaterialOutlineVariantBrush}" 

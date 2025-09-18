@@ -1065,6 +1065,9 @@ public sealed partial class MainPage : Page
         // Reset all overlay controls
         OverlayPreviewTextBox.Text = "";
         OverlayLoadingOverlay.Visibility = Visibility.Collapsed;
+        OverlaySelectedFilePanel.Visibility = Visibility.Collapsed;
+        OverlaySelectedFileName.Text = "";
+        OverlaySelectedFileSize.Text = "";
         
         // Reset button states
         OverlayConvertToTextButton.IsEnabled = false;
@@ -1116,6 +1119,12 @@ public sealed partial class MainPage : Page
             if (file != null)
             {
                 _currentOverlayFile = file;
+                
+                // Update file info display
+                OverlaySelectedFileName.Text = file.Name;
+                var fileProperties = await file.GetBasicPropertiesAsync();
+                OverlaySelectedFileSize.Text = FormatFileSize(fileProperties.Size);
+                OverlaySelectedFilePanel.Visibility = Visibility.Visible;
                 
                 // Enable extract text button
                 OverlayConvertToTextButton.IsEnabled = true;
