@@ -144,6 +144,155 @@ graph TB
 - Multi-language support (French default, English)
 - Extensible architecture for future AI provider integration
 
+## Phase 12: FileUploadPage UI/UX Redesign (Completed)
+
+**Objective**: Complete redesign of FileUploadPage with modern Material Design, improved layout, and enhanced user experience.
+
+**Status**: ✅ Completed
+
+### Key Features Implemented:
+1. **Modern Material Design Interface**
+   - Clean, card-based layout with proper spacing
+   - Consistent color scheme and typography
+   - Professional button styling with hover effects
+
+2. **Three-Column Layout**
+   - Left Panel: File upload controls and actions
+   - Center Panel: Content preview with toggle (Raw/Summary)
+   - Right Panel: Custom instructions and settings
+
+3. **Enhanced File Processing Workflow**
+   - Browse and select files (PDF, TXT, MD, DOCX)
+   - Extract text with visual feedback
+   - Generate AI summaries with custom instructions
+   - Save processed files to database
+
+4. **Smart UI Controls**
+   - Toggle between raw text and summary views
+   - Search and save custom instruction templates
+   - Real-time button state management
+   - Loading overlays with progress indication
+
+### Technical Implementation:
+- **XAML Layout**: Grid-based responsive design
+- **Material Design**: Consistent theming and styling
+- **State Management**: Proper enable/disable logic
+- **Error Handling**: User-friendly error dialogs
+- **Database Integration**: Seamless file data persistence
+
+---
+
+## Phase 13: FileUpload Overlay Integration (Completed)
+
+**Objective**: Transform FileUploadPage into an overlay within MainPage to preserve chat state and improve UX consistency.
+
+**Status**: ✅ Completed
+
+### Architecture Innovation:
+```mermaid
+graph TB
+    A[MainPage Layout] --> B[Fixed Sidebar - Column 0]
+    A --> C[Left Panel - Column 1]
+    A --> D[Splitter - Column 2]
+    A --> E[Chat Area - Column 3]
+    
+    E --> F[Chat Content]
+    E --> G[FileUpload Overlay]
+    
+    G --> H[Overlay Header with Back Button]
+    G --> I[Two-Column Content]
+    I --> J[Upload Controls Panel]
+    I --> K[Preview Panel]
+    
+    style G fill:#e1f5fe
+    style E fill:#f3e5f5
+```
+
+### Key UX Improvements:
+1. **Contextual Overlay Design**
+   - Covers only the active content area (chat panel)
+   - Preserves sidebar and left panel visibility
+   - Maintains navigation context with back button
+
+2. **Smart State Preservation**
+   - Chat state remains intact when accessing file upload
+   - No page navigation overhead
+   - Seamless transition between chat and file processing
+
+3. **Responsive Layout Integration**
+   - Overlay adapts to chat area dimensions
+   - Follows left panel collapse/expand behavior
+   - Proper text wrapping prevents horizontal overflow
+
+### Technical Achievements:
+
+#### Cross-Platform File Picker
+```csharp
+// Platform-specific initialization
+#if WINDOWS
+try {
+    var window = Microsoft.UI.Xaml.Window.Current;
+    if (window != null) {
+        var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(window);
+        WinRT.Interop.InitializeWithWindow.Initialize(picker, hwnd);
+    }
+} catch {
+    // Graceful fallback for initialization failures
+}
+#endif
+```
+
+#### Overlay Positioning Strategy
+- **Container**: Positioned within chat Border (`Grid.Column="3"`)
+- **Coverage**: Uses `Grid.RowSpan="3"` to cover entire chat area
+- **Layering**: `Canvas.ZIndex="1000"` ensures proper stacking
+- **Background**: Solid theme brush prevents transparency issues
+
+#### Smart UI Enhancements
+1. **File Selection Feedback**
+   - Dynamic file info panel with name and size
+   - Visual confirmation of successful file loading
+   - Proper state reset on overlay close
+
+2. **Auto-Summary Switching**
+   - Automatically switches to summary view after generation
+   - Updates toggle state programmatically
+   - Improves user workflow efficiency
+
+3. **Text Wrapping Solution**
+   - Disabled horizontal scrolling in preview
+   - Proper TextWrapping configuration
+   - Prevents content overflow outside app boundaries
+
+### Development Lessons:
+
+#### Uno Platform Compatibility
+- Use `#if WINDOWS` for platform-specific code
+- Avoid complex RelativeSource bindings
+- Prefer direct property settings over complex XAML bindings
+
+#### Overlay Design Patterns
+- Anchor overlays to content containers, not main layout grids
+- Use solid backgrounds to prevent visual interference
+- Implement proper state management for overlay lifecycle
+
+#### Cross-Platform File Operations
+- Windows requires window handle initialization
+- macOS and Linux work natively without handles
+- Always provide graceful fallbacks for platform differences
+
+### Command-Line Tools Used:
+```bash
+# Build verification and testing
+dotnet build CAI_design_1_chat.sln
+
+# Service method discovery during debugging
+grep -r "SaveFileDataAsync" CAI_design_1_chat/Services/
+
+# Git operations for file restoration
+git checkout HEAD -- CAI_design_1_chat/Presentation/MainPage.xaml
+```
+
 ## Screens and Layout
 
 
