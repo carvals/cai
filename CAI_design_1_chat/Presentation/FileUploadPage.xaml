@@ -135,17 +135,6 @@
                                        Style="{ThemeResource CaptionTextBlockStyle}"
                                        Foreground="{ThemeResource MaterialOnSurfaceVariantBrush}"
                                        Margin="24,0,0,0"/>
-                            
-                            <!-- AI Model Indicator -->
-                            <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,8,0,0">
-                                <TextBlock Text="🤖" FontSize="16" VerticalAlignment="Center"/>
-                                <TextBlock x:Name="LLMIndicatorText"
-                                           Text="AI Model: OpenAI - gpt-4.1"
-                                           Style="{ThemeResource CaptionTextBlockStyle}"
-                                           Foreground="{ThemeResource MaterialPrimaryBrush}"
-                                           FontWeight="Medium"
-                                           VerticalAlignment="Center"/>
-                            </StackPanel>
                         </StackPanel>
                     </StackPanel>
 

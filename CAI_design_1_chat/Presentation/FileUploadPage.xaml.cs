@@ -371,37 +371,12 @@ namespace CAI_design_1_chat.Presentation
             GenerateSummaryButton.IsEnabled = false;
             SaveButton.IsEnabled = false;
             
-            // Drop zone removed in redesign - no visual state to reset
         }
 
         private void UpdateLLMIndicator()
         {
-            // Read AI provider settings from local storage
-            var localSettings = Windows.Storage.ApplicationData.Current.LocalSettings;
-            var selectedProvider = localSettings.Values["SelectedAIProvider"]?.ToString() ?? "Ollama";
-            
-            string model = "";
-            switch (selectedProvider)
-            {
-                case "OpenAI":
-                    model = localSettings.Values["OpenAIModel"]?.ToString() ?? "gpt-4";
-                    break;
-                case "Anthropic":
-                    model = localSettings.Values["AnthropicModel"]?.ToString() ?? "claude-3-sonnet";
-                    break;
-                case "Gemini":
-                    model = localSettings.Values["GeminiModel"]?.ToString() ?? "gemini-pro";
-                    break;
-                case "Mistral":
-                    model = localSettings.Values["MistralModel"]?.ToString() ?? "mistral-large";
-                    break;
-                case "Ollama":
-                default:
-                    model = localSettings.Values["OllamaModel"]?.ToString() ?? "llama2";
-                    break;
-            }
-            
-            LLMIndicatorText.Text = $"AI Model: {selectedProvider} - {model}";
+            // LLM indicator removed from UI - method kept for compatibility
+            // AI model information is now displayed elsewhere in the application
         }
 
         private void ShowLoading(string message)
