@@ -61,7 +61,7 @@ This feature map provides a comprehensive overview of the CAI Design 1 Chat appl
 |---------|------|----------------------|
 | Main Layout | `/Presentation/MainPage.xaml` | 4-column grid, left panel, chat area |
 | Main Logic | `/Presentation/MainPage.xaml.cs` | Panel animations, file upload, chat interface |
-| File Processing Interface | `/Presentation/FileUploadPage.xaml` | Three-panel layout, drag & drop, AI summarization |
+| File Processing Interface | `/Presentation/FileUploadPage.xaml` | **REDESIGNED**: Consolidated left panel layout with vertical workflow |
 | File Processing Logic | `/Presentation/FileUploadPage.xaml.cs` | File handling, AI integration, prompt management |
 | Application Shell | `/Presentation/Shell.xaml` | Navigation shell |
 | Login Page | `/Presentation/LoginPage.xaml` | Authentication UI |
@@ -91,6 +91,7 @@ This feature map provides a comprehensive overview of the CAI Design 1 Chat appl
 - State management and data consistency
 - Error handling with graceful recovery
 - Database operation debugging tools
+- **FileUploadPage Layout Redesign (Phase 12)**: Consolidated left panel with vertical workflow, removed redundant elements
 
 ### 🔄 Partially Implemented
 - DOCX file support (placeholder implementation)
@@ -183,6 +184,15 @@ sqlite3 database.db "PRAGMA foreign_key_check;"
 - **Debug Tools**: Command-line inspection and troubleshooting capabilities
 
 ## Recent Updates and Bug Fixes
+
+### Phase 12 Completion - FileUploadPage Layout Redesign ✅
+- **Left Panel Consolidation**: Moved all file upload and processing actions to a single vertical workflow
+- **UI Simplification**: Removed AI model indicator, robot icon, and redundant AI Settings button
+- **Visual Hierarchy**: Added visible dividers (2px MaterialOutlineBrush) between major sections
+- **Button Optimization**: Reduced processing button size and spacing for better UX
+- **Layout Reorganization**: Upload File → Browse Button → File Info → Processing Actions → Summary Instructions → Processing Status
+- **Right Panel Preparation**: Emptied right panel for future content preview functionality
+- **Code-Behind Alignment**: Updated event handlers and removed references to deleted UI elements
 
 ### Phase 9 Completion - AI Summarization Integration ✅
 - **Prompt Instruction System**: Complete CRUD operations with search and save functionality

@@ -684,6 +684,53 @@ CAI_design_1_chat/
 1. **Defensive Programming**: Validate inputs and check preconditions
 2. **Resource Management**: Proper disposal of connections and HTTP clients
 3. **Configuration Validation**: Runtime checks for settings and dependencies
+
+---
+
+## Phase 12 — FileUploadPage Layout Redesign ✅ COMPLETED
+
+### UI/UX Redesign Implementation
+- [x] **12.1** Consolidate left panel layout with vertical workflow ✅
+  - **Implementation**: Moved Upload File header and Browse Files button to top of left panel
+  - **Simplification**: Removed AI model indicator and robot icon from File Information section
+  - **Organization**: Moved all processing action buttons to left panel below file info
+  - **Spacing**: Reduced button size and tighter spacing for better UX
+  - **Visual Hierarchy**: Added visible 2px dividers with MaterialOutlineBrush between sections
+
+- [x] **12.2** Reorganize processing workflow ✅
+  - **New Layout**: Upload File → Browse Button → File Info → Processing Actions → Summary Instructions → Processing Status
+  - **Button Optimization**: Smaller processing buttons with reduced spacing
+  - **Section Separation**: Clear visual dividers between major functional areas
+  - **Right Panel**: Emptied for future content preview functionality
+
+- [x] **12.3** Remove redundant UI elements ✅
+  - **AI Settings Button**: Removed from FileUploadPage header (redundant with MainPage)
+  - **AI Model Indicator**: Removed from File Information panel
+  - **Robot Icon**: Removed from File Information section
+  - **Drag & Drop Zone**: Simplified to browse button approach
+
+- [x] **12.4** Update code-behind alignment ✅
+  - **Event Handler Cleanup**: Removed AISettingsButton_Click event handler
+  - **UI Element References**: Updated UpdateLLMIndicator method to no-op after removing LLMIndicatorText
+  - **Build Verification**: Ensured clean compilation after UI element removal
+  - **Navigation Testing**: Verified FileUploadPage navigation still functions properly
+
+### Frontend-Backend Coordination Lessons
+- **Incremental Changes**: Made small UI modifications with immediate builds to catch errors early
+- **Reference Checking**: Used grep to find all code-behind references before removing UI elements
+- **Build Validation**: Verified clean compilation after each major section modification
+- **Error Recovery**: Successfully reverted and fixed build errors when they occurred
+
+### Documentation Updates
+- **TUTORIAL.md**: Added critical development best practices section at beginning for AI agent guidance
+- **FEATURE_MAP.md**: Updated with Phase 12 completion details and redesign specifics
+- **spec.md**: Previously updated with comprehensive layout design and lessons learned
+
+### Architecture Impact
+- **Material Design Consistency**: Maintained throughout redesign with proper theming
+- **User Workflow**: Improved vertical flow reduces cognitive load and improves task completion
+- **Code Maintainability**: Cleaner code-behind with removed unused event handlers and UI references
+- **Future Extensibility**: Right panel prepared for content preview features
 4. **Testing Strategy**: Verify all supported file types and AI providers
 
 ### Command-Line Tools Developed
