@@ -55,6 +55,9 @@ public sealed partial class MainPage : Page
         // Initialize chat context service
         _chatContextService = new ChatContextService(_databaseService);
         
+        // Update context size from settings
+        UpdateContextServiceFromSettings();
+        
         this.Loaded += MainPage_Loaded;
         InitializeAnimationTimer();
         InitializeScrollHandlers();
@@ -231,8 +234,12 @@ public sealed partial class MainPage : Page
             dialog.SaveSettings();
             // Reload OpenAI service configuration after settings are saved
             _openAIService.ReloadConfiguration();
+            // Update context service with new settings
+            UpdateContextServiceFromSettings();
             // Update AI model indicator to reflect new settings
             UpdateAIModelIndicator();
+            // Update context size display
+            _ = UpdateContextSizeDisplayAsync();
         }
     }
 
@@ -1011,6 +1018,26 @@ public sealed partial class MainPage : Page
         catch (Exception ex)
         {
             Console.WriteLine($"Error updating context size display: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Updates the ChatContextService with current settings
+    /// </summary>
+    private void UpdateContextServiceFromSettings()
+    {
+        try
+        {
+            var localSettings = ApplicationData.Current.LocalSettings;
+            if (localSettings.Values.TryGetValue("ContextMessages", out var value) && value is int contextSize)
+            {
+                _chatContextService.SetContextSize(contextSize);
+                Console.WriteLine($"Updated context service to use {contextSize} messages");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error updating context service from settings: {ex.Message}");
         }
     }
 

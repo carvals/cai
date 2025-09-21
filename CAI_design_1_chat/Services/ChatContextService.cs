@@ -11,11 +11,72 @@ namespace CAI_design_1_chat.Services
         private readonly DatabaseService _databaseService;
         
         private const int MAX_MEMORY_MESSAGES = 15; // Keep more in memory than we send
-        private const int CONTEXT_MESSAGES = 10;   // Send fewer to AI
+        private int _contextMessages = 10;   // Send fewer to AI (now configurable)
         
         public ChatContextService(DatabaseService databaseService)
         {
             _databaseService = databaseService;
+            
+            // Load context size from settings
+            LoadContextSizeFromSettings();
+        }
+        
+        /// <summary>
+        /// Get current context size setting
+        /// </summary>
+        public int GetContextSize()
+        {
+            return _contextMessages;
+        }
+        
+        /// <summary>
+        /// Set context size and save to settings
+        /// </summary>
+        public void SetContextSize(int contextSize)
+        {
+            // Validate range (1-20 messages)
+            _contextMessages = Math.Max(1, Math.Min(20, contextSize));
+            
+            // Save to settings
+            SaveContextSizeToSettings();
+            
+            Console.WriteLine($"Context size updated to: {_contextMessages} messages");
+        }
+        
+        /// <summary>
+        /// Load context size from application settings
+        /// </summary>
+        private void LoadContextSizeFromSettings()
+        {
+            try
+            {
+                var localSettings = Windows.Storage.ApplicationData.Current.LocalSettings;
+                if (localSettings.Values.TryGetValue("ContextMessages", out var value) && value is int contextSize)
+                {
+                    _contextMessages = Math.Max(1, Math.Min(20, contextSize));
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error loading context size from settings: {ex.Message}");
+                _contextMessages = 10; // Default fallback
+            }
+        }
+        
+        /// <summary>
+        /// Save context size to application settings
+        /// </summary>
+        private void SaveContextSizeToSettings()
+        {
+            try
+            {
+                var localSettings = Windows.Storage.ApplicationData.Current.LocalSettings;
+                localSettings.Values["ContextMessages"] = _contextMessages;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error saving context size to settings: {ex.Message}");
+            }
         }
         
         /// <summary>
@@ -38,7 +99,7 @@ namespace CAI_design_1_chat.Services
                 }
                 
                 // Return last messages for AI context
-                var contextMessages = _sessionCache[sessionId].TakeLast(CONTEXT_MESSAGES).ToList();
+                var contextMessages = _sessionCache[sessionId].TakeLast(_contextMessages).ToList();
                 Console.WriteLine($"Providing {contextMessages.Count} messages as context to AI");
                 
                 return contextMessages;

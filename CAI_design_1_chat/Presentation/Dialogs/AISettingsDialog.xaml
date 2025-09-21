@@ -30,6 +30,62 @@
     <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
       <StackPanel Spacing="16">
         
+        <!-- Context Size Configuration -->
+        <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                BorderThickness="1"
+                CornerRadius="8"
+                Padding="16">
+          <StackPanel Spacing="12">
+            <TextBlock Text="Context Configuration" 
+                       FontWeight="SemiBold"
+                       FontSize="14"/>
+            
+            <TextBlock Text="Configure how many previous messages to include in AI conversations."
+                       Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                       FontSize="12"
+                       TextWrapping="Wrap"/>
+            
+            <Grid>
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+              </Grid.ColumnDefinitions>
+              
+              <TextBlock Grid.Column="0"
+                         Text="Number of messages in context:"
+                         VerticalAlignment="Center"
+                         Margin="0,0,12,0"/>
+              
+              <Slider x:Name="ContextSizeSlider"
+                      Grid.Column="1"
+                      Minimum="1"
+                      Maximum="20"
+                      Value="10"
+                      StepFrequency="1"
+                      TickFrequency="5"
+                      TickPlacement="BottomRight"
+                      ValueChanged="ContextSizeSlider_ValueChanged"
+                      Margin="0,0,12,0"/>
+              
+              <TextBlock x:Name="ContextSizeValue"
+                         Grid.Column="2"
+                         Text="10"
+                         FontWeight="SemiBold"
+                         VerticalAlignment="Center"
+                         MinWidth="30"
+                         TextAlignment="Center"/>
+            </Grid>
+            
+            <TextBlock x:Name="ContextSizeInfo"
+                       Text="Estimated tokens: ~250 (10 messages × ~25 tokens each)"
+                       Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                       FontSize="11"
+                       FontStyle="Italic"/>
+          </StackPanel>
+        </Border>
+        
         <!-- Ollama Section -->
         <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
                 BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"

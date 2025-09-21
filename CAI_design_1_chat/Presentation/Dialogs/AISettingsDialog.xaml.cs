@@ -33,6 +33,11 @@ public sealed partial class AISettingsDialog : ContentDialog
         // Load saved settings from ApplicationData
         var localSettings = Windows.Storage.ApplicationData.Current.LocalSettings;
         
+        // Load context size setting
+        var contextMessages = localSettings.Values["ContextMessages"] as int? ?? 10;
+        ContextSizeSlider.Value = Math.Max(1, Math.Min(20, contextMessages));
+        UpdateContextSizeDisplay((int)ContextSizeSlider.Value);
+        
         // Load provider selection
         var selectedProvider = localSettings.Values["SelectedAIProvider"] as string ?? 
                               localSettings.Values["CurrentAIProvider"] as string ?? "Ollama";
@@ -150,6 +155,9 @@ public sealed partial class AISettingsDialog : ContentDialog
         
         localSettings.Values["SelectedAIProvider"] = selectedProvider;
         localSettings.Values["CurrentAIProvider"] = selectedProvider;
+
+        // Save context size setting
+        localSettings.Values["ContextMessages"] = (int)ContextSizeSlider.Value;
 
         // Save Ollama settings
         localSettings.Values["OllamaUrl"] = OllamaUrlBox.Text;
@@ -666,6 +674,26 @@ public sealed partial class AISettingsDialog : ContentDialog
         }
 
         await ShowErrorDialog("Mistral model refresh not yet implemented. Coming soon!");
+    }
+
+    private void ContextSizeSlider_ValueChanged(object sender, Microsoft.UI.Xaml.Controls.Primitives.RangeBaseValueChangedEventArgs e)
+    {
+        var contextSize = (int)e.NewValue;
+        UpdateContextSizeDisplay(contextSize);
+    }
+
+    private void UpdateContextSizeDisplay(int contextSize)
+    {
+        if (ContextSizeValue != null)
+        {
+            ContextSizeValue.Text = contextSize.ToString();
+        }
+        
+        if (ContextSizeInfo != null)
+        {
+            var estimatedTokens = contextSize * 25; // Rough estimate: 25 tokens per message
+            ContextSizeInfo.Text = $"Estimated tokens: ~{estimatedTokens:N0} ({contextSize} messages × ~25 tokens each)";
+        }
     }
 
     public class OllamaGenerateResponse
