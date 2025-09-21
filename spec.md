@@ -804,6 +804,14 @@ flowchart TD
 - **Pattern**: Update existing records instead of creating duplicates
 - **Best Practice**: Use `UpdateFileDataAsync` for existing files, `SaveFileDataAsync` for new files
 
+### Chat Context Management Best Practices
+- **Hybrid Approach**: Memory cache + Database persistence for optimal performance
+- **Token Management**: Limit context to 10 messages (~4000 tokens) to stay within AI provider limits
+- **Provider Compatibility**: OpenAI uses structured message arrays, Ollama uses formatted prompts
+- **Memory Efficiency**: Cache trimming (15 messages max) prevents memory bloat
+- **Session Isolation**: Context cleared on "Clear Session" for proper conversation boundaries
+- **Error Resilience**: Graceful fallbacks when context retrieval fails
+
 ---
 
 ## Architecture Diagrams
@@ -835,6 +843,82 @@ graph TD
     Q[Debug Logging] --> R[AI Provider Details]
     Q --> S[Prompt/Response Info]
     Q --> T[Error Tracking]
+```
+
+### Chat Context Management Architecture
+
+```mermaid
+graph TD
+    A[User Message] --> B[MainPage.AddUserMessage]
+    B --> C[ChatContextService.AddMessageAsync]
+    C --> D[Database Save]
+    C --> E[Memory Cache Update]
+    
+    F[AI Request] --> G[ChatContextService.GetContextForAIAsync]
+    G --> H{Cache Exists?}
+    H -->|Yes| I[Return Cached Messages]
+    H -->|No| J[Load from Database]
+    J --> K[Update Cache]
+    K --> I
+    
+    I --> L{Provider Type?}
+    L -->|OpenAI| M[Structured Message Array]
+    L -->|Ollama| N[Formatted Conversation Prompt]
+    L -->|Others| O[Future Implementation]
+    
+    M --> P[OpenAI API Call]
+    N --> Q[Ollama API Call]
+    
+    P --> R[AI Response]
+    Q --> R
+    R --> S[AddAIMessage]
+    S --> T[Save to Context Service]
+    
+    U[Clear Session] --> V[Create New Session]
+    V --> W[Clear Memory Cache]
+    W --> X[Reset UI]
+    
+    style C fill:#e1f5fe
+    style G fill:#e8f5e8
+    style M fill:#fff3e0
+    style N fill:#fce4ec
+```
+
+### Context Service Performance Flow
+
+```mermaid
+sequenceDiagram
+    participant UI as MainPage
+    participant CS as ChatContextService
+    participant DB as Database
+    participant MC as Memory Cache
+    participant AI as AI Provider
+    
+    Note over UI,AI: First Message in Session
+    UI->>CS: AddMessageAsync(user, "Hello")
+    CS->>DB: SaveChatMessageAsync()
+    CS->>MC: Add to cache
+    
+    UI->>CS: GetContextForAIAsync()
+    CS->>DB: Load recent messages
+    DB-->>CS: Return messages
+    CS->>MC: Initialize cache
+    CS-->>UI: Return context (1 message)
+    
+    UI->>AI: SendMessage with context
+    AI-->>UI: Response
+    UI->>CS: AddMessageAsync(assistant, response)
+    CS->>DB: SaveChatMessageAsync()
+    CS->>MC: Add to cache
+    
+    Note over UI,AI: Subsequent Messages (Fast Path)
+    UI->>CS: GetContextForAIAsync()
+    CS->>MC: Get from cache (fast!)
+    CS-->>UI: Return context (2+ messages)
+    
+    Note over UI,AI: Cache Management
+    CS->>MC: Trim if > 15 messages
+    MC-->>CS: Keep recent messages only
 ```
 
 ### Debugging Workflow
