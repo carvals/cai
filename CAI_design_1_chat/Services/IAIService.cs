@@ -56,12 +56,39 @@ namespace CAI_design_1_chat.Services
         public string Role { get; set; } // "user", "assistant", "system"
         public string Content { get; set; }
         public DateTime Timestamp { get; set; }
+        public int TokenCount { get; set; }
 
         public ChatMessage(string role, string content)
         {
             Role = role;
             Content = content;
             Timestamp = DateTime.UtcNow;
+            TokenCount = EstimateTokens(content);
+        }
+
+        /// <summary>
+        /// Estimates token count for the message content
+        /// Rough estimation: ~4 characters = 1 token for English text
+        /// </summary>
+        public static int EstimateTokens(string text)
+        {
+            if (string.IsNullOrEmpty(text)) return 0;
+            
+            // Basic token estimation: 4 characters ≈ 1 token
+            // Add extra tokens for role formatting overhead
+            var baseTokens = (int)Math.Ceiling(text.Length / 4.0);
+            var roleOverhead = 5; // Overhead for role formatting in API calls
+            
+            return baseTokens + roleOverhead;
+        }
+
+        /// <summary>
+        /// Estimates total token count for a list of messages
+        /// </summary>
+        public static int EstimateTokens(List<ChatMessage> messages)
+        {
+            if (messages == null || !messages.Any()) return 0;
+            return messages.Sum(m => m.TokenCount);
         }
     }
 

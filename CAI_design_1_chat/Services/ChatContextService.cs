@@ -144,6 +144,23 @@ namespace CAI_design_1_chat.Services
         }
         
         /// <summary>
+        /// Get current context token count for a session
+        /// </summary>
+        public async Task<int> GetContextTokenCountAsync(int sessionId)
+        {
+            try
+            {
+                var contextMessages = await GetContextForAIAsync(sessionId);
+                return ChatMessage.EstimateTokens(contextMessages);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error getting context token count: {ex.Message}");
+                return 0;
+            }
+        }
+
+        /// <summary>
         /// Get cache statistics for debugging
         /// </summary>
         public string GetCacheStats()

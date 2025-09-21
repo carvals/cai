@@ -298,6 +298,9 @@ public sealed partial class MainPage : Page
         
         // Save user message using context service (database + cache)
         _ = _chatContextService.AddMessageAsync(_currentSessionId, "user", message);
+        
+        // Update context size display after user message
+        _ = UpdateContextSizeDisplayAsync();
     }
 
     private void AddAIMessage(string message)
@@ -408,6 +411,9 @@ public sealed partial class MainPage : Page
         
         // Save AI message using context service (database + cache)
         _ = _chatContextService.AddMessageAsync(_currentSessionId, "assistant", message);
+        
+        // Update context size display after AI response
+        _ = UpdateContextSizeDisplayAsync();
     }
 
     private (string thinking, string response) ParseThinkingResponse(string message)
@@ -937,6 +943,9 @@ public sealed partial class MainPage : Page
             
             // Get the current session ID for chat messages
             _currentSessionId = await _databaseService.GetCurrentSessionIdAsync();
+            
+            // Initialize context size display
+            _ = UpdateContextSizeDisplayAsync();
         }
         catch (Exception ex)
         {
@@ -978,6 +987,31 @@ public sealed partial class MainPage : Page
         prompt.AppendLine("Assistant:");
         
         return prompt.ToString();
+    }
+
+    /// <summary>
+    /// Updates the context size display in the UI
+    /// </summary>
+    private async Task UpdateContextSizeDisplayAsync()
+    {
+        try
+        {
+            var tokenCount = await _chatContextService.GetContextTokenCountAsync(_currentSessionId);
+            
+            DispatcherQueue.TryEnqueue(() =>
+            {
+                if (ContextSizeDisplay != null)
+                {
+                    ContextSizeDisplay.Text = $"Context size: {tokenCount:N0} tokens";
+                }
+            });
+            
+            Console.WriteLine($"Context size updated: {tokenCount} tokens for session {_currentSessionId}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error updating context size display: {ex.Message}");
+        }
     }
 
     private async Task<string> GetAnthropicResponseAsync(string message)
@@ -1054,6 +1088,9 @@ public sealed partial class MainPage : Page
             ChatInput.Text = string.Empty;
             
             Console.WriteLine($"Session cleared and new session created with ID: {newSessionId}");
+            
+            // Reset context size display for new session
+            _ = UpdateContextSizeDisplayAsync();
         }
         catch (Exception ex)
         {

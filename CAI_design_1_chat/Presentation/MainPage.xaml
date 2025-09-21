@@ -651,9 +651,16 @@
                          FontWeight="SemiBold"
                          FontSize="16"
                          HorizontalAlignment="Left" />
+              
               <StackPanel Orientation="Horizontal"
                           HorizontalAlignment="Right"
-                          Spacing="8">
+                          Spacing="12">
+                
+                <TextBlock x:Name="ContextSizeDisplay"
+                           Text="Context size: 0 tokens"
+                           FontSize="12"
+                           Foreground="{ThemeResource MaterialOnSurfaceVariantBrush}"
+                           VerticalAlignment="Center" />
                 <Button x:Name="ClearSessionButton"
                         Background="Transparent"
                         BorderThickness="1"
