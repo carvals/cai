@@ -31,6 +31,7 @@ public sealed partial class MainPage : Page
     
     // Database service for chat persistence
     private readonly DatabaseService _databaseService;
+    private readonly ChatContextService _chatContextService;
     private int _currentSessionId;
     
     // Auto-scroll state tracking
@@ -50,6 +51,9 @@ public sealed partial class MainPage : Page
         
         // Initialize database service
         _databaseService = new DatabaseService();
+        
+        // Initialize chat context service
+        _chatContextService = new ChatContextService(_databaseService);
         
         this.Loaded += MainPage_Loaded;
         InitializeAnimationTimer();
@@ -292,8 +296,8 @@ public sealed partial class MainPage : Page
 
         ScrollToBottom();
         
-        // Save user message to database
-        _ = _databaseService.SaveChatMessageAsync(_currentSessionId, "user", message);
+        // Save user message using context service (database + cache)
+        _ = _chatContextService.AddMessageAsync(_currentSessionId, "user", message);
     }
 
     private void AddAIMessage(string message)
@@ -402,8 +406,8 @@ public sealed partial class MainPage : Page
         ChatMessagesPanel.Children.Add(aiMessageGrid);
         ScrollToBottom();
         
-        // Save AI message to database
-        _ = _databaseService.SaveChatMessageAsync(_currentSessionId, "assistant", message);
+        // Save AI message using context service (database + cache)
+        _ = _chatContextService.AddMessageAsync(_currentSessionId, "assistant", message);
     }
 
     private (string thinking, string response) ParseThinkingResponse(string message)
@@ -752,7 +756,10 @@ public sealed partial class MainPage : Page
                 return "OpenAI is not configured. Please set your API key and model in AI Settings.";
             }
 
-            var response = await _openAIService.SendMessageAsync(message);
+            // Get conversation context using hybrid approach (memory + database)
+            var conversationHistory = await _chatContextService.GetContextForAIAsync(_currentSessionId);
+            
+            var response = await _openAIService.SendMessageAsync(message, conversationHistory);
             return response;
         }
         catch (AIServiceException ex)
@@ -790,6 +797,9 @@ public sealed partial class MainPage : Page
             
             var fullResponse = new StringBuilder();
             
+            // Get conversation context using hybrid approach (memory + database)
+            var conversationHistory = await _chatContextService.GetContextForAIAsync(_currentSessionId);
+            
             await _openAIService.SendMessageStreamAsync(message, (chunk) =>
             {
                 if (!string.IsNullOrEmpty(chunk))
@@ -814,7 +824,7 @@ public sealed partial class MainPage : Page
                         }
                     });
                 }
-            });
+            }, conversationHistory);
             
             // Final cleanup on main thread
             DispatcherQueue.TryEnqueue(() =>
@@ -976,6 +986,9 @@ public sealed partial class MainPage : Page
             
             // Update current session ID to the new one
             _currentSessionId = newSessionId;
+            
+            // Clear chat context cache for the old session
+            _chatContextService.ClearSessionCache(_currentSessionId);
             
             // Clear chat UI
             ChatMessagesPanel.Children.Clear();
