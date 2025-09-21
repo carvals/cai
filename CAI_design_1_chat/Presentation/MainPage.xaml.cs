@@ -31,7 +31,7 @@ public sealed partial class MainPage : Page
     
     // Database service for chat persistence
     private readonly DatabaseService _databaseService;
-    private int _currentSessionId = 1; // Simple session ID for now
+    private int _currentSessionId;
     
     // Auto-scroll state tracking
     private bool _isUserScrolling = false;
@@ -911,15 +911,18 @@ public sealed partial class MainPage : Page
     {
         try
         {
-            var dbService = new DatabaseService();
-            await dbService.InitializeDatabaseAsync();
+            await _databaseService.InitializeDatabaseAsync();
             
             // Run database test
             await DatabaseTest.RunDatabaseTestAsync();
+            
+            // Get the current session ID for chat messages
+            _currentSessionId = await _databaseService.GetCurrentSessionIdAsync();
         }
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"Database initialization failed: {ex.Message}");
+            _currentSessionId = 1; // Fallback
         }
     }
 
@@ -958,18 +961,21 @@ public sealed partial class MainPage : Page
         try
         {
             // Create new session in database
-            var databaseService = new DatabaseService();
-            using var connection = new SqliteConnection(databaseService.GetConnectionString());
+            using var connection = new SqliteConnection(_databaseService.GetConnectionString());
             await connection.OpenAsync();
             
             using var command = new SqliteCommand(
-                "INSERT INTO session (session_name, user) VALUES (@sessionName, @user)", 
+                "INSERT INTO session (session_name, user) VALUES (@sessionName, @user); SELECT last_insert_rowid();", 
                 connection);
             
             command.Parameters.AddWithValue("@sessionName", $"Chat Session {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
             command.Parameters.AddWithValue("@user", "current_user");
             
-            await command.ExecuteNonQueryAsync();
+            var result = await command.ExecuteScalarAsync();
+            var newSessionId = Convert.ToInt32(result);
+            
+            // Update current session ID to the new one
+            _currentSessionId = newSessionId;
             
             // Clear chat UI
             ChatMessagesPanel.Children.Clear();
@@ -978,10 +984,7 @@ public sealed partial class MainPage : Page
             // Clear chat input
             ChatInput.Text = string.Empty;
             
-            // TODO: Clear context when context window is implemented
-            // This will be handled in future context management features
-            
-            Console.WriteLine("Session cleared and new session created");
+            Console.WriteLine($"Session cleared and new session created with ID: {newSessionId}");
         }
         catch (Exception ex)
         {

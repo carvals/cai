@@ -128,6 +128,37 @@ namespace CAI_design_1_chat.Services
         
         public string GetConnectionString() => _connectionString;
 
+        // Get the most recent session ID (for now, we'll use the latest one)
+        public async Task<int> GetCurrentSessionIdAsync()
+        {
+            try
+            {
+                using var connection = new SqliteConnection(_connectionString);
+                await connection.OpenAsync();
+                
+                using var command = new SqliteCommand(
+                    "SELECT id FROM session ORDER BY id DESC LIMIT 1", 
+                    connection);
+                
+                var result = await command.ExecuteScalarAsync();
+                if (result != null)
+                {
+                    var sessionId = Convert.ToInt32(result);
+                    Console.WriteLine($"Using session ID: {sessionId}");
+                    return sessionId;
+                }
+                
+                // If no session exists, return 1 as fallback
+                Console.WriteLine("No session found, using session ID: 1");
+                return 1;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error getting session ID: {ex.Message}");
+                return 1; // Fallback
+            }
+        }
+
         // Simple method to save chat messages
         public async Task SaveChatMessageAsync(int sessionId, string messageType, string content)
         {
@@ -145,7 +176,7 @@ namespace CAI_design_1_chat.Services
                 command.Parameters.AddWithValue("@content", content);
                 
                 await command.ExecuteNonQueryAsync();
-                Console.WriteLine($"Chat message saved: {messageType} - {content.Substring(0, Math.Min(50, content.Length))}...");
+                Console.WriteLine($"Chat message saved: {messageType} (session {sessionId}) - {content.Substring(0, Math.Min(50, content.Length))}...");
             }
             catch (Exception ex)
             {
