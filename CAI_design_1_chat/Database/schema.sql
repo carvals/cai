@@ -1,7 +1,8 @@
 -- CAI Design Chat Application Database Schema
--- Version: 1.0
+-- Version: 2.0
 -- Created: 2025-09-16
--- Description: SQLite database schema for file processing and context management
+-- Updated: 2025-09-21
+-- Description: SQLite database schema for file processing and enhanced chat functionality
 
 -- Enable foreign key constraints
 PRAGMA foreign_keys = ON;
@@ -28,11 +29,12 @@ CREATE TABLE IF NOT EXISTS file_data (
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
--- Chat sessions
+-- Chat sessions with active session management
 CREATE TABLE IF NOT EXISTS session (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     session_name TEXT NOT NULL,
     user TEXT,
+    is_active BOOLEAN DEFAULT TRUE,         -- Only one session active at a time
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
@@ -64,7 +66,7 @@ CREATE TABLE IF NOT EXISTS prompt_instructions (
     usage_count INTEGER DEFAULT 0
 );
 
--- Chat messages storage
+-- Chat messages storage with enhanced context management
 CREATE TABLE IF NOT EXISTS chat_messages (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     session_id INTEGER NOT NULL,
@@ -73,11 +75,9 @@ CREATE TABLE IF NOT EXISTS chat_messages (
     timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
     ai_provider TEXT,                       -- 'openai', 'ollama', 'anthropic', etc.
     ai_model TEXT,
-    prompt_instruction_id INTEGER,          -- Reference to prompt used
-    file_context_id INTEGER,                -- Reference to file if message relates to file
-    FOREIGN KEY (session_id) REFERENCES session(id) ON DELETE CASCADE,
-    FOREIGN KEY (prompt_instruction_id) REFERENCES prompt_instructions(id) ON DELETE SET NULL,
-    FOREIGN KEY (file_context_id) REFERENCES file_data(id) ON DELETE SET NULL
+    prompt_text TEXT,                       -- Actual prompt text used (for chat reproduction)
+    active_context_file_list TEXT,          -- JSON array of active file IDs: "[1,2,3]"
+    FOREIGN KEY (session_id) REFERENCES session(id) ON DELETE CASCADE
 );
 
 -- Processing jobs for tracking file operations
@@ -97,24 +97,16 @@ CREATE TABLE IF NOT EXISTS processing_jobs (
     FOREIGN KEY (file_id) REFERENCES file_data(id) ON DELETE CASCADE
 );
 
--- Context sessions for managing active file context
-CREATE TABLE IF NOT EXISTS context_sessions (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    session_name TEXT,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    is_active BOOLEAN DEFAULT TRUE
-);
-
--- Link files to context sessions
+-- Link files to context sessions (simplified - one context per session)
 CREATE TABLE IF NOT EXISTS context_file_links (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    context_session_id INTEGER NOT NULL,
+    context_session_id INTEGER NOT NULL,   -- References session.id directly
     file_id INTEGER NOT NULL,
     use_summary BOOLEAN DEFAULT FALSE,
     is_excluded BOOLEAN DEFAULT FALSE,
     order_index INTEGER DEFAULT 0,
     added_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (context_session_id) REFERENCES context_sessions(id) ON DELETE CASCADE,
+    FOREIGN KEY (context_session_id) REFERENCES session(id) ON DELETE CASCADE,
     FOREIGN KEY (file_id) REFERENCES file_data(id) ON DELETE CASCADE
 );
 
@@ -151,6 +143,16 @@ CREATE TRIGGER IF NOT EXISTS update_session_timestamp
         UPDATE session SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
     END;
 
+-- Session activation trigger - ensures only one active session at a time
+CREATE TRIGGER IF NOT EXISTS activate_new_session 
+    AFTER INSERT ON session
+    BEGIN
+        -- Deactivate all existing sessions
+        UPDATE session SET is_active = FALSE WHERE id != NEW.id;
+        -- Activate the new session
+        UPDATE session SET is_active = TRUE WHERE id = NEW.id;
+    END;
+
 CREATE TRIGGER IF NOT EXISTS update_prompt_instructions_timestamp 
     AFTER UPDATE ON prompt_instructions
     BEGIN
@@ -165,4 +167,4 @@ CREATE TABLE IF NOT EXISTS schema_version (
 );
 
 INSERT OR REPLACE INTO schema_version (version, description) VALUES 
-(1, 'Initial schema with file processing and context management');
+(2, 'Enhanced chat functionality with single active session, JSON context storage, and direct prompt text storage');

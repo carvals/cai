@@ -2,16 +2,18 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
-using Microsoft.UI.Text;
+using Microsoft.UI.Xaml.Media.Animation;
 using System;
-using System.Threading.Tasks;
-using Windows.ApplicationModel.DataTransfer;
-using Windows.Storage;
-using Windows.System;
-using Windows.UI;
 using System.Net.Http;
 using System.Text;
+using System.Text.Json;
+using System.Threading.Tasks;
+using Windows.Storage;
 using CAI_design_1_chat.Services;
+using Microsoft.Data.Sqlite;
+using Windows.UI;
+using Windows.ApplicationModel.DataTransfer;
+using Windows.System;
 
 namespace CAI_design_1_chat.Presentation;
 
@@ -445,15 +447,15 @@ public sealed partial class MainPage : Page
         };
         Grid.SetColumn(thinkingIcon, 0);
 
-        var thinkingLabel = new TextBlock
+        var thinkingHeader = new TextBlock
         {
             Text = "AI Thinking Process",
             FontSize = 12,
-            FontWeight = FontWeights.SemiBold,
+            FontWeight = new Windows.UI.Text.FontWeight { Weight = 600 },
             Foreground = (Brush)Application.Current.Resources["AccentTextFillColorPrimaryBrush"],
             Margin = new Thickness(8, 0, 0, 0)
         };
-        Grid.SetColumn(thinkingLabel, 1);
+        Grid.SetColumn(thinkingHeader, 1);
 
         var expandButton = new Button
         {
@@ -473,7 +475,7 @@ public sealed partial class MainPage : Page
         Grid.SetColumn(expandButton, 2);
 
         headerGrid.Children.Add(thinkingIcon);
-        headerGrid.Children.Add(thinkingLabel);
+        headerGrid.Children.Add(thinkingHeader);
         headerGrid.Children.Add(expandButton);
 
         // Thinking content (initially collapsed)
@@ -934,6 +936,77 @@ public sealed partial class MainPage : Page
         public string? response { get; set; }
         public bool done { get; set; }
     }
+
+    #region Chat Session Management
+
+    private async void ClearSessionButton_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            // Create new session in database
+            var databaseService = new DatabaseService();
+            using var connection = new SqliteConnection(databaseService.GetConnectionString());
+            await connection.OpenAsync();
+            
+            using var command = new SqliteCommand(
+                "INSERT INTO session (session_name, user) VALUES (@sessionName, @user)", 
+                connection);
+            
+            command.Parameters.AddWithValue("@sessionName", $"Chat Session {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
+            command.Parameters.AddWithValue("@user", "current_user");
+            
+            await command.ExecuteNonQueryAsync();
+            
+            // Clear chat UI
+            ChatMessagesPanel.Children.Clear();
+            EmptyStatePanel.Visibility = Visibility.Visible;
+            
+            // Clear chat input
+            ChatInput.Text = string.Empty;
+            
+            // TODO: Clear context when context window is implemented
+            // This will be handled in future context management features
+            
+            Console.WriteLine("Session cleared and new session created");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error clearing session: {ex.Message}");
+            await ShowErrorDialog("Session Error", $"Failed to clear session: {ex.Message}");
+        }
+    }
+
+    private async void ContextMenuButton_Click(object sender, RoutedEventArgs e)
+    {
+        // Show empty popup for now - feature placeholder
+        var dialog = new ContentDialog()
+        {
+            Title = "Context Options",
+            Content = new StackPanel
+            {
+                Children =
+                {
+                    new TextBlock 
+                    { 
+                        Text = "Convert chat into context",
+                        Margin = new Thickness(0, 8, 0, 8)
+                    },
+                    new TextBlock 
+                    { 
+                        Text = "Feature coming soon...",
+                        FontStyle = Windows.UI.Text.FontStyle.Italic,
+                        Foreground = new SolidColorBrush(Color.FromArgb(255, 128, 128, 128))
+                    }
+                }
+            },
+            CloseButtonText = "Close"
+        };
+        
+        dialog.XamlRoot = this.XamlRoot;
+        await dialog.ShowAsync();
+    }
+
+    #endregion
 
     #region Tab Navigation Event Handlers
 
