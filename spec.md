@@ -806,10 +806,12 @@ flowchart TD
 
 ### Chat Context Management Best Practices
 - **Hybrid Approach**: Memory cache + Database persistence for optimal performance
-- **Token Management**: Limit context to 10 messages (~4000 tokens) to stay within AI provider limits
+- **Configurable Context Size**: User-adjustable context (1-20 messages) via AI Settings dialog
+- **Smart Token Management**: Real-time token estimation with ~25 tokens per message calculation
 - **Provider Compatibility**: OpenAI uses structured message arrays, Ollama uses formatted prompts
 - **Memory Efficiency**: Cache trimming (15 messages max) prevents memory bloat
 - **Session Isolation**: Context cleared on "Clear Session" for proper conversation boundaries
+- **Settings Persistence**: Context size saved to ApplicationData.LocalSettings
 - **Error Resilience**: Graceful fallbacks when context retrieval fails
 
 ---
@@ -919,6 +921,65 @@ sequenceDiagram
     Note over UI,AI: Cache Management
     CS->>MC: Trim if > 15 messages
     MC-->>CS: Keep recent messages only
+```
+
+### Configurable Context Size Architecture
+
+```mermaid
+graph TD
+    A[User Opens AI Settings] --> B[Context Configuration Section]
+    B --> C[Slider: 1-20 Messages]
+    C --> D[Real-time Token Estimation]
+    D --> E[~25 tokens × N messages]
+    
+    F[User Saves Settings] --> G[ApplicationData.LocalSettings]
+    G --> H[ContextMessages: int]
+    
+    I[MainPage Initialization] --> J[UpdateContextServiceFromSettings]
+    J --> K[ChatContextService.SetContextSize]
+    K --> L[_contextMessages = N]
+    
+    M[AI Request] --> N[GetContextForAIAsync]
+    N --> O[TakeLast(_contextMessages)]
+    O --> P[Provider-Specific Format]
+    P --> Q[OpenAI: ChatMessage[]]
+    P --> R[Ollama: Formatted Prompt]
+    
+    S[Context Size Display] --> T[Chat Header: Context size: X tokens]
+    T --> U[Real-time Updates]
+    
+    style B fill:#e1f5fe
+    style K fill:#e8f5e8
+    style T fill:#fff3e0
+```
+
+### AI Settings Dialog UX Flow
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant D as AI Settings Dialog
+    participant S as Slider Component
+    participant LS as LocalSettings
+    participant CS as ChatContextService
+    participant UI as Chat UI
+    
+    U->>D: Click AI Settings Button
+    D->>LS: Load current context size
+    LS-->>D: Return saved value (default: 10)
+    D->>S: Set slider value
+    
+    U->>S: Adjust slider (1-20)
+    S->>D: ValueChanged event
+    D->>D: UpdateContextSizeDisplay()
+    D-->>U: Show "~250 tokens (10 messages)"
+    
+    U->>D: Click Save
+    D->>LS: Save ContextMessages = N
+    D->>CS: SetContextSize(N)
+    CS->>CS: _contextMessages = N
+    CS-->>UI: Update context display
+    UI-->>U: Show "Context size: X tokens"
 ```
 
 ### Debugging Workflow

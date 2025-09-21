@@ -180,11 +180,13 @@ sqlite3 database.db "PRAGMA foreign_key_check;"
 
 #### 4. Chat Context Management 🧠
 - **Hybrid Architecture**: Memory cache + SQLite persistence for optimal performance
+- **Configurable Context Size**: User-adjustable context (1-20 messages) via elegant slider interface
+- **Smart Token Estimation**: Real-time token calculation with ~25 tokens per message formula
 - **Session Isolation**: Proper conversation boundaries with session management
 - **Provider Agnostic**: Universal context retrieval with provider-specific formatting
 - **Performance Optimized**: 50x faster context access after initial database load
-- **Memory Efficient**: Auto-trimming cache (15 messages) with 10-message AI context
-- **Token Management**: Respects ~4000 token limits for AI provider compatibility
+- **Memory Efficient**: Auto-trimming cache (15 messages) with configurable AI context
+- **Settings Persistence**: Context size saved to ApplicationData.LocalSettings
 - **Error Resilient**: Graceful degradation when context retrieval fails
 
 #### 5. Database Management 🗄️
@@ -197,6 +199,16 @@ sqlite3 database.db "PRAGMA foreign_key_check;"
 - **Debug Tools**: Command-line inspection and troubleshooting capabilities
 
 ## Recent Updates and Bug Fixes
+
+### Phase 16 Completion - Configurable Context Size Implementation ✅
+- **AI Settings Dialog Enhancement**: Added elegant Context Configuration section with slider interface
+- **User-Customizable Context**: 1-20 messages range with real-time token estimation display
+- **Smart Token Calculation**: ~25 tokens per message formula with breakdown explanation
+- **Settings Integration**: Persistent storage via ApplicationData.LocalSettings with validation
+- **ChatContextService Enhancement**: Dynamic context size with GetContextSize/SetContextSize methods
+- **Real-time UI Updates**: Context size display in chat header updates automatically
+- **UX Design Excellence**: Progressive disclosure with immediate feedback and smart defaults
+- **Performance Optimization**: Maintains hybrid cache benefits while adding configurability
 
 ### Phase 14 Completion - Chat Context Management Implementation ✅
 - **ChatContextService Architecture**: Hybrid memory cache + database persistence system

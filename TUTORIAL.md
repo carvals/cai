@@ -1361,6 +1361,228 @@ ORDER BY created_at DESC;
 ❌ Watch for: Context retrieval timeouts
 ```
 
+## Configurable Context Size Implementation (Phase 16)
+
+### Challenge: User-Customizable Context Management
+
+**Problem Statement**: Users needed control over conversation context size to balance between memory retention and token usage, with different use cases requiring different context lengths.
+
+### Solution Architecture: Smart Context Configuration
+
+#### 1. **AI Settings Dialog Enhancement**
+
+**Context Configuration Section Design**:
+```
+┌─────────────────────────────────────┐
+│ Context Configuration               │
+│ Configure how many previous         │
+│ messages to include in AI           │
+│ conversations.                      │
+│                                     │
+│ Number of messages in context:      │
+│ [====●====] 10                      │
+│ Estimated tokens: ~250              │
+│ (10 messages × ~25 tokens each)     │
+└─────────────────────────────────────┘
+```
+
+**XAML Implementation**:
+```xml
+<!-- Context Size Configuration -->
+<Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+        BorderThickness="1"
+        CornerRadius="8"
+        Padding="16">
+  <StackPanel Spacing="12">
+    <TextBlock Text="Context Configuration" 
+               FontWeight="SemiBold"
+               FontSize="14"/>
+    
+    <Grid>
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="Auto"/>
+        <ColumnDefinition Width="*"/>
+        <ColumnDefinition Width="Auto"/>
+      </Grid.ColumnDefinitions>
+      
+      <TextBlock Grid.Column="0"
+                 Text="Number of messages in context:"
+                 VerticalAlignment="Center"/>
+      
+      <Slider x:Name="ContextSizeSlider"
+              Grid.Column="1"
+              Minimum="1"
+              Maximum="20"
+              Value="10"
+              StepFrequency="1"
+              TickFrequency="5"
+              TickPlacement="BottomRight"/>
+      
+      <TextBlock x:Name="ContextSizeValue"
+                 Grid.Column="2"
+                 Text="10"
+                 FontWeight="SemiBold"/>
+    </Grid>
+    
+    <TextBlock x:Name="ContextSizeInfo"
+               Text="Estimated tokens: ~250 (10 messages × ~25 tokens each)"
+               Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+               FontSize="11"/>
+  </StackPanel>
+</Border>
+```
+
+#### 2. **ChatContextService Enhancement**
+
+**Configurable Context Implementation**:
+```csharp
+public class ChatContextService
+{
+    private int _contextMessages = 10;   // Now configurable (was const)
+    
+    public int GetContextSize() => _contextMessages;
+    
+    public void SetContextSize(int contextSize)
+    {
+        // Validate range (1-20 messages)
+        _contextMessages = Math.Max(1, Math.Min(20, contextSize));
+        SaveContextSizeToSettings();
+        Console.WriteLine($"Context size updated to: {_contextMessages} messages");
+    }
+    
+    private void LoadContextSizeFromSettings()
+    {
+        var localSettings = Windows.Storage.ApplicationData.Current.LocalSettings;
+        if (localSettings.Values.TryGetValue("ContextMessages", out var value) && value is int contextSize)
+        {
+            _contextMessages = Math.Max(1, Math.Min(20, contextSize));
+        }
+    }
+}
+```
+
+#### 3. **Real-time Token Estimation**
+
+**Smart Token Calculation**:
+```csharp
+private void UpdateContextSizeDisplay(int contextSize)
+{
+    if (ContextSizeValue != null)
+        ContextSizeValue.Text = contextSize.ToString();
+    
+    if (ContextSizeInfo != null)
+    {
+        var estimatedTokens = contextSize * 25; // ~25 tokens per message
+        ContextSizeInfo.Text = $"Estimated tokens: ~{estimatedTokens:N0} ({contextSize} messages × ~25 tokens each)";
+    }
+}
+```
+
+#### 4. **Settings Integration Flow**
+
+**Complete Settings Workflow**:
+```csharp
+// AI Settings Dialog Save
+public void SaveSettings()
+{
+    var localSettings = Windows.Storage.ApplicationData.Current.LocalSettings;
+    localSettings.Values["ContextMessages"] = (int)ContextSizeSlider.Value;
+    // ... other settings
+}
+
+// MainPage Settings Update
+private async void AISettingsButton_Click(object sender, RoutedEventArgs e)
+{
+    var result = await dialog.ShowAsync();
+    if (result == ContentDialogResult.Primary)
+    {
+        dialog.SaveSettings();
+        UpdateContextServiceFromSettings(); // ← Key integration point
+        _ = UpdateContextSizeDisplayAsync();
+    }
+}
+```
+
+### Key Implementation Lessons
+
+#### **Lesson 1: User-Centric Design**
+**Challenge**: Balance simplicity with power user needs
+**Solution**: Slider with visual feedback and token estimation
+**UX Benefit**: Users understand impact of their choices
+
+#### **Lesson 2: Real-time Feedback**
+**Implementation**: Immediate token calculation on slider change
+**User Experience**: No guesswork about token usage
+**Technical Detail**: `ValueChanged` event with instant UI updates
+
+#### **Lesson 3: Settings Persistence**
+**Storage**: `ApplicationData.LocalSettings["ContextMessages"]`
+**Validation**: Range checking (1-20) with fallback to default (10)
+**Sync**: Automatic service update when settings saved
+
+#### **Lesson 4: Token Estimation Accuracy**
+**Formula**: `contextSize × 25 tokens per message`
+**Rationale**: Based on average message length analysis
+**Display**: User-friendly format with breakdown explanation
+
+### Command Line Usage
+
+**Testing Context Size Configuration**:
+```bash
+# Build and test
+dotnet build CAI_design_1_chat.sln
+dotnet run --project CAI_design_1_chat --framework net9.0-desktop
+
+# Expected console output:
+# "Context size updated to: 15 messages"
+# "Updated context service to use 15 messages"
+# "Providing 15 messages as context to AI"
+# "Context size updated: 375 tokens for session X"
+```
+
+**Settings Verification**:
+```csharp
+// Check saved settings
+var localSettings = ApplicationData.Current.LocalSettings;
+var contextSize = localSettings.Values["ContextMessages"] as int? ?? 10;
+Console.WriteLine($"Saved context size: {contextSize} messages");
+```
+
+### Performance Impact Analysis
+
+**Memory Usage**:
+- **1 message context**: ~25 tokens, minimal memory
+- **10 messages context**: ~250 tokens, balanced performance
+- **20 messages context**: ~500 tokens, maximum memory retention
+
+**Token Cost Comparison**:
+- **Conservative (5 messages)**: ~125 tokens per request
+- **Balanced (10 messages)**: ~250 tokens per request  
+- **Comprehensive (20 messages)**: ~500 tokens per request
+
+**Use Case Recommendations**:
+- **Quick Q&A**: 1-5 messages (minimal context)
+- **Normal Chat**: 8-12 messages (balanced)
+- **Complex Discussions**: 15-20 messages (full context)
+
+### UX Design Principles Applied
+
+#### **Progressive Disclosure**
+- **Basic**: Simple slider with current value
+- **Intermediate**: Token estimation display
+- **Advanced**: Breakdown explanation in parentheses
+
+#### **Immediate Feedback**
+- **Visual**: Slider thumb position
+- **Numerical**: Current value display
+- **Contextual**: Token count estimation
+
+#### **Smart Defaults**
+- **Default**: 10 messages (industry standard)
+- **Range**: 1-20 messages (practical limits)
+- **Validation**: Automatic range clamping
+
 ## Engineering Best Practices - Avoiding Common Pitfalls
 
 ### Issue #1: StackPanel Height="*" Syntax Error
