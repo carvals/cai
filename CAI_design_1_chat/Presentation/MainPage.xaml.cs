@@ -716,16 +716,25 @@ public sealed partial class MainPage : Page
             var serverUrl = localSettings.Values["OllamaUrl"]?.ToString() ?? "http://localhost:11434";
             var model = localSettings.Values["OllamaModel"]?.ToString() ?? "llama2";
 
+            // Get conversation context using hybrid approach (memory + database)
+            var conversationHistory = await _chatContextService.GetContextForAIAsync(_currentSessionId);
+            
+            // Build conversation prompt with history
+            var fullPrompt = BuildOllamaPrompt(conversationHistory, message);
+            
             using var httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(60) };
             var requestBody = new
             {
                 model = model,
-                prompt = message,
+                prompt = fullPrompt,
                 stream = false
             };
 
-            var jsonContent = System.Text.Json.JsonSerializer.Serialize(requestBody);
-            var content = new StringContent(jsonContent, System.Text.Encoding.UTF8, "application/json");
+            var json = System.Text.Json.JsonSerializer.Serialize(requestBody);
+            var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
+            
+            Console.WriteLine($"Ollama request with context: {conversationHistory.Count} messages");
+            
             var response = await httpClient.PostAsync($"{serverUrl}/api/generate", content);
             
             if (!response.IsSuccessStatusCode)
@@ -936,25 +945,72 @@ public sealed partial class MainPage : Page
         }
     }
 
+    /// <summary>
+    /// Build a conversation prompt for Ollama including chat history
+    /// </summary>
+    private string BuildOllamaPrompt(List<ChatMessage> conversationHistory, string currentMessage)
+    {
+        var prompt = new StringBuilder();
+        
+        // Add system context if we have conversation history
+        if (conversationHistory.Count > 0)
+        {
+            prompt.AppendLine("Previous conversation:");
+            
+            foreach (var msg in conversationHistory)
+            {
+                var roleLabel = msg.Role switch
+                {
+                    "user" => "Human",
+                    "assistant" => "Assistant", 
+                    "system" => "System",
+                    _ => msg.Role
+                };
+                
+                prompt.AppendLine($"{roleLabel}: {msg.Content}");
+            }
+            
+            prompt.AppendLine();
+            prompt.AppendLine("Current message:");
+        }
+        
+        prompt.AppendLine($"Human: {currentMessage}");
+        prompt.AppendLine("Assistant:");
+        
+        return prompt.ToString();
+    }
+
     private async Task<string> GetAnthropicResponseAsync(string message)
     {
+        // Get conversation context for future implementation
+        var conversationHistory = await _chatContextService.GetContextForAIAsync(_currentSessionId);
+        Console.WriteLine($"Anthropic request with context: {conversationHistory.Count} messages");
+        
         // Placeholder - will implement with Anthropic API
         await Task.Delay(2000);
-        return "Anthropic integration not yet implemented. Please configure Ollama for now.";
+        return "Anthropic integration not yet implemented. Please configure OpenAI or Ollama for now.";
     }
 
     private async Task<string> GetGeminiResponseAsync(string message)
     {
+        // Get conversation context for future implementation
+        var conversationHistory = await _chatContextService.GetContextForAIAsync(_currentSessionId);
+        Console.WriteLine($"Gemini request with context: {conversationHistory.Count} messages");
+        
         // Placeholder - will implement with Gemini API
         await Task.Delay(2000);
-        return "Gemini integration not yet implemented. Please configure Ollama for now.";
+        return "Gemini integration not yet implemented. Please configure OpenAI or Ollama for now.";
     }
 
     private async Task<string> GetMistralResponseAsync(string message)
     {
+        // Get conversation context for future implementation
+        var conversationHistory = await _chatContextService.GetContextForAIAsync(_currentSessionId);
+        Console.WriteLine($"Mistral request with context: {conversationHistory.Count} messages");
+        
         // Placeholder - will implement with Mistral API
         await Task.Delay(2000);
-        return "Mistral integration not yet implemented. Please configure Ollama for now.";
+        return "Mistral integration not yet implemented. Please configure OpenAI or Ollama for now.";
     }
 
     // Data model for Ollama response (reusing from AISettingsDialog)
