@@ -127,5 +127,30 @@ namespace CAI_design_1_chat.Services
         public string GetDatabasePath() => _databasePath;
         
         public string GetConnectionString() => _connectionString;
+
+        // Simple method to save chat messages
+        public async Task SaveChatMessageAsync(int sessionId, string messageType, string content)
+        {
+            try
+            {
+                using var connection = new SqliteConnection(_connectionString);
+                await connection.OpenAsync();
+                
+                using var command = new SqliteCommand(
+                    "INSERT INTO chat_messages (session_id, message_type, content) VALUES (@sessionId, @messageType, @content)", 
+                    connection);
+                
+                command.Parameters.AddWithValue("@sessionId", sessionId);
+                command.Parameters.AddWithValue("@messageType", messageType);
+                command.Parameters.AddWithValue("@content", content);
+                
+                await command.ExecuteNonQueryAsync();
+                Console.WriteLine($"Chat message saved: {messageType} - {content.Substring(0, Math.Min(50, content.Length))}...");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error saving chat message: {ex.Message}");
+            }
+        }
     }
 }

@@ -29,6 +29,10 @@ public sealed partial class MainPage : Page
     private readonly OpenAIService _openAIService;
     private bool _isAnimating = false;
     
+    // Database service for chat persistence
+    private readonly DatabaseService _databaseService;
+    private int _currentSessionId = 1; // Simple session ID for now
+    
     // Auto-scroll state tracking
     private bool _isUserScrolling = false;
     private bool _shouldAutoScroll = true;
@@ -43,6 +47,10 @@ public sealed partial class MainPage : Page
         
         // Initialize AI services
         _openAIService = new OpenAIService();
+        
+        // Initialize database service
+        _databaseService = new DatabaseService();
+        
         this.Loaded += MainPage_Loaded;
         InitializeAnimationTimer();
         InitializeScrollHandlers();
@@ -283,6 +291,9 @@ public sealed partial class MainPage : Page
         ChatMessagesPanel.Children.Add(userMessageGrid);
 
         ScrollToBottom();
+        
+        // Save user message to database
+        _ = _databaseService.SaveChatMessageAsync(_currentSessionId, "user", message);
     }
 
     private void AddAIMessage(string message)
@@ -390,6 +401,9 @@ public sealed partial class MainPage : Page
 
         ChatMessagesPanel.Children.Add(aiMessageGrid);
         ScrollToBottom();
+        
+        // Save AI message to database
+        _ = _databaseService.SaveChatMessageAsync(_currentSessionId, "assistant", message);
     }
 
     private (string thinking, string response) ParseThinkingResponse(string message)
