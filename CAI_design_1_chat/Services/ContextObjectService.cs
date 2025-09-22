@@ -11,16 +11,19 @@ namespace CAI_design_1_chat.Services
         private readonly DatabaseService _databaseService;
         private readonly ChatContextService _chatContextService;
 
-        public ContextObjectService()
+        public ContextObjectService(DatabaseService databaseService, ChatContextService chatContextService)
         {
-            _databaseService = new DatabaseService();
-            _chatContextService = new ChatContextService(_databaseService);
+            _databaseService = databaseService;
+            _chatContextService = chatContextService;
         }
 
         public async Task<string> BuildContextJsonAsync(int sessionId)
         {
             try
             {
+                var fileContext = await BuildFileContextAsync(sessionId);
+                var messageHistory = await BuildMessageHistoryAsync(sessionId);
+                
                 var contextObject = new
                 {
                     assistant_role = new
@@ -28,8 +31,8 @@ namespace CAI_design_1_chat.Services
                         description = "you must be a clear assistant, if a specific role is better for you ask in the chat and check the answer in the chat history section below",
                         context_date = DateTime.Now.ToString("yyyy-MM-ddTHH:mm:sszzz")
                     },
-                    file_context = await BuildFileContextAsync(sessionId),
-                    message_history = await BuildMessageHistoryAsync(sessionId)
+                    file_context = fileContext,
+                    message_history = messageHistory
                 };
 
                 var options = new JsonSerializerOptions
@@ -40,7 +43,15 @@ namespace CAI_design_1_chat.Services
 
                 var json = JsonSerializer.Serialize(contextObject, options);
                 
-                Console.WriteLine($"Context JSON generated for session {sessionId}: {json.Length} characters");
+                // Calculate actual token count from the complete JSON context
+                var estimatedTokens = EstimateTokensFromText(json);
+                
+                Console.WriteLine($"Context JSON generated for session {sessionId}:");
+                Console.WriteLine($"  - JSON size: {json.Length} characters");
+                Console.WriteLine($"  - Estimated tokens: ~{estimatedTokens}");
+                Console.WriteLine($"  - Files: {((dynamic)fileContext).total_files}");
+                Console.WriteLine($"  - Messages: {((dynamic)messageHistory).total_messages}");
+                
                 return json;
             }
             catch (Exception ex)
@@ -48,6 +59,15 @@ namespace CAI_design_1_chat.Services
                 Console.WriteLine($"Error building context JSON: {ex.Message}");
                 throw;
             }
+        }
+
+        /// <summary>
+        /// Estimate token count from text (rough approximation: ~4 characters per token)
+        /// </summary>
+        private int EstimateTokensFromText(string text)
+        {
+            if (string.IsNullOrEmpty(text)) return 0;
+            return (int)Math.Ceiling(text.Length / 4.0);
         }
 
         private async Task<object> BuildFileContextAsync(int sessionId)
@@ -90,7 +110,15 @@ namespace CAI_design_1_chat.Services
         {
             try
             {
+                Console.WriteLine($"Building message history for session {sessionId}");
+                
+                // Get the configured context size from ChatContextService
+                var contextSize = _chatContextService.GetContextSize();
+                Console.WriteLine($"  - Configured context size: {contextSize} messages");
+                
                 var messages = await _chatContextService.GetContextForAIAsync(sessionId);
+                Console.WriteLine($"  - Retrieved {messages.Count} messages from ChatContextService");
+                
                 var messageList = new List<object>();
 
                 foreach (var message in messages)
@@ -99,9 +127,13 @@ namespace CAI_design_1_chat.Services
                     {
                         timestamp = message.Timestamp.ToString("yyyy-MM-ddTHH:mm:sszzz"),
                         role = message.Role.ToString().ToLower(),
-                        content = message.Content
+                        content = message.Content.Length > 100 ? 
+                            message.Content.Substring(0, 100) + "..." : 
+                            message.Content
                     });
                 }
+
+                Console.WriteLine($"  - Built message list with {messageList.Count} messages");
 
                 return new
                 {

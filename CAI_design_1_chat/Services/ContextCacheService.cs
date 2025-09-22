@@ -13,9 +13,9 @@ namespace CAI_design_1_chat.Services
         // Cache expiration time (5 minutes)
         private readonly TimeSpan _cacheExpiration = TimeSpan.FromMinutes(5);
 
-        public ContextCacheService()
+        public ContextCacheService(DatabaseService databaseService, ChatContextService chatContextService)
         {
-            _contextObjectService = new ContextObjectService();
+            _contextObjectService = new ContextObjectService(databaseService, chatContextService);
         }
 
         /// <summary>

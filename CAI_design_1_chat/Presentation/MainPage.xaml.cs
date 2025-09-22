@@ -56,12 +56,15 @@ public sealed partial class MainPage : Page
         // Initialize database service
         _databaseService = new DatabaseService();
         
-        // Initialize context cache service and connect to database service
-        var contextCacheService = new ContextCacheService();
-        _databaseService.SetContextCacheService(contextCacheService);
-        
         // Initialize chat context service
         _chatContextService = new ChatContextService(_databaseService);
+        
+        // Initialize context cache service with shared service instances
+        var contextCacheService = new ContextCacheService(_databaseService, _chatContextService);
+        _databaseService.SetContextCacheService(contextCacheService);
+        
+        // Configure ContextPanel with shared service instances
+        ContextPanelControl.SetServices(_databaseService, _chatContextService);
         
         // Update context size from settings
         UpdateContextServiceFromSettings();

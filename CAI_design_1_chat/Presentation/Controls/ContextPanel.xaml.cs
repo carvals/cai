@@ -10,15 +10,28 @@ namespace CAI_design_1_chat.Presentation.Controls;
 
 public sealed partial class ContextPanel : UserControl
 {
-    private readonly DatabaseService _databaseService;
-    private readonly ContextObjectService _contextObjectService;
+    private DatabaseService _databaseService;
+    private ContextObjectService _contextObjectService;
     private int _currentSessionId;
 
     public ContextPanel()
     {
         this.InitializeComponent();
         _databaseService = new DatabaseService();
-        _contextObjectService = new ContextObjectService();
+        // Note: ContextObjectService will be set via SetServices method
+        _contextObjectService = null!; // Will be initialized via SetServices
+    }
+
+    /// <summary>
+    /// Set the shared service instances (called from MainPage)
+    /// </summary>
+    public void SetServices(DatabaseService databaseService, ChatContextService chatContextService)
+    {
+        // Update the database service reference
+        _databaseService = databaseService;
+        
+        // Create ContextObjectService with shared instances
+        _contextObjectService = new ContextObjectService(databaseService, chatContextService);
     }
 
     public async Task LoadContextFilesAsync(int sessionId)
