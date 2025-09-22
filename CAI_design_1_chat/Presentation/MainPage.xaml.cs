@@ -121,6 +121,66 @@ public sealed partial class MainPage : Page
         var targetWidth = currentWidth <= 0.5 ? GetLastSavedWidth() : 0.0;
         
         AnimateLeftPanelTo(targetWidth);
+        
+        // Show workspace panel content
+        ShowWorkspacePanel();
+    }
+
+    private void ContextButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_isAnimating) return;
+
+        // If panel is collapsed, expand it first
+        var currentWidth = LeftPanelColumn.Width.Value;
+        if (currentWidth <= 0.5)
+        {
+            AnimateLeftPanelTo(GetLastSavedWidth());
+        }
+        
+        // Show context panel content
+        ShowContextPanel();
+    }
+
+    private void ShowWorkspacePanel()
+    {
+        // Update button visual states
+        UpdatePanelButtonStates(isWorkspaceActive: true);
+        
+        // TODO: Show workspace content (existing functionality)
+        Console.WriteLine("Workspace panel activated");
+    }
+
+    private void ShowContextPanel()
+    {
+        // Update button visual states
+        UpdatePanelButtonStates(isWorkspaceActive: false);
+        
+        // TODO: Show context panel content (to be implemented in next step)
+        Console.WriteLine("Context panel activated");
+    }
+
+    private void UpdatePanelButtonStates(bool isWorkspaceActive)
+    {
+        if (isWorkspaceActive)
+        {
+            // Workspace button active
+            ToggleLeftPanelButton.Background = (Brush)Application.Current.Resources["MaterialPrimaryBrush"];
+            ToggleLeftPanelButton.BorderBrush = (Brush)Application.Current.Resources["MaterialPrimaryBrush"];
+            
+            // Context button inactive
+            ContextButton.Background = (Brush)Application.Current.Resources["SubtleFillColorSecondaryBrush"];
+            ContextButton.BorderBrush = (Brush)Application.Current.Resources["ControlStrokeColorDefaultBrush"];
+        }
+        else
+        {
+            // Context button active
+            ContextButton.Background = (Brush)Application.Current.Resources["MaterialPrimaryBrush"];
+            ContextButton.BorderBrush = (Brush)Application.Current.Resources["MaterialPrimaryBrush"];
+            
+            // Workspace button inactive
+            ToggleLeftPanelButton.Background = (Brush)Application.Current.Resources["SubtleFillColorSecondaryBrush"];
+            ToggleLeftPanelButton.BorderBrush = (Brush)Application.Current.Resources["ControlStrokeColorDefaultBrush"];
+        }
     }
 
     private double GetLastSavedWidth()

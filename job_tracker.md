@@ -578,13 +578,216 @@ CAI_design_1_chat/
 - **Debug Infrastructure**: Command-line tools and structured logging ✅
 - **Data Consistency**: UI-database synchronization verified ✅
 
-### 🎯 Current Status: Phase 16 COMPLETED - Configurable Context Size
-**Achievement**: Implemented user-customizable context size with elegant AI Settings dialog interface
-**Features**: 1-20 message range slider, real-time token estimation, persistent settings storage
-**UX Excellence**: Progressive disclosure design, immediate feedback, smart defaults with validation
-**Integration**: ChatContextService enhancement, MainPage synchronization, settings persistence
-**Performance**: Maintains hybrid cache benefits while adding full configurability
-**Documentation**: Complete implementation guides, UX design principles, performance analysis
+### 🎯 Current Status: Phase 17 IN PROGRESS - Context Handling Panel
+**Challenge**: Implement file context management panel with JSON context object for LLM optimization
+**Features**: Context panel UI, file management actions, JSON context object, database integration
+**Architecture**: Left sidebar panel, in-place editing, real-time context updates, structured LLM context
+**Integration**: Independent from workspace, database-driven, ChatContextService synchronization
+**Performance**: Immediate file loading, cached context object, real-time UI updates
+
+---
+
+## Phase 17 — Context Handling Panel Implementation 📁 🚧 IN PROGRESS
+
+### Challenge: File Context Management with Structured LLM Context
+
+**Problem**: Users need a dedicated interface to manage files in context, with the ability to rename, toggle visibility, and control summary usage. The system must provide a structured JSON context object to LLM for optimal AI response quality.
+
+### Solution Architecture: Context Management Panel ✅
+
+#### **Step 1: Database Schema Enhancement** 🔧
+- **New Column**: Add `display_name TEXT` to `context_file_links` table
+- **Migration Logic**: Set default display_name to original filename for existing records
+- **Validation**: Ensure display_name uniqueness per session
+- **Integration**: Update FileProcessingService insertion queries
+
+#### **Step 2: Context Panel UI Implementation** 🎨
+- **Location**: Left sidebar button below "Espace de travail"
+- **Behavior**: Replace current panel with same collapse/expand logic
+- **Layout**: Card-based file list with action buttons and metadata
+- **Empty State**: "No context" message when no files present
+
+#### **Step 3: File Management Actions** ⚡
+- **Rename (Pen Icon)**: In-place editing of display_name with validation
+- **Toggle Visibility (Eye Icon)**: Update is_excluded property with visual feedback
+- **Delete (Trash Icon)**: Remove from context_file_links with confirmation
+- **Use Summary Checkbox**: Control use_summary property for content vs summary
+
+#### **Step 4: JSON Context Object Service** 🧠
+- **Structure**: assistant_role → file_context → message_history
+- **Optimization**: Ordered by order_index for optimal LLM processing
+- **Metadata**: Include character counts, file counts, and timestamps
+- **Caching**: Cache context object until files/settings change
+
+#### **Step 5: Integration & Synchronization** 🔗
+- **ChatContextService**: Real-time sync with existing context management
+- **Database Operations**: CRUD operations for context_file_links
+- **Performance**: Immediate file loading with cached context object
+- **Validation**: Duplicate prevention based on file_data.name per session
+
+### Implementation Steps (Small, Testable Increments)
+
+#### **Step 1.1: Database Migration** ✅ COMPLETED
+```sql
+-- Created migration_v3.sql in Database folder
+ALTER TABLE context_file_links ADD COLUMN display_name TEXT;
+UPDATE context_file_links SET display_name = (
+    SELECT name FROM file_data WHERE file_data.id = context_file_links.file_id
+) WHERE display_name IS NULL;
+-- Added performance indexes and schema version update
+```
+**Test**: Verify column exists and default values populated
+**Validation**: Check existing context_file_links records have display_name
+**Status**: ✅ Migration script created and ready for execution
+
+#### **Step 1.2: Context Panel Button** ✅ COMPLETED
+- Add Context button to left sidebar below workspace button
+- Implement basic panel toggle functionality
+- Style to match existing sidebar buttons
+**Test**: Button appears, toggles panel visibility
+**Validation**: Panel replaces workspace panel correctly
+**Status**: ✅ Context button added with click handlers and visual state management
+
+#### **Step 1.3: Basic File List Display** 📋
+- Create ContextPanel UserControl
+- Load files from context_file_links for current session
+- Display file names and character counts
+**Test**: Files appear in list, character counts accurate
+**Validation**: Only current session files shown
+
+#### **Step 1.4: Rename Functionality** ✏️
+- Implement in-place editing for display_name
+- Add validation for duplicate names
+- Update database on Enter/blur
+**Test**: Rename works, validation prevents duplicates
+**Validation**: Database updated correctly, UI reflects changes
+
+#### **Step 1.5: Toggle Visibility Action** 👁️
+- Implement eye icon toggle for is_excluded
+- Add visual feedback (grayed out when excluded)
+- Update database immediately
+**Test**: Toggle works, visual feedback correct
+**Validation**: Database is_excluded updated, context rebuilt
+
+#### **Step 1.6: Delete Action** 🗑️
+- Implement delete with confirmation dialog
+- Remove from context_file_links table
+- Update UI immediately
+**Test**: Delete works with confirmation, UI updates
+**Validation**: Record removed from database, context rebuilt
+
+#### **Step 1.7: Use Summary Checkbox** ☑️
+- Implement checkbox for use_summary property
+- Update database on change
+- Provide visual indication of summary vs full content
+**Test**: Checkbox works, database updated
+**Validation**: Context object uses summary when checked
+
+#### **Step 1.8: JSON Context Object Service** 📄
+- Create ContextObjectService class
+- Implement BuildContextJsonAsync method
+- Structure: assistant_role, file_context, message_history
+**Test**: JSON generated correctly, structure validated
+**Validation**: LLM receives properly formatted context
+
+#### **Step 1.9: ChatContextService Integration** 🔗
+- Integrate context object with existing ChatContextService
+- Update context when files change
+- Maintain backward compatibility
+**Test**: Context updates propagate to chat
+**Validation**: AI requests include structured context
+
+#### **Step 1.10: Performance Optimization** ⚡
+- Implement context object caching
+- Add cache invalidation on file changes
+- Optimize file content loading
+**Test**: Performance acceptable with large files
+**Validation**: Cache invalidates correctly
+
+### Technical Architecture
+
+#### **Context Object JSON Structure**
+```json
+{
+  "assistant_role": {
+    "description": "you must be a clear assistant, if a specific role is better for you ask in the chat and check the answer in the chat history section below",
+    "context_date": "2025-09-22T09:56:54+02:00"
+  },
+  "file_context": {
+    "total_files": 2,
+    "total_characters": 24370,
+    "files": [
+      {
+        "order_index": 1,
+        "display_name": "Project Requirements",
+        "original_name": "requirements.pdf",
+        "character_count": 15420,
+        "use_summary": false,
+        "content": "Full file content here..."
+      }
+    ]
+  },
+  "message_history": {
+    "total_messages": 4,
+    "messages": [
+      {
+        "timestamp": "2025-09-22T09:45:00+02:00",
+        "role": "user",
+        "content": "Can you help me analyze the requirements?"
+      }
+    ]
+  }
+}
+```
+
+#### **Key Services to Implement**
+1. **ContextPanelService**: File management operations
+2. **ContextObjectService**: JSON context generation
+3. **ContextValidationService**: Duplicate prevention and validation
+
+#### **Database Operations**
+- **Load**: Get context files for session with JOIN to file_data
+- **Rename**: UPDATE context_file_links SET display_name = ?
+- **Toggle**: UPDATE context_file_links SET is_excluded = ?
+- **Delete**: DELETE FROM context_file_links WHERE id = ?
+- **Summary**: UPDATE context_file_links SET use_summary = ?
+
+### Command Line Testing
+
+**Build and Test Context Panel**:
+```bash
+dotnet build CAI_design_1_chat.sln
+dotnet run --project CAI_design_1_chat --framework net9.0-desktop
+
+# Expected console output:
+# "Context panel loaded: X files for session Y"
+# "Context object generated: Z characters total"
+# "File renamed: old_name → new_name"
+# "Context visibility toggled: file_name excluded=true/false"
+```
+
+**Database Verification**:
+```sql
+-- Check context_file_links structure
+SELECT sql FROM sqlite_master WHERE name = 'context_file_links';
+
+-- Verify display_name column exists
+PRAGMA table_info(context_file_links);
+
+-- Test context files for session
+SELECT cfl.*, fd.name, fd.content 
+FROM context_file_links cfl 
+JOIN file_data fd ON cfl.file_id = fd.id 
+WHERE cfl.context_session_id = 1;
+```
+
+### Expected Deliverables
+
+1. **Context Panel UI**: Fully functional file management interface
+2. **Database Migration**: context_file_links enhanced with display_name
+3. **JSON Context Service**: Structured context object generation
+4. **Integration**: Seamless sync with existing ChatContextService
+5. **Documentation**: Updated spec.md and TUTORIAL.md with implementation guides
 
 ---
 

@@ -115,23 +115,39 @@
             <RowDefinition Height="Auto" />
           </Grid.RowDefinitions>
           
-          <!-- Toggle button for left panel -->
-          <Button x:Name="ToggleLeftPanelButton"
-                  Grid.Row="0"
-                  Click="ToggleLeftPanelButton_Click"
-                  Background="{ThemeResource MaterialPrimaryBrush}"
-                  BorderBrush="{ThemeResource MaterialPrimaryBrush}"
-                  BorderThickness="2"
-                  CornerRadius="6"
-                  Width="48"
-                  Height="48"
-                  Margin="6,8,6,0"
-                  ToolTipService.ToolTip="Toggle workspace panel">
-            <StackPanel>
-              <SymbolIcon Symbol="Add" HorizontalAlignment="Center" />
-              <SymbolIcon Symbol="Page" HorizontalAlignment="Center" />
-            </StackPanel>
-          </Button>
+          <!-- Navigation buttons section -->
+          <StackPanel Grid.Row="0" Margin="6,8,6,0" Spacing="4">
+            <!-- Toggle button for left panel (Espace de travail) -->
+            <Button x:Name="ToggleLeftPanelButton"
+                    Click="ToggleLeftPanelButton_Click"
+                    Background="{ThemeResource MaterialPrimaryBrush}"
+                    BorderBrush="{ThemeResource MaterialPrimaryBrush}"
+                    BorderThickness="2"
+                    CornerRadius="6"
+                    Width="48"
+                    Height="48"
+                    ToolTipService.ToolTip="Toggle workspace panel">
+              <StackPanel>
+                <SymbolIcon Symbol="Add" HorizontalAlignment="Center" />
+                <SymbolIcon Symbol="Page" HorizontalAlignment="Center" />
+              </StackPanel>
+            </Button>
+            
+            <!-- Context button -->
+            <Button x:Name="ContextButton"
+                    Click="ContextButton_Click"
+                    Background="{ThemeResource SubtleFillColorSecondaryBrush}"
+                    BorderBrush="{ThemeResource ControlStrokeColorDefaultBrush}"
+                    BorderThickness="1"
+                    CornerRadius="6"
+                    Width="48"
+                    Height="48"
+                    ToolTipService.ToolTip="Context">
+              <FontIcon Glyph="📄" 
+                        Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                        FontSize="20" />
+            </Button>
+          </StackPanel>
           
           <!-- Settings section with expandable menu -->
           <StackPanel x:Name="SettingsSection" Grid.Row="2" Margin="6,0,6,4">

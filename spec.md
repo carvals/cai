@@ -982,6 +982,178 @@ sequenceDiagram
     UI-->>U: Show "Context size: X tokens"
 ```
 
+### Context Handling Panel Architecture
+
+```mermaid
+graph TD
+    A[Context Button - Left Sidebar] --> B[Context Panel Opens]
+    B --> C[Load Files from context_file_links]
+    C --> D[Display File List with Actions]
+    
+    D --> E[Rename Action - Pen Icon]
+    D --> F[Toggle Visibility - Eye Icon]
+    D --> G[Delete Action - Trash Icon]
+    D --> H[Use Summary Checkbox]
+    
+    E --> I[In-place Edit display_name]
+    F --> J[Update is_excluded in DB]
+    G --> K[Remove from context_file_links]
+    H --> L[Update use_summary in DB]
+    
+    I --> M[Update Context Object]
+    J --> M
+    K --> M
+    L --> M
+    
+    M --> N[Rebuild JSON Context]
+    N --> O[Update ChatContextService]
+    
+    style A fill:#e1f5fe
+    style M fill:#e8f5e8
+    style N fill:#fff3e0
+```
+
+### Context Object JSON Structure
+
+The context object passed to LLM follows this optimized structure for maximum AI response quality:
+
+```json
+{
+  "assistant_role": {
+    "description": "you must be a clear assistant, if a specific role is better for you ask in the chat and check the answer in the chat history section below",
+    "context_date": "2025-09-22T09:56:54+02:00"
+  },
+  "file_context": {
+    "total_files": 2,
+    "total_characters": 24370,
+    "files": [
+      {
+        "order_index": 1,
+        "display_name": "Project Requirements",
+        "original_name": "requirements.pdf",
+        "character_count": 15420,
+        "use_summary": false,
+        "content": "Full file content here..."
+      },
+      {
+        "order_index": 2,
+        "display_name": "Technical Specifications", 
+        "original_name": "tech_spec.md",
+        "character_count": 8950,
+        "use_summary": true,
+        "content": "AI-generated summary here..."
+      }
+    ]
+  },
+  "message_history": {
+    "total_messages": 4,
+    "messages": [
+      {
+        "timestamp": "2025-09-22T09:45:00+02:00",
+        "role": "user",
+        "content": "Can you help me analyze the requirements?"
+      },
+      {
+        "timestamp": "2025-09-22T09:45:15+02:00",
+        "role": "assistant", 
+        "content": "I'll analyze the requirements document for you..."
+      }
+    ]
+  }
+}
+```
+
+**Context Object Design Principles:**
+1. **Assistant Role First**: Sets behavior expectations for LLM
+2. **File Context Second**: Provides knowledge base before conversation
+3. **Message History Last**: Most recent conversational context
+4. **Metadata Inclusion**: Total counts help LLM understand scope
+5. **Order Preservation**: Files ordered by `order_index` for optimal LLM processing
+
+### Context Handling Panel Specification
+
+#### **Database Schema Requirements**
+
+**New Column Addition:**
+```sql
+-- Add display_name column to context_file_links for custom file naming
+ALTER TABLE context_file_links ADD COLUMN display_name TEXT;
+
+-- Set default display_name to original filename for existing records
+UPDATE context_file_links 
+SET display_name = (
+    SELECT name FROM file_data WHERE file_data.id = context_file_links.file_id
+)
+WHERE display_name IS NULL;
+```
+
+**Existing Schema Utilization:**
+- `context_file_links.use_summary BOOLEAN` - Controls content vs summary usage
+- `context_file_links.is_excluded BOOLEAN` - Controls file visibility in context
+- `context_file_links.order_index INTEGER` - Controls file ordering in context
+- `file_data.name TEXT` - Original filename for duplicate prevention
+
+#### **UI/UX Specifications**
+
+**Panel Location & Behavior:**
+- **Position**: Left sidebar, below "Espace de travail" button
+- **Behavior**: Replaces current panel (same collapse/expand logic as workspace)
+- **Empty State**: Display "No context" message when no files present
+
+**Panel Layout:**
+```
+┌─────────────────────────────────────┐
+│ Context                             │
+├─────────────────────────────────────┤
+│ ┌─────────────────────────────────┐ │
+│ │ DT25.234.pdf            [🖊][👁][🗑] │
+│ │ 19583 Caractères                │ │
+│ │ ☐ Utiliser le sommaire          │ │
+│ └─────────────────────────────────┘ │
+│                                     │
+│ ┌─────────────────────────────────┐ │
+│ │ Meeting_Notes.txt       [🖊][👁][🗑] │
+│ │ 2847 Caractères                 │ │
+│ │ ☑ Utiliser le sommaire          │ │
+│ └─────────────────────────────────┘ │
+└─────────────────────────────────────┘
+```
+
+**Action Button Specifications:**
+1. **Pen (🖊) - Rename**: In-place editing of display_name
+   - Click → text becomes editable
+   - Enter/Escape to confirm/cancel
+   - Validation: prevent duplicate display_names per session
+   
+2. **Eye (👁) - Toggle Visibility**: Updates is_excluded property
+   - Visual feedback: grayed out when excluded
+   - Immediate context object rebuild
+   
+3. **Delete (🗑) - Remove**: Remove from context_file_links table
+   - Confirmation dialog required
+   - Immediate context object rebuild
+
+4. **Checkbox - Use Summary**: Updates use_summary property
+   - Controls whether full content or AI summary is used in context
+   - Immediate context object rebuild
+
+#### **Business Logic Requirements**
+
+**Duplicate Prevention:**
+- **Scope**: Per session only (same file can exist in different sessions)
+- **Validation**: Prevent adding same `file_data.name` to same `context_session_id`
+- **Display Names**: Must be unique within same session
+
+**Context Loading Strategy:**
+- **File Contents**: Load all file contents immediately when panel opens
+- **Performance**: Cache context object until files/settings change
+- **Memory Management**: Clear cache when session changes
+
+**Integration Points:**
+- **Independent Operation**: Context panel operates independently from "Espace de travail"
+- **Database Driven**: All context files must exist in `file_data` table
+- **Real-time Sync**: Changes immediately update `ChatContextService`
+
 ### Debugging Workflow
 
 ```mermaid
