@@ -34,6 +34,35 @@ public sealed partial class ContextPanel : UserControl
         _contextObjectService = new ContextObjectService(databaseService, chatContextService);
     }
 
+    /// <summary>
+    /// Clear context panel UI and update to new session (called when session is cleared)
+    /// </summary>
+    public async Task ClearAndUpdateSessionAsync(int newSessionId)
+    {
+        try
+        {
+            Console.WriteLine($"Clearing context panel and updating to session {newSessionId}");
+            
+            // Clear current file list from UI
+            ContextFilesContainer.Children.Clear();
+            
+            // Show empty state (keep panel expanded as requested)
+            EmptyStateText.Visibility = Visibility.Visible;
+            
+            // Update to new session
+            _currentSessionId = newSessionId;
+            
+            // Refresh with new session (should show empty state)
+            await RefreshContextFilesAsync();
+            
+            Console.WriteLine($"Context panel cleared and updated to session {newSessionId}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error clearing context panel: {ex.Message}");
+        }
+    }
+
     public async Task LoadContextFilesAsync(int sessionId)
     {
         _currentSessionId = sessionId;

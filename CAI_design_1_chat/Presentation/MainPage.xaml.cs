@@ -1184,6 +1184,24 @@ public sealed partial class MainPage : Page
 
     private async void ClearSessionButton_Click(object sender, RoutedEventArgs e)
     {
+        // Show confirmation dialog
+        var dialog = new ContentDialog()
+        {
+            Title = "Clear Session",
+            Content = "Are you sure you want to clear the current session?\n\nThis will:\n• Clear all chat messages\n• Remove files from context panel\n• Start a new session\n\nNote: Files will remain in the database and can be re-added later.",
+            PrimaryButtonText = "Clear Session",
+            CloseButtonText = "Cancel",
+            DefaultButton = ContentDialogButton.Close
+        };
+
+        dialog.XamlRoot = this.XamlRoot;
+        var result = await dialog.ShowAsync();
+
+        if (result != ContentDialogResult.Primary)
+        {
+            return; // User cancelled
+        }
+
         try
         {
             // Create new session in database
@@ -1197,14 +1215,23 @@ public sealed partial class MainPage : Page
             command.Parameters.AddWithValue("@sessionName", $"Chat Session {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
             command.Parameters.AddWithValue("@user", "current_user");
             
-            var result = await command.ExecuteScalarAsync();
-            var newSessionId = Convert.ToInt32(result);
+            var dbResult = await command.ExecuteScalarAsync();
+            var newSessionId = Convert.ToInt32(dbResult);
+            
+            // Store old session ID for cleanup
+            var oldSessionId = _currentSessionId;
             
             // Update current session ID to the new one
             _currentSessionId = newSessionId;
             
             // Clear chat context cache for the old session
-            _chatContextService.ClearSessionCache(_currentSessionId);
+            _chatContextService.ClearSessionCache(oldSessionId);
+            
+            // Invalidate context cache for old session and trigger refresh
+            await _contextCacheService.InvalidateContextAsync(oldSessionId, ContextChangeTypes.SessionCleared, null, "Session cleared by user");
+            
+            // Clear and update Context Panel to new session
+            await ContextPanelControl.ClearAndUpdateSessionAsync(_currentSessionId);
             
             // Clear chat UI
             ChatMessagesPanel.Children.Clear();
