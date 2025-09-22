@@ -143,15 +143,8 @@ namespace CAI_design_1_chat.Presentation.Controls
             
             Console.WriteLine($"FileSearchPanel: Content toggle changed to {(showSummary ? "Summary" : "Raw Text")}");
             
-            // TODO: Update content preview based on toggle state
-            if (showSummary)
-            {
-                ContentPreview.Text = "Summary view will be implemented when file is selected...";
-            }
-            else
-            {
-                ContentPreview.Text = "Raw text view will be implemented when file is selected...";
-            }
+            // Update content preview immediately when toggle changes
+            UpdateContentPreview();
         }
 
 
@@ -166,8 +159,9 @@ namespace CAI_design_1_chat.Presentation.Controls
                     var emptyText = new TextBlock
                     {
                         Text = "No files found matching your search.",
-                        FontSize = 14,
-                        Foreground = (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources["TextFillColorSecondaryBrush"],
+                        FontFamily = new Microsoft.UI.Xaml.Media.FontFamily("Consolas, Courier New, monospace"),
+                        FontSize = 12,
+                        Foreground = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Gray),
                         HorizontalAlignment = HorizontalAlignment.Center,
                         Margin = new Thickness(0, 32)
                     };
@@ -177,8 +171,8 @@ namespace CAI_design_1_chat.Presentation.Controls
 
                 foreach (var file in results)
                 {
-                    var resultCard = CreateFileResultCard(file);
-                    ResultsContainer.Children.Add(resultCard);
+                    var resultRow = CreateFileResultRow(file);
+                    ResultsContainer.Children.Add(resultRow);
                 }
 
                 Console.WriteLine($"FileSearchPanel: Displayed {results.Count} search results");
@@ -189,86 +183,122 @@ namespace CAI_design_1_chat.Presentation.Controls
             }
         }
 
-        private Border CreateFileResultCard(FileSearchResult file)
+        private Border CreateFileResultRow(FileSearchResult file)
         {
-            var card = new Border
+            var isSelected = _selectedFile?.Id == file.Id;
+            var isInContext = file.InContext;
+            
+            var row = new Border
             {
-                Background = (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources["SubtleFillColorSecondaryBrush"],
-                BorderBrush = (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources["DividerStrokeColorDefaultBrush"],
-                BorderThickness = new Thickness(1),
-                CornerRadius = new CornerRadius(6),
-                Padding = new Thickness(12),
-                Margin = new Thickness(0, 2),
-                Tag = file
+                Background = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Transparent),
+                BorderBrush = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Gray),
+                BorderThickness = new Thickness(0, 0, 0, 1),
+                Padding = new Thickness(12, 6),
+                Tag = file,
             };
 
             var grid = new Grid();
-            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(2, GridUnitType.Star) }); // Name
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(3, GridUnitType.Star) }); // Name
             grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) }); // Date
             grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) }); // Size
-            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(80, GridUnitType.Pixel) }); // Action
 
-            // File name
+            // File name with status indicator and 2-char margin
             var nameText = new TextBlock
             {
-                Text = file.DisplayFileName,
-                FontSize = 14,
-                FontWeight = Microsoft.UI.Text.FontWeights.Medium,
-                Foreground = (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources["TextFillColorPrimaryBrush"],
+                FontFamily = new Microsoft.UI.Xaml.Media.FontFamily("Consolas, Courier New, monospace"),
+                FontSize = 12,
                 VerticalAlignment = VerticalAlignment.Center,
                 TextTrimming = TextTrimming.CharacterEllipsis
             };
+
+            // Set text and color based on state
+            if (isInContext)
+            {
+                nameText.Text = $"  ✓ {file.DisplayFileName}";
+                nameText.Foreground = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.LightGreen);
+            }
+            else if (isSelected)
+            {
+                nameText.Text = $"  ► {file.DisplayFileName}";
+                nameText.Foreground = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.White);
+            }
+            else
+            {
+                nameText.Text = $"    {file.DisplayFileName}";
+                nameText.Foreground = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.White);
+            }
+            
             Grid.SetColumn(nameText, 0);
 
-            // Date
+            // Date - centered
             var dateText = new TextBlock
             {
                 Text = file.FormattedDate,
+                FontFamily = new Microsoft.UI.Xaml.Media.FontFamily("Consolas, Courier New, monospace"),
                 FontSize = 12,
-                Foreground = (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources["TextFillColorSecondaryBrush"],
-                VerticalAlignment = VerticalAlignment.Center
+                Foreground = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.LightGray),
+                VerticalAlignment = VerticalAlignment.Center,
+                HorizontalAlignment = HorizontalAlignment.Center
             };
             Grid.SetColumn(dateText, 1);
 
-            // Size
+            // Column separator for date
+            var separator1 = new Border
+            {
+                BorderBrush = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Gray),
+                BorderThickness = new Thickness(1, 0, 0, 0)
+            };
+            Grid.SetColumn(separator1, 1);
+
+            // Size - centered
             var sizeText = new TextBlock
             {
                 Text = file.FormattedSize,
+                FontFamily = new Microsoft.UI.Xaml.Media.FontFamily("Consolas, Courier New, monospace"),
                 FontSize = 12,
-                Foreground = (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources["TextFillColorSecondaryBrush"],
-                VerticalAlignment = VerticalAlignment.Center
+                Foreground = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.LightGray),
+                VerticalAlignment = VerticalAlignment.Center,
+                HorizontalAlignment = HorizontalAlignment.Center
             };
             Grid.SetColumn(sizeText, 2);
 
-            // Add to Context button
-            var addButton = new Button
+            // Column separator for size
+            var separator2 = new Border
             {
-                Content = file.InContext ? "✓ Added" : "+ Add",
-                FontSize = 12,
-                Padding = new Thickness(8, 4),
-                Background = file.InContext ? 
-                    (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources["SystemAccentColorLight2"] :
-                    (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources["AccentButtonBackground"],
-                IsEnabled = !file.InContext,
-                Tag = file
+                BorderBrush = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Gray),
+                BorderThickness = new Thickness(1, 0, 0, 0)
             };
-            addButton.Click += AddToContextButton_Click;
-            Grid.SetColumn(addButton, 3);
+            Grid.SetColumn(separator2, 2);
 
             grid.Children.Add(nameText);
+            grid.Children.Add(separator1);
             grid.Children.Add(dateText);
+            grid.Children.Add(separator2);
             grid.Children.Add(sizeText);
-            grid.Children.Add(addButton);
 
-            card.Child = grid;
+            row.Child = grid;
 
-            // Add click handler for row selection
-            card.Tapped += (sender, e) => SelectFile(file, card);
+            // Add hover effect
+            row.PointerEntered += (sender, e) =>
+            {
+                if (!isInContext)
+                {
+                    row.Background = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.DarkGray);
+                }
+            };
 
-            return card;
+            row.PointerExited += (sender, e) =>
+            {
+                row.Background = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Transparent);
+            };
+
+            // Add click handler for row selection and context adding
+            row.Tapped += (sender, e) => ToggleFileContext(file);
+
+            return row;
         }
 
-        private void SelectFile(FileSearchResult file, Border card)
+        private void SelectFile(FileSearchResult file, Border row)
         {
             try
             {
@@ -282,13 +312,6 @@ namespace CAI_design_1_chat.Presentation.Controls
                 
                 // Update viewer title
                 ViewerTitle.Text = $"Preview: {file.DisplayFileName}";
-                
-                // Visual feedback - highlight selected card
-                foreach (Border child in ResultsContainer.Children.OfType<Border>())
-                {
-                    child.Background = (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources["SubtleFillColorSecondaryBrush"];
-                }
-                card.Background = (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources["AccentFillColorSecondaryBrush"];
                 
                 Console.WriteLine($"FileSearchPanel: Selected file '{file.DisplayFileName}'");
             }
@@ -344,7 +367,7 @@ namespace CAI_design_1_chat.Presentation.Controls
                 {
                     file.InContext = true;
                     button.Content = "✓ Added";
-                    button.Background = (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources["SystemAccentColorLight2"];
+                    button.Background = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Green);
                     
                     // Update main Add to Context button if this is the selected file
                     if (_selectedFile?.Id == file.Id)
@@ -366,6 +389,35 @@ namespace CAI_design_1_chat.Presentation.Controls
                 Console.WriteLine($"FileSearchPanel: Error adding file to context: {ex.Message}");
                 button.Content = "Error";
                 button.IsEnabled = true;
+            }
+        }
+
+        private async void ToggleFileContext(FileSearchResult file)
+        {
+            try
+            {
+                // First, select the file for preview
+                _selectedFile = file;
+                UpdateContentPreview();
+                
+                // If not in context, add it (visual only for now)
+                if (!file.InContext)
+                {
+                    file.InContext = true;
+                    
+                    // Refresh the display to show green filename
+                    await DisplaySearchResults(_currentResults);
+                    
+                    Console.WriteLine($"FileSearchPanel: Added file '{file.DisplayFileName}' to context (visual only)");
+                }
+                else
+                {
+                    Console.WriteLine($"FileSearchPanel: File '{file.DisplayFileName}' already in context");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"FileSearchPanel: Error toggling file context: {ex.Message}");
             }
         }
     }
