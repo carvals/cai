@@ -27,6 +27,7 @@ public sealed partial class MainPage : Page
     
     // AI Services
     private readonly OpenAIService _openAIService;
+    private readonly OllamaService _ollamaService;
     private bool _isAnimating = false;
     
     // Database service for chat persistence
@@ -58,6 +59,7 @@ public sealed partial class MainPage : Page
         
         // Initialize AI services
         _openAIService = new OpenAIService();
+        _ollamaService = new OllamaService();
         
         // Initialize database service
         _databaseService = new DatabaseService();
@@ -832,47 +834,29 @@ public sealed partial class MainPage : Page
     {
         try
         {
-            var localSettings = ApplicationData.Current.LocalSettings;
-            var serverUrl = localSettings.Values["OllamaUrl"]?.ToString() ?? "http://localhost:11434";
-            var model = localSettings.Values["OllamaModel"]?.ToString() ?? "llama2";
-
-            // Get conversation context using hybrid approach (memory + database)
-            var conversationHistory = await _chatContextService.GetContextForAIAsync(_currentSessionId);
-            
-            // Build conversation prompt with history
-            var fullPrompt = BuildOllamaPrompt(conversationHistory, message);
-            
-            using var httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(60) };
-            var requestBody = new
+            if (!_ollamaService.IsConfigured)
             {
-                model = model,
-                prompt = fullPrompt,
-                stream = false
-            };
-
-            var json = System.Text.Json.JsonSerializer.Serialize(requestBody);
-            var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
-            
-            Console.WriteLine($"Ollama request with context: {conversationHistory.Count} messages");
-            
-            var response = await httpClient.PostAsync($"{serverUrl}/api/generate", content);
-            
-            if (!response.IsSuccessStatusCode)
-            {
-                return $"Ollama API error: {response.StatusCode} - {response.ReasonPhrase}";
+                return "Ollama is not configured. Please set server URL and model in AI Settings.";
             }
 
-            var responseText = await response.Content.ReadAsStringAsync();
-            var responseData = System.Text.Json.JsonSerializer.Deserialize<OllamaGenerateResponse>(responseText);
-            return responseData?.response ?? "No response from Ollama";
+            // Get structured context (files + message history)
+            var contextData = await _contextParserService.GetContextDataAsync(_currentSessionId);
+            
+            Console.WriteLine($"Ollama request with enhanced context:");
+            Console.WriteLine($"  - Files: {contextData.FileCount}");
+            Console.WriteLine($"  - Messages: {contextData.MessageCount}");
+            Console.WriteLine($"  - Total tokens: ~{contextData.TotalTokens}");
+            
+            var response = await _ollamaService.SendMessageWithContextAsync(message, contextData);
+            return response;
         }
-        catch (HttpRequestException ex)
+        catch (AIServiceException ex)
         {
-            return $"Connection error: {ex.Message}. Make sure Ollama is running.";
+            return $"Ollama Error: {ex.Message}";
         }
         catch (Exception ex)
         {
-            return $"Error: {ex.Message}";
+            return $"Unexpected error with Ollama: {ex.Message}";
         }
     }
 
@@ -1078,40 +1062,6 @@ public sealed partial class MainPage : Page
         }
     }
 
-    /// <summary>
-    /// Build a conversation prompt for Ollama including chat history
-    /// </summary>
-    private string BuildOllamaPrompt(List<ChatMessage> conversationHistory, string currentMessage)
-    {
-        var prompt = new StringBuilder();
-        
-        // Add system context if we have conversation history
-        if (conversationHistory.Count > 0)
-        {
-            prompt.AppendLine("Previous conversation:");
-            
-            foreach (var msg in conversationHistory)
-            {
-                var roleLabel = msg.Role switch
-                {
-                    "user" => "Human",
-                    "assistant" => "Assistant", 
-                    "system" => "System",
-                    _ => msg.Role
-                };
-                
-                prompt.AppendLine($"{roleLabel}: {msg.Content}");
-            }
-            
-            prompt.AppendLine();
-            prompt.AppendLine("Current message:");
-        }
-        
-        prompt.AppendLine($"Human: {currentMessage}");
-        prompt.AppendLine("Assistant:");
-        
-        return prompt.ToString();
-    }
 
     /// <summary>
     /// Updates the context size display in the chat header with total context tokens (files + messages)
