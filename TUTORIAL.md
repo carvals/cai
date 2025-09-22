@@ -309,6 +309,105 @@ dotnet run --project CAI_design_1_chat
 
 This system demonstrates how thoughtful architecture, comprehensive debugging, and user-centered design create a robust, maintainable application that handles real-world complexity gracefully.
 
+---
+
+## Phase 18: Advanced Context Handling System Tutorial
+
+### Overview
+This phase implemented a comprehensive context-aware AI integration system with structured data, event-driven updates, and universal provider support. The system provides real-time context synchronization across all UI components and AI providers.
+
+### Key Architectural Components
+
+#### 1. ContextData Structure
+```csharp
+public class ContextData
+{
+    public string AssistantRole { get; set; }
+    public List<FileContext> Files { get; set; }
+    public List<ChatMessage> MessageHistory { get; set; }
+    public int TotalTokens { get; set; }
+    public int FileCount => Files.Count(f => !f.IsExcluded);
+    public int MessageCount => MessageHistory.Count;
+}
+```
+
+#### 2. Event-Driven Updates
+```csharp
+// Event infrastructure for real-time updates
+public class ContextChangedEventArgs : EventArgs
+{
+    public int SessionId { get; set; }
+    public string ChangeType { get; set; }
+    public int? FileId { get; set; }
+    public string? Details { get; set; }
+}
+
+// Debounced UI updates (300ms)
+private void OnContextChanged(object? sender, ContextChangedEventArgs e)
+{
+    if (e.SessionId != _currentSessionId) return;
+    _contextUpdateTimer?.Stop();
+    _contextUpdateTimer.Start();
+}
+```
+
+#### 3. Universal AI Provider Integration
+```csharp
+// OpenAI: System message + chat messages
+await _openAIService.SendMessageWithContextAsync(message, contextData);
+
+// Ollama: Formatted prompt with context
+await _ollamaService.SendMessageWithContextAsync(message, contextData);
+```
+
+### Critical Bug Fixes Implemented
+
+#### 1. Context Token Count Display
+**Problem**: UI showed only message tokens, not total context
+**Solution**: Use ContextParserService instead of ChatContextService
+```csharp
+// Fixed implementation
+var contextData = await _contextParserService.GetContextDataAsync(_currentSessionId);
+var totalTokens = contextData.TotalTokens;
+```
+
+#### 2. Ollama Configuration Regression
+**Problem**: Settings not persisting when switching providers
+**Solution**: Reload configuration before each request
+```csharp
+_ollamaService.ReloadConfiguration();
+```
+
+#### 3. Context Panel Synchronization
+**Problem**: Panel didn't update when context changed
+**Solution**: Event-driven updates with specific change types
+```csharp
+await _contextCacheService.InvalidateContextAsync(sessionId, ContextChangeTypes.FileExcluded, fileId);
+```
+
+### Testing Commands
+
+```bash
+# Build and run with context debugging
+dotnet build CAI_design_1_chat.sln
+dotnet run --project CAI_design_1_chat --framework net9.0-desktop
+
+# Context debugging - watch console for:
+# "Context size updated: X tokens for session Y (Files: Z, Messages: W)"
+# "Context invalidated: ChangeType (session X, file Y)"
+# "Ollama request with enhanced context: Files: X, Messages: Y"
+
+# Database context inspection
+sqlite3 database.db "SELECT cfl.*, fd.display_name FROM context_file_links cfl JOIN file_data fd ON cfl.file_id = fd.id;"
+```
+
+### Performance Achievements
+- **Real-time Updates**: 300ms debounced token count updates
+- **Universal Context**: Same ContextData works for all AI providers
+- **Event-Driven**: Automatic UI synchronization when context changes
+- **Intelligent Caching**: 5-minute cache with event-driven invalidation
+- **Memory Efficient**: Proper event unsubscription prevents leaks
+
 ## Quick Start Commands
 
 ```bash

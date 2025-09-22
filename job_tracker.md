@@ -1347,6 +1347,213 @@ sqlite3 database.db "PRAGMA foreign_key_check;"
 - **Data Consistency**: UI and database state synchronized
 - **Error Recovery**: Graceful handling of all failure scenarios
 - **File Type Support**: Complete coverage for all advertised formats
+
+---
+
+## Phase 18: Advanced Context Handling System (Completed ✅)
+
+**Objective**: Complete context-aware AI integration with structured data, event-driven updates, and universal provider support.
+
+**Status**: ✅ **COMPLETED** - All objectives achieved with comprehensive testing
+
+### Major Achievements
+
+#### 18.1 Enhanced AI Provider Interface ✅
+- **ContextData Architecture**: Created structured context objects with FileContext and ChatMessage components
+- **IAIService Enhancement**: Added SendMessageWithContextAsync and SendMessageStreamWithContextAsync methods
+- **Universal Compatibility**: Same ContextData works for OpenAI, Ollama, and future providers
+- **Backward Compatibility**: Legacy methods maintained for existing code
+
+#### 18.2 ContextParserService Implementation ✅
+- **JSON to Object Conversion**: Seamless transformation from cached JSON to structured ContextData
+- **Accurate Token Calculation**: Total token count including files and messages (not just message estimation)
+- **Error Handling**: Graceful fallback when JSON parsing fails
+- **Performance Optimized**: Leverages existing ContextCacheService for optimal speed
+
+#### 18.3 Event-Driven Context Updates ✅
+- **ContextChangedEventArgs**: Event infrastructure with SessionId, ChangeType, FileId, and Details
+- **Real-time UI Updates**: Token count updates immediately when context changes
+- **Debounced Updates**: 300ms timer prevents excessive calculations during rapid changes
+- **Event Types**: FileExcluded, FileIncluded, FileDeleted, FileRenamed, SummaryToggled, ManualRefresh, SessionCleared
+
+#### 18.4 Universal AI Provider Integration ✅
+- **OpenAI Enhancement**: Uses structured ContextData to build system messages with file content
+- **OllamaService Creation**: New dedicated service implementing IAIService with context-aware methods
+- **Provider-Specific Formatting**: OpenAI uses ChatMessage arrays, Ollama uses formatted prompts
+- **Configuration Management**: Dynamic configuration reloading for provider switching
+
+#### 18.5 Clear Session Enhancement ✅
+- **Confirmation Dialog**: User-friendly warning with detailed explanation of actions
+- **Complete Context Reset**: Clears chat messages, context panel, and creates new session
+- **Event Propagation**: Triggers SessionCleared events for proper cleanup
+- **Context Panel Integration**: ClearAndUpdateSessionAsync method for UI synchronization
+
+### Critical Bug Fixes Resolved
+
+#### Bug Fix 1: Context Token Count Display ✅
+**Problem**: UI showed only message tokens (21 tokens) instead of total context tokens (229 tokens)
+**Root Cause**: UpdateContextSizeDisplayAsync used ChatContextService.GetContextTokenCountAsync() instead of complete context
+**Solution**: Updated to use ContextParserService.GetContextDataAsync() for accurate total token count
+**Result**: UI now displays correct total context tokens with breakdown (Files: X, Messages: Y)
+
+#### Bug Fix 2: Ollama Configuration Regression ✅
+**Problem**: Ollama settings not persisting when switching between AI providers
+**Root Cause**: OllamaService loaded configuration once in constructor, never reloaded
+**Solution**: Added _ollamaService.ReloadConfiguration() before each request
+**Result**: Ollama settings now persist correctly when switching providers
+
+#### Bug Fix 3: Context Panel Synchronization ✅
+**Problem**: Context panel didn't update when files were excluded, deleted, or refreshed
+**Root Cause**: No event system to notify UI components of context changes
+**Solution**: Event-driven architecture with ContextChanged events and debounced updates
+**Result**: Real-time UI synchronization when context changes occur
+
+### Performance Optimizations
+
+#### Intelligent Context Caching
+- **5-minute cache expiration** with automatic refresh
+- **Event-driven invalidation** ensures data consistency
+- **Shared service instances** via dependency injection pattern
+- **Memory efficient** with proper event unsubscription
+
+#### Token Calculation Efficiency
+- **Cached token estimates** in ContextData objects
+- **Incremental updates** only when context actually changes
+- **Provider-agnostic calculation** works for all AI services
+
+#### Debounced UI Updates
+- **300ms debounce timer** prevents excessive calculations
+- **Session isolation** - only updates relevant to current session
+- **Automatic cleanup** prevents memory leaks
+
+### Architecture Patterns Established
+
+#### 1. Dependency Injection Pattern
+```csharp
+// MainPage creates shared service instances
+_databaseService = new DatabaseService();
+_chatContextService = new ChatContextService(_databaseService);
+_contextCacheService = new ContextCacheService(_databaseService, _chatContextService);
+_contextParserService = new ContextParserService(_contextCacheService);
+```
+
+#### 2. Event-Driven Updates Pattern
+```csharp
+// Database operation triggers event
+await _contextCacheService.InvalidateContextAsync(sessionId, changeType, fileId, details);
+// Event propagates to UI components with debouncing
+```
+
+#### 3. Provider Abstraction Pattern
+```csharp
+// Same context data works for all providers
+var contextData = await _contextParserService.GetContextDataAsync(_currentSessionId);
+await _openAIService.SendMessageWithContextAsync(message, contextData);
+await _ollamaService.SendMessageWithContextAsync(message, contextData);
+```
+
+### Development Tools Created
+
+#### Enhanced Debug Logging
+```bash
+# Console output provides comprehensive debugging:
+Context JSON generated for session 203: 576 characters, ~144 tokens
+Context parsed for session 203: Files: 0, Messages: 1, Total tokens: ~47
+Context invalidated: FileExcluded (session 203, file 42)
+Context change detected: FileExcluded for session 203
+Context size updated: 856 tokens for session 203 (Files: 1, Messages: 3)
+Ollama request with enhanced context: Files: 1, Messages: 3, Total tokens: ~856
+```
+
+#### Command-Line Testing Tools
+```bash
+# Context system testing
+dotnet build CAI_design_1_chat.sln
+dotnet run --project CAI_design_1_chat --framework net9.0-desktop
+
+# Database context inspection
+sqlite3 database.db "SELECT cfl.*, fd.display_name FROM context_file_links cfl JOIN file_data fd ON cfl.file_id = fd.id;"
+
+# Event tracking verification
+# Watch console for: "Context invalidated: [ChangeType] (session X, file Y)"
+# Watch console for: "Context change detected: [ChangeType] for session X"
+```
+
+### Testing Scenarios Validated
+
+#### Context Panel Operations
+- ✅ Add files to context and verify token count updates
+- ✅ Exclude/include files and check real-time token changes  
+- ✅ Delete files from context and verify immediate UI updates
+- ✅ Click refresh button and confirm context synchronization
+- ✅ Rename files and verify context updates
+
+#### AI Provider Integration
+- ✅ OpenAI receives structured context with system messages
+- ✅ Ollama receives formatted prompts with file content
+- ✅ Provider switching maintains context consistency
+- ✅ Configuration changes apply immediately
+
+#### Session Management
+- ✅ Clear Session shows confirmation dialog
+- ✅ Context panel clears and updates to new session
+- ✅ Token count resets to initial state
+- ✅ All AI providers work with new session
+
+### Future-Proofing Achievements
+
+#### Extensible AI Provider Support
+- New providers only need to implement IAIService interface
+- ContextData structure works universally
+- Provider-specific formatting handled in service implementations
+
+#### Scalable Event System
+- Easy to add new event types for future features
+- Debouncing pattern prevents performance issues
+- Event filtering by session ID supports multi-session scenarios
+
+#### Maintainable Architecture
+- Clear separation between data, services, and UI
+- Comprehensive error handling and logging
+- Consistent patterns across all components
+
+### Documentation Updates
+- **spec.md**: Added comprehensive Phase 18 section with architecture diagrams and lessons learned
+- **TUTORIAL.md**: Added context handling tutorial with testing commands and bug fix explanations
+- **FEATURE_MAP.md**: Updated with Phase 18 completion details and architectural achievements
+- **job_tracker.md**: Complete Phase 18 documentation with testing scenarios and performance metrics
+
+### Command-Line Tools Developed
+
+```bash
+# Build and test context system
+dotnet build CAI_design_1_chat.sln
+dotnet run --project CAI_design_1_chat --framework net9.0-desktop
+
+# Database context analysis
+sqlite3 database.db "SELECT s.id, s.session_name, COUNT(cfl.id) as file_count FROM session s LEFT JOIN context_file_links cfl ON s.id = cfl.context_session_id GROUP BY s.id;"
+
+# Context file inspection
+sqlite3 database.db "SELECT cfl.context_session_id, fd.display_name, cfl.is_excluded, cfl.use_summary FROM context_file_links cfl JOIN file_data fd ON cfl.file_id = fd.id ORDER BY cfl.context_session_id, cfl.order_index;"
+
+# Message history verification
+sqlite3 database.db "SELECT session_id, role, LENGTH(content) as content_length, timestamp FROM chat_messages ORDER BY session_id, timestamp;"
+```
+
+## Phase 18 Summary
+
+**Phase 18 represents a major architectural milestone**, delivering:
+
+- **Universal AI Provider Support** with consistent context across OpenAI, Ollama, and future providers
+- **Real-time UI Updates** with event-driven architecture and intelligent debouncing  
+- **Accurate Token Calculation** from complete context including files and messages
+- **Robust Error Handling** with graceful fallbacks and detailed logging
+- **Performance Optimization** through intelligent caching and shared service instances
+- **Developer-Friendly Debugging** with comprehensive console output and command-line tools
+
+The system is now **production-ready** and provides a solid foundation for future enhancements while maintaining backward compatibility and clean architecture principles.
+
+**All Phase 18 objectives completed successfully with comprehensive testing and documentation.** ✅
 - **AI Integration**: Robust provider switching with fallback mechanisms
 - **Debug Capability**: Comprehensive logging and troubleshooting tools
 
