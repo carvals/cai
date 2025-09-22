@@ -234,7 +234,7 @@ public sealed partial class ContextPanel : UserControl
             await StartEditingFileName(fileNameContainer, fileName, fileNameEditor, file);
         };
         
-        // Eye button (toggle visibility) - placeholder
+        // Eye button (toggle visibility) - now functional
         var eyeButton = new Button
         {
             Content = file.IsExcluded ? "👁‍🗨" : "👁",
@@ -242,9 +242,16 @@ public sealed partial class ContextPanel : UserControl
             Width = 28,
             Height = 28,
             Background = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Transparent),
-            BorderThickness = new Thickness(0)
+            BorderThickness = new Thickness(0),
+            Tag = file.Id // Store file ID for reference
         };
         ToolTipService.SetToolTip(eyeButton, file.IsExcluded ? "Show in context" : "Hide from context");
+        
+        // Add click handler for visibility toggle
+        eyeButton.Click += async (sender, e) =>
+        {
+            await ToggleFileVisibility(eyeButton, card, file);
+        };
         
         // Delete button - placeholder
         var deleteButton = new Button
@@ -461,6 +468,58 @@ public sealed partial class ContextPanel : UserControl
         catch (Exception ex)
         {
             Console.WriteLine($"Error updating file display name: {ex.Message}");
+            throw;
+        }
+    }
+
+    private async Task ToggleFileVisibility(Button eyeButton, Border card, ContextFileInfo file)
+    {
+        try
+        {
+            // Toggle the excluded state
+            file.IsExcluded = !file.IsExcluded;
+            
+            // Update database
+            await UpdateFileVisibility(file.Id, file.IsExcluded);
+            
+            // Update button icon and tooltip
+            eyeButton.Content = file.IsExcluded ? "👁‍🗨" : "👁";
+            ToolTipService.SetToolTip(eyeButton, file.IsExcluded ? "Show in context" : "Hide from context");
+            
+            // Update visual state of the card
+            card.Opacity = file.IsExcluded ? 0.6 : 1.0;
+            
+            Console.WriteLine($"File visibility toggled: {file.DisplayName} → {(file.IsExcluded ? "excluded" : "included")}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error toggling file visibility: {ex.Message}");
+            
+            // Revert the state on error
+            file.IsExcluded = !file.IsExcluded;
+        }
+    }
+
+    private async Task UpdateFileVisibility(int contextLinkId, bool isExcluded)
+    {
+        try
+        {
+            using var connection = new SqliteConnection(_databaseService.GetConnectionString());
+            await connection.OpenAsync();
+            
+            var sql = "UPDATE context_file_links SET is_excluded = @isExcluded WHERE id = @contextLinkId";
+            
+            using var command = new SqliteCommand(sql, connection);
+            command.Parameters.AddWithValue("@isExcluded", isExcluded);
+            command.Parameters.AddWithValue("@contextLinkId", contextLinkId);
+            
+            await command.ExecuteNonQueryAsync();
+            
+            Console.WriteLine($"Database updated: context link ID {contextLinkId} → is_excluded = {isExcluded}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error updating file visibility: {ex.Message}");
             throw;
         }
     }

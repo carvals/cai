@@ -668,12 +668,13 @@ UPDATE context_file_links SET display_name = (
 **Validation**: Database updated correctly, UI reflects changes
 **Status**: ✅ In-place editing with TextBox, Enter/Escape keys, duplicate validation, database updates
 
-#### **Step 1.5: Toggle Visibility Action** 👁️
+#### **Step 1.5: Toggle Visibility Action** ✅ COMPLETED
 - Implement eye icon toggle for is_excluded
 - Add visual feedback (grayed out when excluded)
 - Update database immediately
 **Test**: Toggle works, visual feedback correct
 **Validation**: Database is_excluded updated, context rebuilt
+**Status**: ✅ Eye button toggles visibility with database updates, visual feedback (opacity), and icon changes
 
 #### **Step 1.6: Delete Action** 🗑️
 - Implement delete with confirmation dialog
