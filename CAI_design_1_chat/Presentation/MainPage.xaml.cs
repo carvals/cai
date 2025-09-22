@@ -33,7 +33,12 @@ public sealed partial class MainPage : Page
     private readonly DatabaseService _databaseService;
     private readonly ChatContextService _chatContextService;
     private ContextParserService _contextParserService;
+    private ContextCacheService _contextCacheService;
     private int _currentSessionId;
+    
+    // Context token count debouncing
+    private DispatcherTimer? _contextUpdateTimer;
+    private const int CONTEXT_UPDATE_DEBOUNCE_MS = 300;
     
     // Auto-scroll state tracking
     private bool _isUserScrolling = false;
@@ -61,11 +66,14 @@ public sealed partial class MainPage : Page
         _chatContextService = new ChatContextService(_databaseService);
         
         // Initialize context cache service with shared service instances
-        var contextCacheService = new ContextCacheService(_databaseService, _chatContextService);
-        _databaseService.SetContextCacheService(contextCacheService);
+        _contextCacheService = new ContextCacheService(_databaseService, _chatContextService);
+        _databaseService.SetContextCacheService(_contextCacheService);
         
         // Initialize context parser service
-        _contextParserService = new ContextParserService(contextCacheService);
+        _contextParserService = new ContextParserService(_contextCacheService);
+        
+        // Subscribe to context change events
+        _contextCacheService.ContextChanged += OnContextChanged;
         
         // Configure ContextPanel with shared service instances
         ContextPanelControl.SetServices(_databaseService, _chatContextService);
@@ -1130,6 +1138,36 @@ public sealed partial class MainPage : Page
         {
             Console.WriteLine($"Error updating context size display: {ex.Message}");
         }
+    }
+
+    /// <summary>
+    /// Handles context change events with debouncing to prevent excessive updates
+    /// </summary>
+    private void OnContextChanged(object? sender, ContextChangedEventArgs e)
+    {
+        // Only handle events for the current session
+        if (e.SessionId != _currentSessionId)
+            return;
+
+        Console.WriteLine($"Context change detected: {e.ChangeType} for session {e.SessionId}");
+
+        // Cancel existing timer if running
+        _contextUpdateTimer?.Stop();
+
+        // Create or reuse timer for debouncing
+        if (_contextUpdateTimer == null)
+        {
+            _contextUpdateTimer = new DispatcherTimer();
+            _contextUpdateTimer.Interval = TimeSpan.FromMilliseconds(CONTEXT_UPDATE_DEBOUNCE_MS);
+            _contextUpdateTimer.Tick += async (s, args) =>
+            {
+                _contextUpdateTimer?.Stop();
+                await UpdateContextSizeDisplayAsync();
+            };
+        }
+
+        // Start debounce timer
+        _contextUpdateTimer.Start();
     }
 
     /// <summary>

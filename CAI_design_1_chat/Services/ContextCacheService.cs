@@ -13,6 +13,11 @@ namespace CAI_design_1_chat.Services
         // Cache expiration time (5 minutes)
         private readonly TimeSpan _cacheExpiration = TimeSpan.FromMinutes(5);
 
+        /// <summary>
+        /// Event triggered when context changes occur
+        /// </summary>
+        public event EventHandler<ContextChangedEventArgs>? ContextChanged;
+
         public ContextCacheService(DatabaseService databaseService, ChatContextService chatContextService)
         {
             _contextObjectService = new ContextObjectService(databaseService, chatContextService);
@@ -44,25 +49,25 @@ namespace CAI_design_1_chat.Services
         }
 
         /// <summary>
-        /// Force refresh context for a session (called when data changes)
+        /// Invalidate cached context for a session (called when context changes)
         /// </summary>
-        public async Task InvalidateContextAsync(int sessionId)
+        public async Task InvalidateContextAsync(int sessionId, string changeType = ContextChangeTypes.ManualRefresh, int? fileId = null, string? details = null)
         {
             try
             {
-                Console.WriteLine($"Invalidating context cache for session {sessionId}");
-                
                 // Remove from cache
                 _contextCache.Remove(sessionId);
                 _cacheTimestamps.Remove(sessionId);
                 
-                // Refresh immediately
-                await RefreshContextAsync(sessionId);
+                Console.WriteLine($"Context invalidated: {changeType} (session {sessionId}{(fileId.HasValue ? $", file {fileId}" : "")})");
+                
+                // Trigger context changed event
+                var eventArgs = new ContextChangedEventArgs(sessionId, changeType, fileId, details);
+                ContextChanged?.Invoke(this, eventArgs);
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error invalidating context for session {sessionId}: {ex.Message}");
-                throw;
+                Console.WriteLine($"Error invalidating context cache: {ex.Message}");
             }
         }
 

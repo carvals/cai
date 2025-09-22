@@ -31,6 +31,11 @@ namespace CAI_design_1_chat.Services
             Console.WriteLine("Context cache service connected to DatabaseService");
         }
 
+        public ContextCacheService? GetContextCacheService()
+        {
+            return _contextCacheService;
+        }
+
         public async Task InitializeDatabaseAsync()
         {
             try
@@ -340,10 +345,10 @@ namespace CAI_design_1_chat.Services
                 
                 Console.WriteLine($"Database updated: context link ID {contextLinkId} → file display_name = '{newDisplayName}'");
                 
-                // Trigger context invalidation
+                // Trigger context invalidation with specific change type
                 if (_contextCacheService != null && sessionId > 0)
                 {
-                    await _contextCacheService.InvalidateContextAsync(sessionId);
+                    await _contextCacheService.InvalidateContextAsync(sessionId, ContextChangeTypes.FileRenamed, contextLinkId, $"File display name changed to '{newDisplayName}'");
                 }
             }
             catch (Exception ex)
@@ -376,10 +381,11 @@ namespace CAI_design_1_chat.Services
                 
                 Console.WriteLine($"Database updated: context link ID {contextLinkId} → is_excluded = {isExcluded}");
                 
-                // Trigger context invalidation
+                // Trigger context invalidation with specific change type
                 if (_contextCacheService != null && sessionId > 0)
                 {
-                    await _contextCacheService.InvalidateContextAsync(sessionId);
+                    var changeType = isExcluded ? ContextChangeTypes.FileExcluded : ContextChangeTypes.FileIncluded;
+                    await _contextCacheService.InvalidateContextAsync(sessionId, changeType, contextLinkId, $"File visibility changed to {(isExcluded ? "excluded" : "included")}");
                 }
             }
             catch (Exception ex)
@@ -412,10 +418,10 @@ namespace CAI_design_1_chat.Services
                 
                 Console.WriteLine($"Database updated: context link ID {contextLinkId} → use_summary = {useSummary}");
                 
-                // Trigger context invalidation
+                // Trigger context invalidation with specific change type
                 if (_contextCacheService != null && sessionId > 0)
                 {
-                    await _contextCacheService.InvalidateContextAsync(sessionId);
+                    await _contextCacheService.InvalidateContextAsync(sessionId, ContextChangeTypes.SummaryToggled, contextLinkId, $"Summary usage changed to {(useSummary ? "enabled" : "disabled")}");
                 }
             }
             catch (Exception ex)
@@ -454,10 +460,10 @@ namespace CAI_design_1_chat.Services
                     Console.WriteLine($"Warning: No rows affected when removing context link ID {contextLinkId}");
                 }
                 
-                // Trigger context invalidation
+                // Trigger context invalidation with specific change type
                 if (_contextCacheService != null && sessionId > 0)
                 {
-                    await _contextCacheService.InvalidateContextAsync(sessionId);
+                    await _contextCacheService.InvalidateContextAsync(sessionId, ContextChangeTypes.FileDeleted, contextLinkId, "File removed from context");
                 }
             }
             catch (Exception ex)

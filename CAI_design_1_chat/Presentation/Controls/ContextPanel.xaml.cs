@@ -44,6 +44,17 @@ public sealed partial class ContextPanel : UserControl
     {
         try
         {
+            // Trigger manual refresh event for context token count update
+            if (_contextObjectService != null)
+            {
+                // This will trigger context cache invalidation and token count update
+                var contextCacheService = _databaseService.GetContextCacheService();
+                if (contextCacheService != null)
+                {
+                    await contextCacheService.InvalidateContextAsync(_currentSessionId, ContextChangeTypes.ManualRefresh, null, "Manual context refresh triggered");
+                }
+            }
+            
             var contextFiles = await GetContextFilesForSessionAsync(_currentSessionId);
             
             // Clear existing content
