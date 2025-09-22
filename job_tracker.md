@@ -676,12 +676,13 @@ UPDATE context_file_links SET display_name = (
 **Validation**: Database is_excluded updated, context rebuilt
 **Status**: ✅ Eye button toggles visibility with database updates, visual feedback (opacity), and icon changes
 
-#### **Step 1.6: Delete Action** 🗑️
+#### **Step 1.6: Delete Action** ✅ COMPLETED
 - Implement delete with confirmation dialog
 - Remove from context_file_links table
 - Update UI immediately
 **Test**: Delete works with confirmation, UI updates
 **Validation**: Record removed from database, context rebuilt
+**Status**: ✅ Trash button shows confirmation dialog, removes from database, updates UI, handles empty state
 
 #### **Step 1.7: Use Summary Checkbox** ☑️
 - Implement checkbox for use_summary property

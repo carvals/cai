@@ -253,7 +253,7 @@ public sealed partial class ContextPanel : UserControl
             await ToggleFileVisibility(eyeButton, card, file);
         };
         
-        // Delete button - placeholder
+        // Delete button - now functional
         var deleteButton = new Button
         {
             Content = "🗑",
@@ -261,9 +261,16 @@ public sealed partial class ContextPanel : UserControl
             Width = 28,
             Height = 28,
             Background = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Transparent),
-            BorderThickness = new Thickness(0)
+            BorderThickness = new Thickness(0),
+            Tag = file.Id // Store file ID for reference
         };
         ToolTipService.SetToolTip(deleteButton, "Remove from context");
+        
+        // Add click handler for delete functionality
+        deleteButton.Click += async (sender, e) =>
+        {
+            await DeleteFileFromContext(card, file);
+        };
         
         actionsPanel.Children.Add(penButton);
         actionsPanel.Children.Add(eyeButton);
@@ -520,6 +527,94 @@ public sealed partial class ContextPanel : UserControl
         catch (Exception ex)
         {
             Console.WriteLine($"Error updating file visibility: {ex.Message}");
+            throw;
+        }
+    }
+
+    private async Task DeleteFileFromContext(Border card, ContextFileInfo file)
+    {
+        try
+        {
+            // Show confirmation dialog
+            var dialog = new Microsoft.UI.Xaml.Controls.ContentDialog
+            {
+                Title = "Remove from Context",
+                Content = $"Are you sure you want to remove \"{file.DisplayName}\" from the context?\n\nThis will not delete the file itself, only remove it from this context session.",
+                PrimaryButtonText = "Remove",
+                SecondaryButtonText = "Cancel",
+                DefaultButton = Microsoft.UI.Xaml.Controls.ContentDialogButton.Secondary,
+                XamlRoot = this.XamlRoot
+            };
+
+            var result = await dialog.ShowAsync();
+            
+            if (result == Microsoft.UI.Xaml.Controls.ContentDialogResult.Primary)
+            {
+                // Remove from database
+                await RemoveFileFromContext(file.Id);
+                
+                // Remove from UI
+                var parent = card.Parent as StackPanel;
+                if (parent != null)
+                {
+                    parent.Children.Remove(card);
+                    
+                    // Check if we need to show empty state
+                    if (parent.Children.Count == 0)
+                    {
+                        EmptyStateText.Visibility = Visibility.Visible;
+                    }
+                }
+                
+                Console.WriteLine($"File removed from context: {file.DisplayName}");
+            }
+            else
+            {
+                Console.WriteLine($"File removal cancelled: {file.DisplayName}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error deleting file from context: {ex.Message}");
+            
+            // Show error dialog
+            var errorDialog = new Microsoft.UI.Xaml.Controls.ContentDialog
+            {
+                Title = "Error",
+                Content = $"Failed to remove file from context: {ex.Message}",
+                CloseButtonText = "OK",
+                XamlRoot = this.XamlRoot
+            };
+            await errorDialog.ShowAsync();
+        }
+    }
+
+    private async Task RemoveFileFromContext(int contextLinkId)
+    {
+        try
+        {
+            using var connection = new SqliteConnection(_databaseService.GetConnectionString());
+            await connection.OpenAsync();
+            
+            var sql = "DELETE FROM context_file_links WHERE id = @contextLinkId";
+            
+            using var command = new SqliteCommand(sql, connection);
+            command.Parameters.AddWithValue("@contextLinkId", contextLinkId);
+            
+            var rowsAffected = await command.ExecuteNonQueryAsync();
+            
+            if (rowsAffected > 0)
+            {
+                Console.WriteLine($"Database updated: context link ID {contextLinkId} removed from context_file_links");
+            }
+            else
+            {
+                Console.WriteLine($"Warning: No rows affected when removing context link ID {contextLinkId}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error removing file from context: {ex.Message}");
             throw;
         }
     }
