@@ -188,9 +188,9 @@ namespace CAI_design_1_chat.Presentation.Controls
             var isSelected = _selectedFile?.Id == file.Id;
             var isInContext = file.InContext;
             
-            // Purple color matching the back button (from XAML: #19FFFFFF with purple tint)
-            var purpleHover = Microsoft.UI.Colors.Purple; // Purple with transparency
-            var purpleSelected = Microsoft.UI.Colors.DarkMagenta; // Darker purple for selection
+            // Purple color matching AI Settings button exactly - using hex colors
+            var purpleHover = Microsoft.UI.Colors.MediumPurple; // Light purple hover
+            var purpleSelected = Microsoft.UI.Colors.BlueViolet; // Darker purple selection
             
             var row = new Border
             {
@@ -217,11 +217,11 @@ namespace CAI_design_1_chat.Presentation.Controls
                 TextTrimming = TextTrimming.CharacterEllipsis
             };
 
-            // Set text and color based on state - NO green for selection, only for context
+            // Set text and color based on state - NO green colors, only white text
             if (isInContext)
             {
                 nameText.Text = $"  ✓ {file.DisplayFileName}";
-                nameText.Foreground = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.LightGreen);
+                nameText.Foreground = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.White);
             }
             else if (isSelected)
             {
@@ -454,7 +454,7 @@ namespace CAI_design_1_chat.Presentation.Controls
             }
         }
 
-        private void HandleKeyboardNavigation(bool moveDown)
+        private async void HandleKeyboardNavigation(bool moveDown)
         {
             try
             {
@@ -477,7 +477,12 @@ namespace CAI_design_1_chat.Presentation.Controls
 
                 if (currentIndex >= 0 && currentIndex < _currentResults.Count)
                 {
-                    SelectFileOnly(_currentResults[currentIndex]);
+                    // Select the new file and refresh display
+                    _selectedFile = _currentResults[currentIndex];
+                    UpdateContentPreview();
+                    await DisplaySearchResults(_currentResults);
+                    
+                    Console.WriteLine($"FileSearchPanel: Keyboard navigation to '{_selectedFile.DisplayFileName}'");
                 }
             }
             catch (Exception ex)
@@ -512,6 +517,94 @@ namespace CAI_design_1_chat.Presentation.Controls
             catch (Exception ex)
             {
                 Console.WriteLine($"FileSearchPanel: Error toggling file context: {ex.Message}");
+            }
+        }
+
+        // Splitter drag functionality
+        private bool _isDragging = false;
+        private double _startX = 0;
+        private double _startWidth = 0;
+
+        private void SplitterHandle_PointerPressed(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)
+        {
+            try
+            {
+                var border = sender as Border;
+                border?.CapturePointer(e.Pointer);
+                _isDragging = true;
+                _startX = e.GetCurrentPoint(this).Position.X;
+                _startWidth = LeftColumn.Width.Value;
+                e.Handled = true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"FileSearchPanel: Error starting splitter drag: {ex.Message}");
+            }
+        }
+
+        private void SplitterHandle_PointerMoved(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)
+        {
+            try
+            {
+                if (!_isDragging) return;
+
+                var currentX = e.GetCurrentPoint(this).Position.X;
+                var deltaX = currentX - _startX;
+                var newWidth = Math.Max(300, Math.Min(800, _startWidth + deltaX)); // Min 300px, Max 800px
+
+                LeftColumn.Width = new GridLength(newWidth, GridUnitType.Pixel);
+                e.Handled = true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"FileSearchPanel: Error during splitter drag: {ex.Message}");
+            }
+        }
+
+        private void SplitterHandle_PointerReleased(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)
+        {
+            try
+            {
+                var border = sender as Border;
+                border?.ReleasePointerCapture(e.Pointer);
+                _isDragging = false;
+                e.Handled = true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"FileSearchPanel: Error ending splitter drag: {ex.Message}");
+            }
+        }
+
+        private void SplitterHandle_PointerEntered(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)
+        {
+            try
+            {
+                var border = sender as Border;
+                if (border != null)
+                {
+                    border.Background = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.LightGray);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"FileSearchPanel: Error on splitter hover: {ex.Message}");
+            }
+        }
+
+        private void SplitterHandle_PointerExited(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)
+        {
+            try
+            {
+                var border = sender as Border;
+                if (border != null && !_isDragging)
+                {
+                    border.Background = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Transparent);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"FileSearchPanel: Error on splitter exit: {ex.Message}");
             }
         }
     }

@@ -57,12 +57,12 @@
             <!-- Main Content Area with Horizontal Split -->
             <Grid Grid.Row="1" Margin="16">
                 <Grid.ColumnDefinitions>
-                    <!-- Search & Table Area (40%) -->
-                    <ColumnDefinition Width="2*"/>
+                    <!-- Search & Table Area (resizable) -->
+                    <ColumnDefinition x:Name="LeftColumn" Width="400" MinWidth="300"/>
                     <!-- Splitter -->
                     <ColumnDefinition Width="Auto"/>
-                    <!-- File Viewer Area (60%) -->
-                    <ColumnDefinition Width="3*"/>
+                    <!-- File Viewer Area (takes remaining space) -->
+                    <ColumnDefinition Width="*" MinWidth="300"/>
                 </Grid.ColumnDefinitions>
 
                 <!-- Left Panel: Search & Results Table -->
@@ -217,11 +217,21 @@
                     </Grid>
                 </Border>
 
-                <!-- Splitter -->
+                <!-- Resizable Splitter -->
                 <Border Grid.Column="1" 
-                        Width="1" 
-                        Background="{ThemeResource DividerStrokeColorDefaultBrush}" 
-                        Margin="8,0"/>
+                        x:Name="SplitterHandle"
+                        Width="8" 
+                        Background="Transparent"
+                        Margin="4,0"
+                        PointerPressed="SplitterHandle_PointerPressed"
+                        PointerMoved="SplitterHandle_PointerMoved"
+                        PointerReleased="SplitterHandle_PointerReleased"
+                        PointerEntered="SplitterHandle_PointerEntered"
+                        PointerExited="SplitterHandle_PointerExited">
+                    <Border Width="2" 
+                            Background="{ThemeResource DividerStrokeColorDefaultBrush}"
+                            HorizontalAlignment="Center"/>
+                </Border>
 
                 <!-- Right Panel: File Viewer -->
                 <Border Grid.Column="2"
