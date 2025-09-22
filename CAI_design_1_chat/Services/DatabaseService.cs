@@ -42,10 +42,83 @@ namespace CAI_design_1_chat.Services
                 await sqlCommand.ExecuteNonQueryAsync();
                 
                 Console.WriteLine($"Database initialized successfully at: {_databasePath}");
+                
+                // Run migrations after initial schema setup
+                await RunMigrationsAsync();
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Error initializing database: {ex.Message}");
+                throw;
+            }
+        }
+
+        private async Task RunMigrationsAsync()
+        {
+            try
+            {
+                // Check current schema version
+                var currentVersion = await GetSchemaVersionAsync();
+                Console.WriteLine($"Current database schema version: {currentVersion}");
+                
+                // Run migration v3 if needed
+                if (currentVersion < 3)
+                {
+                    await ExecuteMigrationV3Async();
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error running migrations: {ex.Message}");
+                throw;
+            }
+        }
+
+        private async Task<int> GetSchemaVersionAsync()
+        {
+            try
+            {
+                using var connection = new SqliteConnection(_connectionString);
+                await connection.OpenAsync();
+                
+                using var command = new SqliteCommand(
+                    "SELECT MAX(version) FROM schema_version", 
+                    connection);
+                
+                var result = await command.ExecuteScalarAsync();
+                return result != null ? Convert.ToInt32(result) : 1;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error getting schema version: {ex.Message}");
+                return 1; // Default to version 1 if table doesn't exist
+            }
+        }
+
+        private async Task ExecuteMigrationV3Async()
+        {
+            try
+            {
+                var migrationPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Database", "migration_v3.sql");
+                if (!File.Exists(migrationPath))
+                {
+                    Console.WriteLine($"Migration v3 file not found at: {migrationPath}");
+                    return;
+                }
+
+                var migrationSql = await File.ReadAllTextAsync(migrationPath);
+                
+                using var connection = new SqliteConnection(_connectionString);
+                await connection.OpenAsync();
+                
+                using var command = new SqliteCommand(migrationSql, connection);
+                await command.ExecuteNonQueryAsync();
+                
+                Console.WriteLine("✅ Database migration v3 completed successfully - Context Handling Panel ready");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error executing migration v3: {ex.Message}");
                 throw;
             }
         }

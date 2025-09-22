@@ -6,11 +6,37 @@
     <Grid Background="{ThemeResource LayerFillColorDefaultBrush}">
         <ScrollViewer VerticalScrollBarVisibility="Auto">
             <StackPanel Spacing="16" Margin="16">
-                <!-- Header -->
-                <TextBlock Text="Context" 
-                           FontSize="20" 
-                           FontWeight="SemiBold"
-                           Foreground="{ThemeResource TextFillColorPrimaryBrush}" />
+                <!-- Header with Refresh Button -->
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    
+                    <!-- Context Title -->
+                    <TextBlock Grid.Column="0"
+                               Text="Context" 
+                               FontSize="20" 
+                               FontWeight="SemiBold"
+                               Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                               VerticalAlignment="Center" />
+                    
+                    <!-- Refresh Button -->
+                    <Button x:Name="RefreshButton"
+                            Grid.Column="1"
+                            Click="RefreshButton_Click"
+                            Background="{ThemeResource SubtleFillColorSecondaryBrush}"
+                            BorderBrush="{ThemeResource ControlStrokeColorDefaultBrush}"
+                            BorderThickness="1"
+                            CornerRadius="6"
+                            Width="32"
+                            Height="32"
+                            ToolTipService.ToolTip="Refresh context files">
+                        <FontIcon Glyph="🔄" 
+                                  FontSize="14" 
+                                  Foreground="{ThemeResource TextFillColorPrimaryBrush}" />
+                    </Button>
+                </Grid>
                 
                 <!-- Divider -->
                 <Border Height="1" 

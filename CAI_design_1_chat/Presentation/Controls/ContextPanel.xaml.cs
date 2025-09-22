@@ -22,10 +22,14 @@ public sealed partial class ContextPanel : UserControl
     public async Task LoadContextFilesAsync(int sessionId)
     {
         _currentSessionId = sessionId;
-        
+        await RefreshContextFilesAsync();
+    }
+
+    private async Task RefreshContextFilesAsync()
+    {
         try
         {
-            var contextFiles = await GetContextFilesForSessionAsync(sessionId);
+            var contextFiles = await GetContextFilesForSessionAsync(_currentSessionId);
             
             // Clear existing content
             ContextFilesContainer.Children.Clear();
@@ -34,7 +38,7 @@ public sealed partial class ContextPanel : UserControl
             {
                 // Show empty state
                 EmptyStateText.Visibility = Visibility.Visible;
-                Console.WriteLine($"Context panel loaded: 0 files for session {sessionId}");
+                Console.WriteLine($"Context panel loaded: 0 files for session {_currentSessionId}");
             }
             else
             {
@@ -47,7 +51,7 @@ public sealed partial class ContextPanel : UserControl
                     ContextFilesContainer.Children.Add(fileCard);
                 }
                 
-                Console.WriteLine($"Context panel loaded: {contextFiles.Count} files for session {sessionId}");
+                Console.WriteLine($"Context panel loaded: {contextFiles.Count} files for session {_currentSessionId}");
             }
         }
         catch (Exception ex)
@@ -55,6 +59,55 @@ public sealed partial class ContextPanel : UserControl
             Console.WriteLine($"Error loading context files: {ex.Message}");
             EmptyStateText.Text = "Error loading context files";
             EmptyStateText.Visibility = Visibility.Visible;
+        }
+    }
+
+    private async void RefreshButton_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            // Provide visual feedback during refresh
+            var button = sender as Button;
+            if (button != null)
+            {
+                button.IsEnabled = false;
+                var originalContent = button.Content;
+                
+                // Show loading state
+                var loadingIcon = new FontIcon 
+                { 
+                    Glyph = "⟳", 
+                    FontSize = 14,
+                    Foreground = (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources["TextFillColorSecondaryBrush"]
+                };
+                button.Content = loadingIcon;
+                
+                // Refresh the context files
+                await RefreshContextFilesAsync();
+                
+                // Restore button state
+                button.Content = originalContent;
+                button.IsEnabled = true;
+            }
+            
+            Console.WriteLine($"Context files refreshed for session {_currentSessionId}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error refreshing context files: {ex.Message}");
+            
+            // Restore button state on error
+            var button = sender as Button;
+            if (button != null)
+            {
+                button.Content = new FontIcon 
+                { 
+                    Glyph = "🔄", 
+                    FontSize = 14,
+                    Foreground = (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources["TextFillColorPrimaryBrush"]
+                };
+                button.IsEnabled = true;
+            }
         }
     }
 
@@ -126,17 +179,34 @@ public sealed partial class ContextPanel : UserControl
         headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 
-        // File name
+        // File name container (for switching between TextBlock and TextBox)
+        var fileNameContainer = new Grid();
+        
+        // File name display (normal state)
         var fileName = new TextBlock
         {
             Text = file.DisplayName,
             FontSize = 14,
             FontWeight = Microsoft.UI.Text.FontWeights.Medium,
             Foreground = (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources["TextFillColorPrimaryBrush"],
-            TextTrimming = TextTrimming.CharacterEllipsis
+            TextTrimming = TextTrimming.CharacterEllipsis,
+            Tag = file.Id // Store file ID for reference
         };
-        Grid.SetColumn(fileName, 0);
-        headerGrid.Children.Add(fileName);
+        
+        // File name editor (edit state) - initially hidden
+        var fileNameEditor = new TextBox
+        {
+            Text = file.DisplayName,
+            FontSize = 14,
+            Visibility = Visibility.Collapsed,
+            Tag = file.Id // Store file ID for reference
+        };
+        
+        fileNameContainer.Children.Add(fileName);
+        fileNameContainer.Children.Add(fileNameEditor);
+        
+        Grid.SetColumn(fileNameContainer, 0);
+        headerGrid.Children.Add(fileNameContainer);
 
         // Action buttons (placeholder for now)
         var actionsPanel = new StackPanel 
@@ -145,7 +215,7 @@ public sealed partial class ContextPanel : UserControl
             Spacing = 4 
         };
         
-        // Pen button (rename) - placeholder
+        // Pen button (rename) - now functional
         var penButton = new Button
         {
             Content = "🖊",
@@ -153,9 +223,16 @@ public sealed partial class ContextPanel : UserControl
             Width = 28,
             Height = 28,
             Background = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Transparent),
-            BorderThickness = new Thickness(0)
+            BorderThickness = new Thickness(0),
+            Tag = file.Id // Store file ID for reference
         };
         ToolTipService.SetToolTip(penButton, "Rename");
+        
+        // Add click handler for rename functionality
+        penButton.Click += async (sender, e) =>
+        {
+            await StartEditingFileName(fileNameContainer, fileName, fileNameEditor, file);
+        };
         
         // Eye button (toggle visibility) - placeholder
         var eyeButton = new Button
@@ -215,6 +292,166 @@ public sealed partial class ContextPanel : UserControl
 
         card.Child = stackPanel;
         return card;
+    }
+
+    private async Task StartEditingFileName(Grid container, TextBlock displayName, TextBox editor, ContextFileInfo file)
+    {
+        try
+        {
+            // Switch to edit mode
+            displayName.Visibility = Visibility.Collapsed;
+            editor.Visibility = Visibility.Visible;
+            editor.Focus(FocusState.Programmatic);
+            editor.SelectAll();
+            
+            // Store original name for validation
+            var originalName = editor.Text;
+            
+            // Add event handlers for completing the edit
+            void CompleteEdit() => _ = CompleteEditingFileName(container, displayName, editor, file, originalName);
+            void CancelEdit() => CancelEditingFileName(container, displayName, editor, originalName);
+            
+            // Handle Enter key (complete edit)
+            editor.KeyDown += (sender, e) =>
+            {
+                if (e.Key == Windows.System.VirtualKey.Enter)
+                {
+                    CompleteEdit();
+                    e.Handled = true;
+                }
+                else if (e.Key == Windows.System.VirtualKey.Escape)
+                {
+                    CancelEdit();
+                    e.Handled = true;
+                }
+            };
+            
+            // Handle losing focus (complete edit)
+            editor.LostFocus += (sender, e) => CompleteEdit();
+            
+            Console.WriteLine($"Started editing file name: {file.DisplayName}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error starting file name edit: {ex.Message}");
+        }
+    }
+
+    private async Task CompleteEditingFileName(Grid container, TextBlock displayName, TextBox editor, ContextFileInfo file, string originalName)
+    {
+        try
+        {
+            var newName = editor.Text.Trim();
+            
+            // Validate new name
+            if (string.IsNullOrEmpty(newName))
+            {
+                // Revert to original name if empty
+                editor.Text = originalName;
+                CancelEditingFileName(container, displayName, editor, originalName);
+                return;
+            }
+            
+            // Check for duplicates (excluding current file)
+            if (await IsDisplayNameDuplicate(newName, file.Id))
+            {
+                // Show error and revert
+                Console.WriteLine($"Display name '{newName}' already exists. Reverting to '{originalName}'");
+                editor.Text = originalName;
+                CancelEditingFileName(container, displayName, editor, originalName);
+                return;
+            }
+            
+            // Update database
+            await UpdateFileDisplayName(file.Id, newName);
+            
+            // Update UI
+            displayName.Text = newName;
+            file.DisplayName = newName;
+            
+            // Switch back to display mode
+            editor.Visibility = Visibility.Collapsed;
+            displayName.Visibility = Visibility.Visible;
+            
+            Console.WriteLine($"File renamed: '{originalName}' → '{newName}'");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error completing file name edit: {ex.Message}");
+            CancelEditingFileName(container, displayName, editor, originalName);
+        }
+    }
+
+    private void CancelEditingFileName(Grid container, TextBlock displayName, TextBox editor, string originalName)
+    {
+        try
+        {
+            // Revert to original name
+            editor.Text = originalName;
+            
+            // Switch back to display mode
+            editor.Visibility = Visibility.Collapsed;
+            displayName.Visibility = Visibility.Visible;
+            
+            Console.WriteLine($"File rename cancelled: {originalName}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error cancelling file name edit: {ex.Message}");
+        }
+    }
+
+    private async Task<bool> IsDisplayNameDuplicate(string displayName, int excludeFileId)
+    {
+        try
+        {
+            using var connection = new SqliteConnection(_databaseService.GetConnectionString());
+            await connection.OpenAsync();
+            
+            var sql = @"
+                SELECT COUNT(*) 
+                FROM context_file_links 
+                WHERE display_name = @displayName 
+                AND context_session_id = @sessionId 
+                AND id != @excludeId";
+            
+            using var command = new SqliteCommand(sql, connection);
+            command.Parameters.AddWithValue("@displayName", displayName);
+            command.Parameters.AddWithValue("@sessionId", _currentSessionId);
+            command.Parameters.AddWithValue("@excludeId", excludeFileId);
+            
+            var result = await command.ExecuteScalarAsync();
+            return Convert.ToInt32(result) > 0;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error checking display name duplicate: {ex.Message}");
+            return false; // Allow rename if check fails
+        }
+    }
+
+    private async Task UpdateFileDisplayName(int fileId, string newDisplayName)
+    {
+        try
+        {
+            using var connection = new SqliteConnection(_databaseService.GetConnectionString());
+            await connection.OpenAsync();
+            
+            var sql = "UPDATE context_file_links SET display_name = @displayName WHERE id = @fileId";
+            
+            using var command = new SqliteCommand(sql, connection);
+            command.Parameters.AddWithValue("@displayName", newDisplayName);
+            command.Parameters.AddWithValue("@fileId", fileId);
+            
+            await command.ExecuteNonQueryAsync();
+            
+            Console.WriteLine($"Database updated: file ID {fileId} display_name = '{newDisplayName}'");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error updating file display name: {ex.Message}");
+            throw;
+        }
     }
 
     public class ContextFileInfo
