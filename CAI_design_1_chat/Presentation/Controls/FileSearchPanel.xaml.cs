@@ -188,9 +188,15 @@ namespace CAI_design_1_chat.Presentation.Controls
             var isSelected = _selectedFile?.Id == file.Id;
             var isInContext = file.InContext;
             
+            // Purple color matching the back button (from XAML: #19FFFFFF with purple tint)
+            var purpleHover = Microsoft.UI.Colors.Purple; // Purple with transparency
+            var purpleSelected = Microsoft.UI.Colors.DarkMagenta; // Darker purple for selection
+            
             var row = new Border
             {
-                Background = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Transparent),
+                Background = isSelected ? 
+                    new Microsoft.UI.Xaml.Media.SolidColorBrush(purpleSelected) :
+                    new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Transparent),
                 BorderBrush = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Gray),
                 BorderThickness = new Thickness(0, 0, 0, 1),
                 Padding = new Thickness(12, 6),
@@ -211,7 +217,7 @@ namespace CAI_design_1_chat.Presentation.Controls
                 TextTrimming = TextTrimming.CharacterEllipsis
             };
 
-            // Set text and color based on state
+            // Set text and color based on state - NO green for selection, only for context
             if (isInContext)
             {
                 nameText.Text = $"  ✓ {file.DisplayFileName}";
@@ -278,22 +284,25 @@ namespace CAI_design_1_chat.Presentation.Controls
 
             row.Child = grid;
 
-            // Add hover effect
+            // Add hover effect with purple color
             row.PointerEntered += (sender, e) =>
             {
-                if (!isInContext)
+                if (!isSelected)
                 {
-                    row.Background = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.DarkGray);
+                    row.Background = new Microsoft.UI.Xaml.Media.SolidColorBrush(purpleHover);
                 }
             };
 
             row.PointerExited += (sender, e) =>
             {
-                row.Background = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Transparent);
+                if (!isSelected)
+                {
+                    row.Background = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Transparent);
+                }
             };
 
-            // Add click handler for row selection and context adding
-            row.Tapped += (sender, e) => ToggleFileContext(file);
+            // Add click handler for row selection (NOT context adding)
+            row.Tapped += (sender, e) => SelectFileOnly(file);
 
             return row;
         }
@@ -389,6 +398,91 @@ namespace CAI_design_1_chat.Presentation.Controls
                 Console.WriteLine($"FileSearchPanel: Error adding file to context: {ex.Message}");
                 button.Content = "Error";
                 button.IsEnabled = true;
+            }
+        }
+
+        private async void SelectFileOnly(FileSearchResult file)
+        {
+            try
+            {
+                // Just select the file, don't add to context
+                _selectedFile = file;
+                UpdateContentPreview();
+                
+                // Refresh display to show purple selection
+                await DisplaySearchResults(_currentResults);
+                
+                Console.WriteLine($"FileSearchPanel: Selected file '{file.DisplayFileName}'");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"FileSearchPanel: Error selecting file: {ex.Message}");
+            }
+        }
+
+        private async void SearchTextBox_KeyDown(object sender, Microsoft.UI.Xaml.Input.KeyRoutedEventArgs e)
+        {
+            try
+            {
+                if (e.Key == Windows.System.VirtualKey.Enter)
+                {
+                    // Trigger search on Enter key
+                    var textBox = sender as TextBox;
+                    if (textBox?.Text?.Length >= 3)
+                    {
+                        SearchButton_Click(null, null);
+                    }
+                    e.Handled = true;
+                }
+                else if (e.Key == Windows.System.VirtualKey.Down || e.Key == Windows.System.VirtualKey.Up)
+                {
+                    // Handle keyboard navigation
+                    HandleKeyboardNavigation(e.Key == Windows.System.VirtualKey.Down);
+                    e.Handled = true;
+                }
+                else if (e.Key == Windows.System.VirtualKey.Escape)
+                {
+                    // Clear selection
+                    _selectedFile = null;
+                    await DisplaySearchResults(_currentResults);
+                    e.Handled = true;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"FileSearchPanel: Error handling key down: {ex.Message}");
+            }
+        }
+
+        private void HandleKeyboardNavigation(bool moveDown)
+        {
+            try
+            {
+                if (_currentResults == null || _currentResults.Count == 0) return;
+
+                int currentIndex = -1;
+                if (_selectedFile != null)
+                {
+                    currentIndex = _currentResults.FindIndex(f => f.Id == _selectedFile.Id);
+                }
+
+                if (moveDown)
+                {
+                    currentIndex = (currentIndex + 1) % _currentResults.Count;
+                }
+                else
+                {
+                    currentIndex = currentIndex <= 0 ? _currentResults.Count - 1 : currentIndex - 1;
+                }
+
+                if (currentIndex >= 0 && currentIndex < _currentResults.Count)
+                {
+                    SelectFileOnly(_currentResults[currentIndex]);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"FileSearchPanel: Error handling keyboard navigation: {ex.Message}");
             }
         }
 

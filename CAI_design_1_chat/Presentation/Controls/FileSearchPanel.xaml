@@ -80,6 +80,8 @@
                             <RowDefinition Height="16"/>
                             <!-- Results Table -->
                             <RowDefinition Height="*"/>
+                            <!-- Search Controls -->
+                            <RowDefinition Height="Auto"/>
                             <!-- Status Message -->
                             <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
@@ -91,29 +93,40 @@
                                      PlaceholderText="Search files... (minimum 3 characters)"
                                      FontSize="14"
                                      Padding="12,8"
-                                     TextChanged="SearchTextBox_TextChanged"/>
+                                     TextChanged="SearchTextBox_TextChanged"
+                                     KeyDown="SearchTextBox_KeyDown"/>
 
-                            <!-- Search Button -->
-                            <Button x:Name="SearchButton"
-                                    Click="SearchButton_Click"
-                                    IsEnabled="False"
-                                    HorizontalAlignment="Left"
-                                    Background="#19FFFFFF"
-                                    BorderBrush="#28FFFFFF"
-                                    BorderThickness="1"
-                                    CornerRadius="6"
-                                    Padding="12,8"
-                                    ToolTipService.ToolTip="Search files">
-                                <StackPanel Orientation="Horizontal" Spacing="8">
-                                    <FontIcon Glyph="&#xE721;" 
-                                              FontSize="16" 
-                                              Foreground="#DCFFFFFF"/>
-                                    <TextBlock Text="Search"
-                                               Foreground="#DCFFFFFF"
-                                               FontWeight="Medium"/>
-                                </StackPanel>
-                            </Button>
+                            <!-- Search Controls Row -->
+                            <StackPanel Orientation="Horizontal" Spacing="12">
+                                <!-- Search Button -->
+                                <Button x:Name="SearchButton"
+                                        Click="SearchButton_Click"
+                                        IsEnabled="False"
+                                        Background="#19FFFFFF"
+                                        BorderBrush="#28FFFFFF"
+                                        BorderThickness="1"
+                                        CornerRadius="6"
+                                        Padding="12,8"
+                                        ToolTipService.ToolTip="Search files">
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <FontIcon Glyph="&#xE721;" 
+                                                  FontSize="16" 
+                                                  Foreground="#DCFFFFFF"/>
+                                        <TextBlock Text="Search"
+                                                   Foreground="#DCFFFFFF"
+                                                   FontWeight="Medium"/>
+                                    </StackPanel>
+                                </Button>
+
+                                <!-- Search Options -->
+                                <CheckBox x:Name="SearchNameOnlyCheckBox"
+                                          Content="Search in name only"
+                                          FontSize="12"
+                                          Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                          Margin="8,0,0,0"/>
+                            </StackPanel>
                         </StackPanel>
+
 
                         <!-- Results Table -->
                         <Border Grid.Row="2"
@@ -234,6 +247,7 @@
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
 
                             <TextBlock Grid.Column="0"
@@ -244,8 +258,16 @@
                                        Foreground="{ThemeResource TextFillColorPrimaryBrush}"
                                        VerticalAlignment="Center"/>
 
+                            <!-- Toggle Label -->
+                            <TextBlock Grid.Column="1"
+                                       Text="Raw text / Summary"
+                                       FontSize="12"
+                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                       VerticalAlignment="Center"
+                                       Margin="0,0,8,0"/>
+
                             <!-- Content/Summary Toggle -->
-                            <ToggleSwitch Grid.Column="1"
+                            <ToggleSwitch Grid.Column="2"
                                           x:Name="ContentToggle"
                                           OnContent="Summary"
                                           OffContent="Raw Text"
