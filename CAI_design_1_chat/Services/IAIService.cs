@@ -18,7 +18,7 @@ namespace CAI_design_1_chat.Services
         bool IsConfigured { get; }
 
         /// <summary>
-        /// Sends a message to the AI and returns the response
+        /// Sends a message to the AI and returns the response (legacy method for backward compatibility)
         /// </summary>
         /// <param name="message">The user's message</param>
         /// <param name="conversationHistory">Previous messages in the conversation</param>
@@ -27,7 +27,16 @@ namespace CAI_design_1_chat.Services
         Task<string> SendMessageAsync(string message, List<ChatMessage>? conversationHistory = null, CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Sends a message to the AI and streams the response word by word
+        /// Sends a message to the AI with structured context and returns the response
+        /// </summary>
+        /// <param name="message">The user's message</param>
+        /// <param name="context">Structured context containing files and message history</param>
+        /// <param name="cancellationToken">Cancellation token</param>
+        /// <returns>The AI's response</returns>
+        Task<string> SendMessageWithContextAsync(string message, ContextData context, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Sends a message to the AI and streams the response word by word (legacy method for backward compatibility)
         /// </summary>
         /// <param name="message">The user's message</param>
         /// <param name="onTokenReceived">Callback for each token/word received</param>
@@ -35,6 +44,16 @@ namespace CAI_design_1_chat.Services
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>The complete response when streaming is finished</returns>
         Task<string> SendMessageStreamAsync(string message, Action<string> onTokenReceived, List<ChatMessage>? conversationHistory = null, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Sends a message to the AI with structured context and streams the response word by word
+        /// </summary>
+        /// <param name="message">The user's message</param>
+        /// <param name="context">Structured context containing files and message history</param>
+        /// <param name="onTokenReceived">Callback for each token/word received</param>
+        /// <param name="cancellationToken">Cancellation token</param>
+        /// <returns>The complete response when streaming is finished</returns>
+        Task<string> SendMessageStreamWithContextAsync(string message, ContextData context, Action<string> onTokenReceived, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Tests the connection to the AI service

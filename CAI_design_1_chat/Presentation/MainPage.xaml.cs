@@ -32,6 +32,7 @@ public sealed partial class MainPage : Page
     // Database service for chat persistence
     private readonly DatabaseService _databaseService;
     private readonly ChatContextService _chatContextService;
+    private ContextParserService _contextParserService;
     private int _currentSessionId;
     
     // Auto-scroll state tracking
@@ -62,6 +63,9 @@ public sealed partial class MainPage : Page
         // Initialize context cache service with shared service instances
         var contextCacheService = new ContextCacheService(_databaseService, _chatContextService);
         _databaseService.SetContextCacheService(contextCacheService);
+        
+        // Initialize context parser service
+        _contextParserService = new ContextParserService(contextCacheService);
         
         // Configure ContextPanel with shared service instances
         ContextPanelControl.SetServices(_databaseService, _chatContextService);
@@ -873,10 +877,15 @@ public sealed partial class MainPage : Page
                 return "OpenAI is not configured. Please set your API key and model in AI Settings.";
             }
 
-            // Get conversation context using hybrid approach (memory + database)
-            var conversationHistory = await _chatContextService.GetContextForAIAsync(_currentSessionId);
+            // Get structured context (files + message history)
+            var contextData = await _contextParserService.GetContextDataAsync(_currentSessionId);
             
-            var response = await _openAIService.SendMessageAsync(message, conversationHistory);
+            Console.WriteLine($"OpenAI request with enhanced context:");
+            Console.WriteLine($"  - Files: {contextData.FileCount}");
+            Console.WriteLine($"  - Messages: {contextData.MessageCount}");
+            Console.WriteLine($"  - Total tokens: ~{contextData.TotalTokens}");
+            
+            var response = await _openAIService.SendMessageWithContextAsync(message, contextData);
             return response;
         }
         catch (AIServiceException ex)
@@ -914,10 +923,15 @@ public sealed partial class MainPage : Page
             
             var fullResponse = new StringBuilder();
             
-            // Get conversation context using hybrid approach (memory + database)
-            var conversationHistory = await _chatContextService.GetContextForAIAsync(_currentSessionId);
+            // Get structured context (files + message history)
+            var contextData = await _contextParserService.GetContextDataAsync(_currentSessionId);
             
-            await _openAIService.SendMessageStreamAsync(message, (chunk) =>
+            Console.WriteLine($"OpenAI streaming request with enhanced context:");
+            Console.WriteLine($"  - Files: {contextData.FileCount}");
+            Console.WriteLine($"  - Messages: {contextData.MessageCount}");
+            Console.WriteLine($"  - Total tokens: ~{contextData.TotalTokens}");
+            
+            await _openAIService.SendMessageStreamWithContextAsync(message, contextData, (chunk) =>
             {
                 if (!string.IsNullOrEmpty(chunk))
                 {
@@ -941,7 +955,7 @@ public sealed partial class MainPage : Page
                         }
                     });
                 }
-            }, conversationHistory);
+            });
             
             // Final cleanup on main thread
             DispatcherQueue.TryEnqueue(() =>
@@ -1092,23 +1106,25 @@ public sealed partial class MainPage : Page
     }
 
     /// <summary>
-    /// Updates the context size display in the UI
+    /// Updates the context size display in the chat header with total context tokens (files + messages)
     /// </summary>
     private async Task UpdateContextSizeDisplayAsync()
     {
         try
         {
-            var tokenCount = await _chatContextService.GetContextTokenCountAsync(_currentSessionId);
+            // Get complete context data (files + messages) for accurate token count
+            var contextData = await _contextParserService.GetContextDataAsync(_currentSessionId);
+            var totalTokens = contextData.TotalTokens;
             
             DispatcherQueue.TryEnqueue(() =>
             {
                 if (ContextSizeDisplay != null)
                 {
-                    ContextSizeDisplay.Text = $"Context size: {tokenCount:N0} tokens";
+                    ContextSizeDisplay.Text = $"Context size: {totalTokens:N0} tokens";
                 }
             });
             
-            Console.WriteLine($"Context size updated: {tokenCount} tokens for session {_currentSessionId}");
+            Console.WriteLine($"Context size updated: {totalTokens} tokens for session {_currentSessionId} (Files: {contextData.FileCount}, Messages: {contextData.MessageCount})");
         }
         catch (Exception ex)
         {

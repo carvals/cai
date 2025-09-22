@@ -50,6 +50,13 @@ namespace CAI_design_1_chat.Services
 
         public async Task<string> SendMessageAsync(string message, List<ChatMessage>? conversationHistory = null, CancellationToken cancellationToken = default)
         {
+            // Convert to ContextData for backward compatibility
+            var context = ContextData.FromMessages(conversationHistory ?? new List<ChatMessage>());
+            return await SendMessageWithContextAsync(message, context, cancellationToken);
+        }
+
+        public async Task<string> SendMessageWithContextAsync(string message, ContextData context, CancellationToken cancellationToken = default)
+        {
             if (!IsConfigured || _chatClient == null)
             {
                 throw new AIServiceException(ProviderName, "OpenAI service is not configured. Please set API key and model in settings.");
@@ -57,9 +64,18 @@ namespace CAI_design_1_chat.Services
 
             try
             {
-                var messages = BuildChatMessages(message, conversationHistory ?? new List<ChatMessage>());
+                var messages = BuildChatMessagesWithContext(message, context);
+                
+                Console.WriteLine($"OpenAI request prepared:");
+                Console.WriteLine($"  - Total messages: {messages.Count}");
+                Console.WriteLine($"  - Context files: {context.FileCount}");
+                Console.WriteLine($"  - Estimated tokens: ~{context.TotalTokens}");
+                
                 var completion = await _chatClient.CompleteChatAsync(messages, cancellationToken: cancellationToken);
-                return completion.Value.Content[0].Text ?? "No response from OpenAI";
+                var responseText = completion.Value.Content[0].Text ?? "No response from OpenAI";
+                
+                Console.WriteLine($"OpenAI response received: {responseText.Length} characters");
+                return responseText;
             }
             catch (Exception ex)
             {
@@ -69,7 +85,14 @@ namespace CAI_design_1_chat.Services
 
         public async Task<string> SendMessageStreamAsync(string message, Action<string> onTokenReceived, List<ChatMessage>? conversationHistory = null, CancellationToken cancellationToken = default)
         {
-            System.Diagnostics.Debug.WriteLine($"SendMessageStreamAsync called: IsConfigured={IsConfigured}, _chatClient={(_chatClient != null ? "SET" : "NULL")}");
+            // Convert to ContextData for backward compatibility
+            var context = ContextData.FromMessages(conversationHistory ?? new List<ChatMessage>());
+            return await SendMessageStreamWithContextAsync(message, context, onTokenReceived, cancellationToken);
+        }
+
+        public async Task<string> SendMessageStreamWithContextAsync(string message, ContextData context, Action<string> onTokenReceived, CancellationToken cancellationToken = default)
+        {
+            System.Diagnostics.Debug.WriteLine($"SendMessageStreamWithContextAsync called: IsConfigured={IsConfigured}, _chatClient={(_chatClient != null ? "SET" : "NULL")}");
             System.Diagnostics.Debug.WriteLine($"ApiKey length: {(_apiKey?.Length ?? 0)}, Model: {_model}");
             
             if (!IsConfigured || _chatClient == null)
@@ -79,7 +102,13 @@ namespace CAI_design_1_chat.Services
 
             try
             {
-                var messages = BuildChatMessages(message, conversationHistory ?? new List<ChatMessage>());
+                var messages = BuildChatMessagesWithContext(message, context);
+                
+                Console.WriteLine($"OpenAI streaming request prepared:");
+                Console.WriteLine($"  - Total messages: {messages.Count}");
+                Console.WriteLine($"  - Context files: {context.FileCount}");
+                Console.WriteLine($"  - Estimated tokens: ~{context.TotalTokens}");
+                
                 var completionUpdates = _chatClient.CompleteChatStreamingAsync(messages, cancellationToken: cancellationToken);
                 
                 var fullResponse = new StringBuilder();
@@ -97,7 +126,9 @@ namespace CAI_design_1_chat.Services
                     }
                 }
 
-                return fullResponse.ToString();
+                var responseText = fullResponse.ToString();
+                Console.WriteLine($"OpenAI streaming response completed: {responseText.Length} characters");
+                return responseText;
             }
             catch (Exception ex)
             {
@@ -161,6 +192,78 @@ namespace CAI_design_1_chat.Services
             messages.Add(OpenAI.Chat.ChatMessage.CreateUserMessage(userMessage));
             
             return messages;
+        }
+
+        private List<OpenAI.Chat.ChatMessage> BuildChatMessagesWithContext(string userMessage, ContextData context)
+        {
+            var messages = new List<OpenAI.Chat.ChatMessage>();
+            
+            // Add system message with assistant role and file context
+            if (context.FileCount > 0 || !string.IsNullOrEmpty(context.AssistantRole))
+            {
+                var systemMessage = BuildSystemMessage(context);
+                messages.Add(OpenAI.Chat.ChatMessage.CreateSystemMessage(systemMessage));
+            }
+            
+            // Add conversation history
+            foreach (var historyMessage in context.MessageHistory)
+            {
+                if (historyMessage.Role == "user")
+                {
+                    messages.Add(OpenAI.Chat.ChatMessage.CreateUserMessage(historyMessage.Content));
+                }
+                else if (historyMessage.Role == "assistant")
+                {
+                    messages.Add(OpenAI.Chat.ChatMessage.CreateAssistantMessage(historyMessage.Content));
+                }
+                else if (historyMessage.Role == "system")
+                {
+                    messages.Add(OpenAI.Chat.ChatMessage.CreateSystemMessage(historyMessage.Content));
+                }
+            }
+            
+            // Add the current user message
+            messages.Add(OpenAI.Chat.ChatMessage.CreateUserMessage(userMessage));
+            
+            return messages;
+        }
+
+        private string BuildSystemMessage(ContextData context)
+        {
+            var systemMessage = new StringBuilder();
+            
+            // Add assistant role
+            systemMessage.AppendLine(context.AssistantRole);
+            
+            // Add file context if available
+            if (context.FileCount > 0)
+            {
+                systemMessage.AppendLine();
+                systemMessage.AppendLine("You have access to the following files for context:");
+                systemMessage.AppendLine();
+                
+                foreach (var file in context.Files.Where(f => !f.IsExcluded).OrderBy(f => f.OrderIndex))
+                {
+                    systemMessage.AppendLine($"## File: {file.DisplayName}");
+                    if (!string.IsNullOrEmpty(file.OriginalName) && file.OriginalName != file.DisplayName)
+                    {
+                        systemMessage.AppendLine($"Original filename: {file.OriginalName}");
+                    }
+                    if (file.UseSummary)
+                    {
+                        systemMessage.AppendLine("(Summary provided)");
+                    }
+                    systemMessage.AppendLine();
+                    systemMessage.AppendLine(file.Content);
+                    systemMessage.AppendLine();
+                    systemMessage.AppendLine("---");
+                    systemMessage.AppendLine();
+                }
+                
+                systemMessage.AppendLine("Please reference these files when relevant to answer the user's questions.");
+            }
+            
+            return systemMessage.ToString();
         }
 
         public void ReloadConfiguration()
