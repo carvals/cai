@@ -1097,8 +1097,15 @@ WHERE display_name IS NULL;
 
 **Panel Location & Behavior:**
 - **Position**: Left sidebar, below "Espace de travail" button
-- **Behavior**: Replaces current panel (same collapse/expand logic as workspace)
+- **Behavior**: Smart sidebar interaction with three-state logic
 - **Empty State**: Display "No context" message when no files present
+
+**Enhanced Sidebar UX Logic:**
+1. **Panel Collapsed + Button Click**: Expand panel and show button's content
+2. **Panel Expanded + Different Content**: Switch to button's content (keep expanded)  
+3. **Panel Expanded + Same Content**: Collapse panel (toggle behavior)
+
+This provides intuitive toggle functionality matching modern application patterns (VS Code, Discord, Slack).
 
 **Panel Layout:**
 ```

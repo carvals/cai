@@ -41,6 +41,10 @@ public sealed partial class MainPage : Page
     
     // Tab navigation state
     private bool _isChatTabActive = true;
+    
+    // Panel state tracking
+    private enum PanelType { Workspace, Context }
+    private PanelType? _currentPanelType = PanelType.Workspace;
 
     public MainPage()
     {
@@ -115,48 +119,72 @@ public sealed partial class MainPage : Page
 
     private void ToggleLeftPanelButton_Click(object sender, RoutedEventArgs e)
     {
-        if (_isAnimating) return;
-
-        var currentWidth = LeftPanelColumn.Width.Value;
-        var targetWidth = currentWidth <= 0.5 ? GetLastSavedWidth() : 0.0;
-        
-        AnimateLeftPanelTo(targetWidth);
-        
-        // Show workspace panel content
-        ShowWorkspacePanel();
+        HandleSidebarButtonClick(PanelType.Workspace);
     }
 
     private void ContextButton_Click(object sender, RoutedEventArgs e)
     {
+        HandleSidebarButtonClick(PanelType.Context);
+    }
+
+    private void HandleSidebarButtonClick(PanelType requestedPanelType)
+    {
         if (_isAnimating) return;
 
-        // If panel is collapsed, expand it first
         var currentWidth = LeftPanelColumn.Width.Value;
-        if (currentWidth <= 0.5)
+        var isPanelCollapsed = currentWidth <= 0.5;
+        var isSamePanelType = _currentPanelType == requestedPanelType;
+
+        if (isPanelCollapsed)
         {
+            // Case 1: Panel Collapsed + Button Click → Expand & Show Content
             AnimateLeftPanelTo(GetLastSavedWidth());
+            ShowPanel(requestedPanelType);
         }
-        
-        // Show context panel content
-        ShowContextPanel();
+        else if (!isSamePanelType)
+        {
+            // Case 2: Panel Expanded + Different Content → Switch Content
+            ShowPanel(requestedPanelType);
+        }
+        else
+        {
+            // Case 3: Panel Expanded + Same Content → Collapse Panel
+            AnimateLeftPanelTo(0.0);
+            _currentPanelType = null; // Panel is collapsed, no active content
+        }
     }
 
-    private void ShowWorkspacePanel()
+    private async void ShowPanel(PanelType panelType)
     {
-        // Update button visual states
-        UpdatePanelButtonStates(isWorkspaceActive: true);
+        _currentPanelType = panelType;
         
-        // TODO: Show workspace content (existing functionality)
-        Console.WriteLine("Workspace panel activated");
-    }
-
-    private void ShowContextPanel()
-    {
-        // Update button visual states
-        UpdatePanelButtonStates(isWorkspaceActive: false);
-        
-        // TODO: Show context panel content (to be implemented in next step)
-        Console.WriteLine("Context panel activated");
+        switch (panelType)
+        {
+            case PanelType.Workspace:
+                // Update button visual states
+                UpdatePanelButtonStates(isWorkspaceActive: true);
+                
+                // Show workspace panel, hide context panel
+                WorkspacePanel.Visibility = Visibility.Visible;
+                ContextPanelControl.Visibility = Visibility.Collapsed;
+                
+                Console.WriteLine("Workspace panel activated");
+                break;
+                
+            case PanelType.Context:
+                // Update button visual states
+                UpdatePanelButtonStates(isWorkspaceActive: false);
+                
+                // Show context panel, hide workspace panel
+                WorkspacePanel.Visibility = Visibility.Collapsed;
+                ContextPanelControl.Visibility = Visibility.Visible;
+                
+                // Load context files for current session
+                await ContextPanelControl.LoadContextFilesAsync(_currentSessionId);
+                
+                Console.WriteLine("Context panel activated");
+                break;
+        }
     }
 
     private void UpdatePanelButtonStates(bool isWorkspaceActive)
