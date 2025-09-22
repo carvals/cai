@@ -28,7 +28,10 @@ namespace CAI_design_1_chat.Services
         {
             var settings = ApplicationData.Current.LocalSettings.Values;
             _serverUrl = settings.TryGetValue("OllamaUrl", out var url) ? url?.ToString() : "http://localhost:11434";
-            _model = settings.TryGetValue("OllamaModel", out var model) ? model?.ToString() : "llama2";
+            
+            // Get model from settings, but handle empty/null values
+            var modelFromSettings = settings.TryGetValue("OllamaModel", out var model) ? model?.ToString() : null;
+            _model = string.IsNullOrWhiteSpace(modelFromSettings) ? "llama3.2:latest" : modelFromSettings;
 
             Console.WriteLine($"Ollama LoadConfiguration: ServerUrl={_serverUrl}, Model={_model}");
             Console.WriteLine($"Ollama IsConfigured: {IsConfigured}");

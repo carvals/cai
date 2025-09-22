@@ -834,9 +834,12 @@ public sealed partial class MainPage : Page
     {
         try
         {
+            // Reload configuration to ensure we have the latest settings
+            _ollamaService.ReloadConfiguration();
+            
             if (!_ollamaService.IsConfigured)
             {
-                return "Ollama is not configured. Please set server URL and model in AI Settings.";
+                return "Ollama is not configured. Please:\n1. Open AI Settings\n2. Select Ollama provider\n3. Click 'Refresh' to load available models\n4. Select a model and save settings";
             }
 
             // Get structured context (files + message history)
