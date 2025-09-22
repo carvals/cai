@@ -121,7 +121,7 @@ public sealed partial class ContextPanel : UserControl
         var sql = @"
             SELECT 
                 cfl.id,
-                fd.name as display_name,
+                fd.display_name,
                 cfl.use_summary,
                 cfl.is_excluded,
                 cfl.order_index,
@@ -408,16 +408,19 @@ public sealed partial class ContextPanel : UserControl
             using var connection = new SqliteConnection(_databaseService.GetConnectionString());
             await connection.OpenAsync();
             
+            // Check for duplicates in file_data table (global check)
             var sql = @"
                 SELECT COUNT(*) 
-                FROM context_file_links 
+                FROM file_data 
                 WHERE display_name = @displayName 
-                AND context_session_id = @sessionId 
-                AND id != @excludeId";
+                AND id != (
+                    SELECT file_id 
+                    FROM context_file_links 
+                    WHERE id = @excludeId
+                )";
             
             using var command = new SqliteCommand(sql, connection);
             command.Parameters.AddWithValue("@displayName", displayName);
-            command.Parameters.AddWithValue("@sessionId", _currentSessionId);
             command.Parameters.AddWithValue("@excludeId", excludeFileId);
             
             var result = await command.ExecuteScalarAsync();
@@ -430,22 +433,30 @@ public sealed partial class ContextPanel : UserControl
         }
     }
 
-    private async Task UpdateFileDisplayName(int fileId, string newDisplayName)
+    private async Task UpdateFileDisplayName(int contextLinkId, string newDisplayName)
     {
         try
         {
             using var connection = new SqliteConnection(_databaseService.GetConnectionString());
             await connection.OpenAsync();
             
-            var sql = "UPDATE context_file_links SET display_name = @displayName WHERE id = @fileId";
+            // Update display_name in file_data table (not context_file_links)
+            var sql = @"
+                UPDATE file_data 
+                SET display_name = @displayName 
+                WHERE id = (
+                    SELECT file_id 
+                    FROM context_file_links 
+                    WHERE id = @contextLinkId
+                )";
             
             using var command = new SqliteCommand(sql, connection);
             command.Parameters.AddWithValue("@displayName", newDisplayName);
-            command.Parameters.AddWithValue("@fileId", fileId);
+            command.Parameters.AddWithValue("@contextLinkId", contextLinkId);
             
             await command.ExecuteNonQueryAsync();
             
-            Console.WriteLine($"Database updated: file ID {fileId} display_name = '{newDisplayName}'");
+            Console.WriteLine($"Database updated: context link ID {contextLinkId} → file display_name = '{newDisplayName}'");
         }
         catch (Exception ex)
         {

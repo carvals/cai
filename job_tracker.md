@@ -596,10 +596,13 @@ CAI_design_1_chat/
 ### Solution Architecture: Context Management Panel ✅
 
 #### **Step 1: Database Schema Enhancement** 🔧
-- **New Column**: Add `display_name TEXT` to `context_file_links` table
-- **Migration Logic**: Set default display_name to original filename for existing records
-- **Validation**: Ensure display_name uniqueness per session
-- **Integration**: Update FileProcessingService insertion queries
+- ~~Add display_name column to context_file_links table~~ **REFACTORED**
+- **MIGRATION v4**: Moved display_name from context_file_links to file_data table
+- Create migration script for schema version 4 with data preservation
+- Ensure backward compatibility and data migration
+**Test**: Migration runs without errors, display_name in file_data table
+**Validation**: Schema version 4, existing data migrated, duplicate names prevented globally
+**Status**: ✅ Migration v4 executed successfully - display_name now in file_data table
 
 #### **Step 2: Context Panel UI Implementation** 🎨
 - **Location**: Left sidebar button below "Espace de travail"
