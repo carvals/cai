@@ -2000,3 +2000,91 @@ dotnet run --project CAI_design_1_chat/CAI_design_1_chat.csproj --framework net9
 
 # Switch to chat streaming branch
 git checkout chat_stream
+```
+
+---
+
+## Phase 20 — File Search Panel Implementation 🔍 (IN PROGRESS)
+
+### Objective
+Implement a comprehensive file search system allowing users to search through all files in the database, preview content, and add selected files to the current context session.
+
+### Implementation Strategy: Small Steps with Testing
+
+#### **Step 1: Basic Layout Creation** 📝 (PENDING)
+- [ ] **20.1** Create FileSearchPanel.xaml with horizontal split layout
+  - **Layout**: 40% search/table, 60% viewer (matching file upload design)
+  - **Header**: Back button + "File Search" title
+  - **Structure**: Grid with two columns and proper spacing
+  - **Testing**: Verify layout renders correctly and back navigation works
+
+#### **Step 2: Navigation Integration** 🔗 (PENDING)
+- [ ] **20.2** Add FileSearchPanel overlay to MainPage.xaml
+  - **Integration**: Similar to FileUploadOverlay with proper z-index
+  - **Navigation**: ShowFileSearchPanel() method in MainPage.xaml.cs
+  - **Button Wiring**: Connect "Rechercher un fichier" button to show panel
+  - **Testing**: Verify panel shows/hides correctly and doesn't break existing functionality
+
+#### **Step 3: Search Interface** 🔍 (PENDING)
+- [ ] **20.3** Implement search box and basic table structure
+  - **Search Box**: TextBox with 3-character minimum validation
+  - **Search Button**: AppBarButton with proper styling and enable/disable logic
+  - **Table Headers**: Name, Date, Size, Actions with sortable indicators
+  - **Testing**: Verify search box validation and button states work correctly
+
+#### **Step 4: Database Integration** 💾 (PENDING)
+- [ ] **20.4** Create FileSearchService and database methods
+  - **Service**: FileSearchService.cs with SearchFilesAsync method
+  - **Database**: Add search methods to DatabaseService.cs
+  - **Model**: FileSearchResult.cs data model
+  - **Testing**: Verify search queries return correct results (max 50)
+
+#### **Step 5: Results Display** 📋 (PENDING)
+- [ ] **20.5** Implement search results table with data binding
+  - **Data Binding**: Connect search results to table display
+  - **Row Selection**: Highlight selected row with proper styling
+  - **Sorting**: Click column headers to sort results
+  - **Testing**: Verify table displays data correctly and sorting works
+
+#### **Step 6: File Viewer** 👁 (PENDING)
+- [ ] **20.6** Implement file content preview with toggle
+  - **Content Display**: Show raw text or summary based on toggle
+  - **Toggle Button**: Raw Text ↔ Summary switch with proper styling
+  - **Loading States**: Show loading indicator while content loads
+  - **Testing**: Verify content displays correctly and toggle works
+
+#### **Step 7: Context Integration** 🔗 (PENDING)
+- [ ] **20.7** Implement add to context functionality
+  - **Add Button**: [+] button per row with duplicate detection
+  - **Context Check**: Query existing context_file_links for current session
+  - **Auto-refresh**: Trigger context panel refresh after adding files
+  - **Testing**: Verify files are added to context and duplicates are prevented
+
+#### **Step 8: Polish & Error Handling** ✨ (PENDING)
+- [ ] **20.8** Add error handling, loading states, and final polish
+  - **Error Handling**: Graceful error messages for search failures
+  - **Empty States**: "No results found" with helpful messages
+  - **Loading States**: Progress indicators during search operations
+  - **Testing**: Verify all error cases are handled gracefully
+
+### Technical Architecture
+
+#### **New Components**
+```
+CAI_design_1_chat/
+├── Presentation/
+│   └── Controls/
+│       ├── FileSearchPanel.xaml          # Main search overlay
+│       └── FileSearchPanel.xaml.cs       # Search logic & UI
+├── Models/
+│   └── FileSearchResult.cs               # Search result data model
+└── Services/
+    └── FileSearchService.cs              # Database search operations
+```
+
+### Success Criteria
+- ✅ **Functional Search**: Users can search files by name, display_name, summary
+- ✅ **Immediate Preview**: Selected files show content/summary instantly
+- ✅ **Context Integration**: Files can be added to current session context
+- ✅ **Duplicate Prevention**: Already-added files are clearly marked
+- ✅ **Performance**: Search completes within 500ms for typical queries

@@ -278,11 +278,12 @@
             
             <!-- Rechercher un fichier button -->
             <Button x:Name="BtnSearchFile"
+                    Click="BtnSearchFile_Click"
                     HorizontalAlignment="Stretch"
                     Background="{ThemeResource SubtleFillColorSecondaryBrush}"
                     BorderBrush="{ThemeResource ControlStrokeColorDefaultBrush}"
                     BorderThickness="1"
-                    CornerRadius="4"
+                    CornerRadius="6"
                     Padding="12,8">
               <StackPanel Orientation="Horizontal" Spacing="8">
                 <FontIcon Glyph="&#xE11A;" FontSize="16" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
@@ -652,6 +653,13 @@
               </StackPanel>
             </Border>
           </Grid>
+          
+          <!-- FileSearch Overlay - Positioned within chat content area -->
+          <controls:FileSearchPanel x:Name="FileSearchOverlay" 
+                                    Grid.RowSpan="3"
+                                    Visibility="Collapsed" 
+                                    Canvas.ZIndex="1001"
+                                    BackRequested="FileSearchOverlay_BackRequested"/>
           
           <!-- Chat Header -->
           <Border Grid.Row="0"

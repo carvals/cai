@@ -493,5 +493,137 @@ namespace CAI_design_1_chat.Services
                 return 0;
             }
         }
+
+        #region File Search Methods
+
+        public async Task<List<Models.FileSearchResult>> SearchFilesAsync(string searchTerm, int currentSessionId)
+        {
+            var results = new List<Models.FileSearchResult>();
+
+            try
+            {
+                using var connection = new SqliteConnection(_connectionString);
+                await connection.OpenAsync();
+
+                var sql = @"
+                    SELECT 
+                        fd.id, fd.name, fd.display_name, fd.created_at, fd.summary, fd.content,
+                        LENGTH(fd.content) as file_size,
+                        CASE 
+                            WHEN fd.name LIKE '%.pdf' THEN 'PDF'
+                            WHEN fd.name LIKE '%.txt' THEN 'TXT'
+                            WHEN fd.name LIKE '%.md' THEN 'MD'
+                            WHEN fd.name LIKE '%.docx' THEN 'DOCX'
+                            ELSE 'OTHER'
+                        END as file_type,
+                        CASE WHEN cfl.file_id IS NOT NULL THEN 1 ELSE 0 END as in_context
+                    FROM file_data fd
+                    LEFT JOIN context_file_links cfl ON fd.id = cfl.file_id 
+                        AND cfl.context_session_id = @currentSessionId
+                    WHERE (
+                        LOWER(fd.name) LIKE LOWER(@search) OR 
+                        LOWER(fd.display_name) LIKE LOWER(@search) OR 
+                        LOWER(fd.summary) LIKE LOWER(@search)
+                    )
+                    ORDER BY fd.created_at DESC
+                    LIMIT 50";
+
+                using var command = new SqliteCommand(sql, connection);
+                command.Parameters.AddWithValue("@search", $"%{searchTerm}%");
+                command.Parameters.AddWithValue("@currentSessionId", currentSessionId);
+
+                using var reader = await command.ExecuteReaderAsync();
+                while (await reader.ReadAsync())
+                {
+                    var result = new Models.FileSearchResult
+                    {
+                        Id = reader.GetInt32(0), // id
+                        Name = reader.GetString(1), // name
+                        DisplayName = reader.IsDBNull(2) ? reader.GetString(1) : reader.GetString(2), // display_name
+                        CreatedAt = DateTime.Parse(reader.GetString(3)), // created_at
+                        Summary = reader.IsDBNull(4) ? string.Empty : reader.GetString(4), // summary
+                        Content = reader.IsDBNull(5) ? string.Empty : reader.GetString(5), // content
+                        FileSize = reader.GetInt64(6), // file_size
+                        FileType = reader.GetString(7), // file_type
+                        InContext = reader.GetInt32(8) == 1 // in_context
+                    };
+
+                    results.Add(result);
+                }
+
+                Console.WriteLine($"DatabaseService: SearchFilesAsync found {results.Count} results for '{searchTerm}'");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"DatabaseService: Error in SearchFilesAsync: {ex.Message}");
+                throw;
+            }
+
+            return results;
+        }
+
+        public async Task<bool> IsFileInContextAsync(int fileId, int sessionId)
+        {
+            try
+            {
+                using var connection = new SqliteConnection(_connectionString);
+                await connection.OpenAsync();
+
+                var sql = "SELECT COUNT(*) FROM context_file_links WHERE file_id = @fileId AND context_session_id = @sessionId";
+                using var command = new SqliteCommand(sql, connection);
+                command.Parameters.AddWithValue("@fileId", fileId);
+                command.Parameters.AddWithValue("@sessionId", sessionId);
+
+                var count = Convert.ToInt32(await command.ExecuteScalarAsync());
+                return count > 0;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"DatabaseService: Error checking if file is in context: {ex.Message}");
+                return false;
+            }
+        }
+
+        public async Task AddFileToContextAsync(int fileId, int sessionId)
+        {
+            try
+            {
+                using var connection = new SqliteConnection(_connectionString);
+                await connection.OpenAsync();
+
+                // Get the next order index
+                var orderSql = "SELECT COALESCE(MAX(order_index), 0) + 1 FROM context_file_links WHERE context_session_id = @sessionId";
+                using var orderCommand = new SqliteCommand(orderSql, connection);
+                orderCommand.Parameters.AddWithValue("@sessionId", sessionId);
+                var nextOrder = Convert.ToInt32(await orderCommand.ExecuteScalarAsync());
+
+                // Insert the file into context
+                var insertSql = @"
+                    INSERT INTO context_file_links (context_session_id, file_id, use_summary, is_excluded, order_index)
+                    VALUES (@sessionId, @fileId, 0, 0, @orderIndex)";
+
+                using var insertCommand = new SqliteCommand(insertSql, connection);
+                insertCommand.Parameters.AddWithValue("@sessionId", sessionId);
+                insertCommand.Parameters.AddWithValue("@fileId", fileId);
+                insertCommand.Parameters.AddWithValue("@orderIndex", nextOrder);
+
+                await insertCommand.ExecuteNonQueryAsync();
+
+                // Invalidate context cache
+                if (_contextCacheService != null)
+                {
+                    await _contextCacheService.InvalidateContextAsync(sessionId, "FileAddedToContext", fileId);
+                }
+
+                Console.WriteLine($"DatabaseService: Added file {fileId} to context for session {sessionId} at order {nextOrder}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"DatabaseService: Error adding file to context: {ex.Message}");
+                throw;
+            }
+        }
+
+        #endregion
     }
 }

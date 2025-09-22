@@ -1,0 +1,250 @@
+<UserControl x:Class="CAI_design_1_chat.Presentation.Controls.FileSearchPanel"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="using:CAI_design_1_chat.Presentation.Controls">
+
+    <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+        <!-- Main Content Grid -->
+        <Grid Margin="0">
+            <Grid.RowDefinitions>
+                <!-- Header Row -->
+                <RowDefinition Height="Auto"/>
+                <!-- Content Row -->
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <!-- Header with Back Button and Title -->
+            <Grid Grid.Row="0" 
+                  Background="#19FFFFFF" 
+                  BorderBrush="#28FFFFFF" 
+                  BorderThickness="0,0,0,1" 
+                  Padding="16,12">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Back Button -->
+                <Button Grid.Column="0"
+                        x:Name="BackButton"
+                        Click="BackButton_Click"
+                        Background="#19FFFFFF"
+                        BorderBrush="#28FFFFFF"
+                        BorderThickness="1"
+                        CornerRadius="6"
+                        Padding="12,8"
+                        Margin="0,0,16,0"
+                        ToolTipService.ToolTip="Back to chat">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <FontIcon Glyph="&#xE72B;" 
+                                  FontSize="16" 
+                                  Foreground="#DCFFFFFF"/>
+                        <TextBlock Text="Back"
+                                   Foreground="#DCFFFFFF"
+                                   FontWeight="Medium"/>
+                    </StackPanel>
+                </Button>
+
+                <!-- Title -->
+                <TextBlock Grid.Column="1"
+                           Text="File Search"
+                           FontSize="20"
+                           FontWeight="SemiBold"
+                           Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                           VerticalAlignment="Center"/>
+            </Grid>
+
+            <!-- Main Content Area with Horizontal Split -->
+            <Grid Grid.Row="1" Margin="16">
+                <Grid.ColumnDefinitions>
+                    <!-- Search & Table Area (40%) -->
+                    <ColumnDefinition Width="2*"/>
+                    <!-- Splitter -->
+                    <ColumnDefinition Width="Auto"/>
+                    <!-- File Viewer Area (60%) -->
+                    <ColumnDefinition Width="3*"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Left Panel: Search & Results Table -->
+                <Border Grid.Column="0"
+                        Background="{ThemeResource LayerFillColorDefaultBrush}"
+                        BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}"
+                        BorderThickness="1"
+                        CornerRadius="8"
+                        Padding="16">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <!-- Search Area -->
+                            <RowDefinition Height="Auto"/>
+                            <!-- Spacing -->
+                            <RowDefinition Height="16"/>
+                            <!-- Results Table -->
+                            <RowDefinition Height="*"/>
+                            <!-- Status Message -->
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- Search Interface -->
+                        <StackPanel Grid.Row="0" Spacing="12">
+                            <!-- Search Box -->
+                            <TextBox x:Name="SearchTextBox"
+                                     PlaceholderText="Search files... (minimum 3 characters)"
+                                     FontSize="14"
+                                     Padding="12,8"
+                                     TextChanged="SearchTextBox_TextChanged"/>
+
+                            <!-- Search Button -->
+                            <Button x:Name="SearchButton"
+                                    Click="SearchButton_Click"
+                                    IsEnabled="False"
+                                    HorizontalAlignment="Left"
+                                    Background="#19FFFFFF"
+                                    BorderBrush="#28FFFFFF"
+                                    BorderThickness="1"
+                                    CornerRadius="6"
+                                    Padding="12,8"
+                                    ToolTipService.ToolTip="Search files">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <FontIcon Glyph="&#xE721;" 
+                                              FontSize="16" 
+                                              Foreground="#DCFFFFFF"/>
+                                    <TextBlock Text="Search"
+                                               Foreground="#DCFFFFFF"
+                                               FontWeight="Medium"/>
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
+
+                        <!-- Results Table Placeholder -->
+                        <Border Grid.Row="2"
+                                Background="{ThemeResource SubtleFillColorSecondaryBrush}"
+                                BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}"
+                                BorderThickness="1"
+                                CornerRadius="6">
+                            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                <StackPanel x:Name="ResultsContainer" 
+                                            Spacing="1"
+                                            Padding="8">
+                                    <!-- Results will be populated here -->
+                                    <TextBlock Text="Enter search terms to find files..."
+                                               FontSize="14"
+                                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                               HorizontalAlignment="Center"
+                                               Margin="0,32"/>
+                                </StackPanel>
+                            </ScrollViewer>
+                        </Border>
+
+                        <!-- Status Message -->
+                        <TextBlock x:Name="StatusMessage"
+                                   Grid.Row="3"
+                                   Text=""
+                                   FontSize="12"
+                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                   HorizontalAlignment="Center"
+                                   Margin="0,8,0,0"
+                                   Visibility="Collapsed"/>
+                    </Grid>
+                </Border>
+
+                <!-- Splitter -->
+                <Border Grid.Column="1" 
+                        Width="1" 
+                        Background="{ThemeResource DividerStrokeColorDefaultBrush}" 
+                        Margin="8,0"/>
+
+                <!-- Right Panel: File Viewer -->
+                <Border Grid.Column="2"
+                        Background="{ThemeResource LayerFillColorDefaultBrush}"
+                        BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}"
+                        BorderThickness="1"
+                        CornerRadius="8"
+                        Padding="16">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <!-- Viewer Header -->
+                            <RowDefinition Height="Auto"/>
+                            <!-- Spacing -->
+                            <RowDefinition Height="16"/>
+                            <!-- Content Area -->
+                            <RowDefinition Height="*"/>
+                            <!-- Actions -->
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- Viewer Header with Toggle -->
+                        <Grid Grid.Row="0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <TextBlock Grid.Column="0"
+                                       x:Name="ViewerTitle"
+                                       Text="File Preview"
+                                       FontSize="16"
+                                       FontWeight="SemiBold"
+                                       Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                                       VerticalAlignment="Center"/>
+
+                            <!-- Content/Summary Toggle -->
+                            <ToggleSwitch Grid.Column="1"
+                                          x:Name="ContentToggle"
+                                          OnContent="Summary"
+                                          OffContent="Raw Text"
+                                          IsOn="False"
+                                          Toggled="ContentToggle_Toggled"
+                                          VerticalAlignment="Center"/>
+                        </Grid>
+
+                        <!-- Content Preview Area -->
+                        <ScrollViewer Grid.Row="2" 
+                                      VerticalScrollBarVisibility="Auto"
+                                      HorizontalScrollBarVisibility="Auto">
+                            <Border Background="{ThemeResource SubtleFillColorSecondaryBrush}"
+                                    BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="6"
+                                    Padding="16"
+                                    MinHeight="200">
+                                <TextBlock x:Name="ContentPreview"
+                                           Text="Select a file to preview its content..."
+                                           FontSize="14"
+                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                           TextWrapping="Wrap"
+                                           VerticalAlignment="Center"
+                                           HorizontalAlignment="Center"/>
+                            </Border>
+                        </ScrollViewer>
+
+                        <!-- Action Buttons -->
+                        <StackPanel Grid.Row="3" 
+                                    Orientation="Horizontal" 
+                                    HorizontalAlignment="Center"
+                                    Spacing="12"
+                                    Margin="0,16,0,0">
+                            <Button x:Name="AddToContextButton"
+                                    Click="AddToContextButton_Click"
+                                    Background="#19FFFFFF"
+                                    BorderBrush="#28FFFFFF"
+                                    BorderThickness="1"
+                                    CornerRadius="6"
+                                    Padding="16,8"
+                                    IsEnabled="False"
+                                    ToolTipService.ToolTip="Add selected file to context">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <FontIcon Glyph="&#xE710;" 
+                                              FontSize="16" 
+                                              Foreground="#DCFFFFFF"/>
+                                    <TextBlock Text="Add to Context"
+                                               Foreground="#DCFFFFFF"
+                                               FontWeight="Medium"/>
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+            </Grid>
+        </Grid>
+    </Grid>
+</UserControl>

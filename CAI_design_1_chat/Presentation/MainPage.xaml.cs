@@ -1741,4 +1741,51 @@ public sealed partial class MainPage : Page
     }
 
     #endregion
+
+    #region File Search Panel Methods
+
+    private void BtnSearchFile_Click(object sender, RoutedEventArgs e)
+    {
+        Console.WriteLine("MainPage: Search File button clicked - showing FileSearchPanel");
+        ShowFileSearchPanel();
+    }
+
+    private void ShowFileSearchPanel()
+    {
+        try
+        {
+            // Hide other overlays
+            FileUploadOverlay.Visibility = Visibility.Collapsed;
+            
+            // Show file search overlay
+            FileSearchOverlay.Visibility = Visibility.Visible;
+            
+            Console.WriteLine("MainPage: FileSearchPanel overlay shown successfully");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"MainPage: Error showing FileSearchPanel: {ex.Message}");
+        }
+    }
+
+    private void FileSearchOverlay_BackRequested(object sender, EventArgs e)
+    {
+        Console.WriteLine("MainPage: FileSearchPanel back requested - hiding overlay");
+        HideFileSearchPanel();
+    }
+
+    private void HideFileSearchPanel()
+    {
+        try
+        {
+            FileSearchOverlay.Visibility = Visibility.Collapsed;
+            Console.WriteLine("MainPage: FileSearchPanel overlay hidden successfully");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"MainPage: Error hiding FileSearchPanel: {ex.Message}");
+        }
+    }
+
+    #endregion
 }

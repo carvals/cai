@@ -2032,3 +2032,183 @@ The visibility toggle button automatically updates its icon based on file state:
 ```
 
 This completes the comprehensive AppBarButton implementation across the entire application, ensuring all interactive elements are visible and functional on all platforms.
+
+---
+
+## Phase 20: File Search Panel Implementation (In Progress 🚧)
+
+### Overview
+Implementation of a comprehensive file search system allowing users to search through all files in the database, preview content, and add selected files to the current context session.
+
+### Architecture Design
+
+```mermaid
+graph TB
+    subgraph "File Search Panel Architecture"
+        A[Workspace Panel] -->|"Rechercher un fichier"| B[FileSearchPanel Overlay]
+        B --> C[Search Interface]
+        B --> D[File Viewer]
+        
+        subgraph "Search Interface"
+            C --> E[Search Box - Min 3 chars]
+            C --> F[Results Table - Max 50]
+            C --> G[Sorting Controls]
+        end
+        
+        subgraph "File Viewer"
+            D --> H[Content Preview]
+            D --> I[Raw Text / Summary Toggle]
+            D --> J[Add to Context Button]
+        end
+        
+        subgraph "Data Flow"
+            K[DatabaseService] --> L[SearchFilesAsync]
+            L --> M[File Results]
+            M --> N[Context Integration]
+            N --> O[Context Panel Refresh]
+        end
+    end
+```
+
+### Layout Specification
+
+#### **Horizontal Split Design**
+```
+┌─────────────────────────────────────────────────────────────┐
+│ ← Back                    File Search                       │
+├─────────────────┬───────────────────────────────────────────┤
+│ Search & Table  │           File Viewer                     │
+│ (40% width)     │          (60% width)                      │
+│                 │                                           │
+│ Search: [____]  │  ┌─────────────────────────────────────┐  │
+│ [🔍 Search]     │  │        Content Preview              │  │
+│ (min 3 chars)   │  │                                     │  │
+│                 │  │     Raw Text / Summary              │  │
+│ ┌─────────────┐ │  │        Toggle: ●○                   │  │
+│ │Name    ▼Date│ │  │                                     │  │
+│ │Size ▲  [+] │ │  │                                     │  │
+│ │► file1.pdf  │ │  │     [Add to Context]                │  │
+│ │  file2.txt  │ │  │                                     │  │
+│ │  file3.md   │ │  │                                     │  │
+│ │...          │ │  │                                     │  │
+│ │(max 50)     │ │  │                                     │  │
+│ └─────────────┘ │  └─────────────────────────────────────┘  │
+│ "Showing first  │                                           │
+│ 50 results"     │                                           │
+└─────────────────┴───────────────────────────────────────────┘
+```
+
+### Technical Specifications
+
+#### **Search Functionality**
+- **Trigger**: Manual search button (not real-time)
+- **Minimum Characters**: 3 characters required
+- **Search Fields**: `name`, `display_name`, `summary` (case-insensitive LIKE)
+- **Results Limit**: Maximum 50 files with message "Showing first 50 results, refine search"
+- **Sorting**: Date Created (default: newest first), File Size (ascending/descending)
+
+#### **Table Columns**
+| Column | Width | Sortable | Content |
+|--------|-------|----------|---------|
+| **Name** | 40% | ✅ | `display_name` (fallback to `name`) |
+| **Date** | 25% | ✅ | `created_at` formatted |
+| **Size** | 20% | ✅ | `LENGTH(content)` formatted |
+| **Actions** | 15% | ❌ | Add to Context button |
+
+#### **User Interactions**
+1. **Row Selection**: Single-click highlights row and loads preview immediately
+2. **Content Toggle**: Raw text ↔ Summary switch in viewer panel
+3. **Add to Context**: [+] button per row, disabled if file already in current session
+4. **Duplicate Prevention**: Visual feedback and database check
+5. **Sorting**: Click column headers to sort (visual indicators ▲▼)
+
+#### **Database Integration**
+```sql
+-- Main search query
+SELECT 
+    fd.id, fd.name, fd.display_name, fd.created_at, fd.summary, fd.content,
+    LENGTH(fd.content) as file_size,
+    CASE 
+        WHEN fd.name LIKE '%.pdf' THEN 'PDF'
+        WHEN fd.name LIKE '%.txt' THEN 'TXT'
+        WHEN fd.name LIKE '%.md' THEN 'MD'
+        ELSE 'OTHER'
+    END as file_type,
+    CASE WHEN cfl.file_id IS NOT NULL THEN 1 ELSE 0 END as in_context
+FROM file_data fd
+LEFT JOIN context_file_links cfl ON fd.id = cfl.file_id 
+    AND cfl.context_session_id = @currentSessionId
+WHERE (
+    LOWER(fd.name) LIKE LOWER(@search) OR 
+    LOWER(fd.display_name) LIKE LOWER(@search) OR 
+    LOWER(fd.summary) LIKE LOWER(@search)
+)
+ORDER BY fd.created_at DESC
+LIMIT 50;
+
+-- Add to context operation
+INSERT INTO context_file_links (context_session_id, file_id, use_summary, is_excluded, order_index)
+VALUES (@sessionId, @fileId, 0, 0, (SELECT COALESCE(MAX(order_index), 0) + 1 FROM context_file_links WHERE context_session_id = @sessionId));
+```
+
+### Implementation Components
+
+#### **New Files to Create**
+1. **FileSearchPanel.xaml** - Main overlay panel with horizontal split layout
+2. **FileSearchPanel.xaml.cs** - Search logic, table management, and context integration
+3. **Models/FileSearchResult.cs** - Data model for search results
+4. **Services/FileSearchService.cs** - Database search operations and context management
+
+#### **Files to Modify**
+1. **MainPage.xaml** - Add FileSearchPanel overlay (similar to FileUploadOverlay)
+2. **MainPage.xaml.cs** - Add ShowFileSearchPanel() and navigation methods
+3. **Services/DatabaseService.cs** - Add SearchFilesAsync() and context management methods
+
+### UX/UI Design Principles
+
+#### **Modern Search Interface**
+- **Glass Morphism Styling**: Consistent with existing design system
+- **AppBarButton Pattern**: For all interactive elements
+- **Responsive Layout**: Adapts to left panel collapse/expand
+- **Loading States**: Search progress indicators
+- **Empty States**: "No results found" with search refinement suggestions
+
+#### **File Type Icons**
+- **PDF**: 📄 (Glyph: `&#xE8A5;`)
+- **TXT**: 📝 (Glyph: `&#xE8A5;`)
+- **MD**: 📋 (Glyph: `&#xE8A5;`)
+- **DOCX**: 📊 (Glyph: `&#xE8A5;`)
+
+#### **Accessibility Features**
+- **Keyboard Navigation**: Tab through search, table, and viewer
+- **Screen Reader Support**: Proper ARIA labels and descriptions
+- **High Contrast**: WCAG AAA compliant color schemes
+- **Touch Targets**: Minimum 44px for mobile compatibility
+
+### Performance Considerations
+
+#### **Search Optimization**
+- **Debounced Input**: 300ms delay for search button enable
+- **Indexed Queries**: Database indexes on searchable columns
+- **Result Caching**: Cache recent searches for session duration
+- **Lazy Loading**: Load file content only when selected
+
+#### **Memory Management**
+- **Content Streaming**: Load large file content on-demand
+- **Result Pagination**: Hard limit of 50 results to prevent memory issues
+- **Cache Cleanup**: Clear search results when panel closes
+
+### Integration with Existing Systems
+
+#### **Context Management**
+- **Shared Services**: Reuse existing DatabaseService and ChatContextService
+- **Auto-refresh**: Trigger context panel refresh after adding files
+- **Session Isolation**: Respect current active session for context operations
+- **Duplicate Detection**: Check existing context_file_links before adding
+
+#### **Navigation Consistency**
+- **Back Button**: Same glass morphism styling as file upload
+- **Overlay Behavior**: Same expand/collapse logic as existing overlays
+- **State Preservation**: Maintain search results when switching panels
+
+This comprehensive file search system will provide users with powerful file discovery capabilities while maintaining the application's modern, accessible design principles.
