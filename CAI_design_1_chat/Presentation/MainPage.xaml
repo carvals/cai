@@ -43,9 +43,9 @@
           <Button x:Name="MacroTabButton"
                   Content="Macro"
                   Click="MacroTabButton_Click"
-                  Background="Transparent"
-                  Foreground="{ThemeResource MaterialOnSurfaceBrush}"
-                  BorderBrush="{ThemeResource MaterialOutlineBrush}"
+                  Background="#19FFFFFF"
+                  Foreground="#DCFFFFFF"
+                  BorderBrush="#28FFFFFF"
                   BorderThickness="1"
                   CornerRadius="20"
                   Padding="16,8"
@@ -104,10 +104,12 @@
       </Grid.ColumnDefinitions>
       
       <!-- Far-left Sidebar (icons only) -->
-      <Border Grid.Column="0" 
+      <Border x:Name="FarLeftSidebar"
+              Grid.Column="0" 
               Background="{ThemeResource MaterialSurfaceBrush}"
               BorderBrush="{ThemeResource MaterialOutlineBrush}"
-              BorderThickness="0,0,1,0">
+              BorderThickness="0,0,1,0"
+              Visibility="Visible">
         <Grid>
           <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
@@ -119,53 +121,44 @@
           <!-- Navigation buttons section -->
           <StackPanel Grid.Row="0" Margin="6,8,6,0" Spacing="4">
             <!-- Toggle button for left panel (Espace de travail) -->
-            <Button x:Name="ToggleLeftPanelButton"
-                    Click="ToggleLeftPanelButton_Click"
-                    Background="{ThemeResource MaterialPrimaryBrush}"
-                    BorderBrush="{ThemeResource MaterialPrimaryBrush}"
-                    BorderThickness="2"
-                    CornerRadius="6"
-                    Width="48"
-                    Height="48"
-                    ToolTipService.ToolTip="Toggle workspace panel">
-              <StackPanel>
-                <SymbolIcon Symbol="Add" HorizontalAlignment="Center" />
-                <SymbolIcon Symbol="Page" HorizontalAlignment="Center" />
-              </StackPanel>
-            </Button>
+            <AppBarButton x:Name="ToggleLeftPanelButton"
+                          Click="ToggleLeftPanelButton_Click"
+                          Width="48"
+                          Height="48"
+                          ToolTipService.ToolTip="Toggle workspace panel">
+              <AppBarButton.Icon>
+                <FontIcon FontFamily="{ThemeResource SymbolThemeFontFamily}"
+                          Glyph="&#xE8F4;"/>
+              </AppBarButton.Icon>
+            </AppBarButton>
             
             <!-- Context button -->
-            <Button x:Name="ContextButton"
-                    Click="ContextButton_Click"
-                    Background="{ThemeResource SubtleFillColorSecondaryBrush}"
-                    BorderBrush="{ThemeResource ControlStrokeColorDefaultBrush}"
-                    BorderThickness="1"
-                    CornerRadius="6"
-                    Width="48"
-                    Height="48"
-                    ToolTipService.ToolTip="Context">
-              <FontIcon Glyph="📄" 
-                        Foreground="{ThemeResource TextFillColorPrimaryBrush}"
-                        FontSize="20" />
-            </Button>
+            <AppBarButton x:Name="ContextButton"
+                          Click="ContextButton_Click"
+                          Width="48"
+                          Height="48"
+                          ToolTipService.ToolTip="Context">
+              <AppBarButton.Icon>
+                <FontIcon FontFamily="{ThemeResource SymbolThemeFontFamily}"
+                          Glyph="&#xE8A5;"/>
+              </AppBarButton.Icon>
+            </AppBarButton>
+            
           </StackPanel>
           
           <!-- Settings section with expandable menu -->
           <StackPanel x:Name="SettingsSection" Grid.Row="2" Margin="6,0,6,4">
               <!-- Settings Button -->
-              <Button x:Name="SettingsButton"
-                      Click="SettingsButton_Click"
-                      Background="{ThemeResource SubtleFillColorSecondaryBrush}"
-                      BorderBrush="{ThemeResource ControlStrokeColorDefaultBrush}"
-                      BorderThickness="1"
-                      CornerRadius="6"
-                      Width="48"
-                      Height="48"
-                      ToolTipService.ToolTip="Settings">
-                <FontIcon Glyph="⚙" 
-                          Foreground="{ThemeResource TextFillColorPrimaryBrush}"
-                          FontSize="20" />
-              </Button>
+              <AppBarButton x:Name="SettingsButton"
+                            Click="SettingsButton_Click"
+                            Width="48"
+                            Height="48"
+                            ToolTipService.ToolTip="Settings">
+                <AppBarButton.Icon>
+                  <FontIcon FontFamily="{ThemeResource SymbolThemeFontFamily}"
+                            Glyph="&#xE713;"/>
+                </AppBarButton.Icon>
+              </AppBarButton>
             
             <!-- Expandable settings menu -->
             <StackPanel x:Name="SettingsMenu"
@@ -216,7 +209,6 @@
                           Foreground="{ThemeResource TextFillColorPrimaryBrush}"
                           FontSize="18" />
               </Button>
-              
               
             </StackPanel>
           </StackPanel>
@@ -270,23 +262,17 @@
                         Margin="16"
                         Spacing="8">
             
-            
             <Button x:Name="BtnAddFile"
                     HorizontalAlignment="Stretch"
-                    Background="{ThemeResource MaterialSurfaceVariantBrush}"
-                    BorderBrush="{ThemeResource MaterialPrimaryBrush}"
+                    Background="#19FFFFFF"
+                    BorderBrush="#28FFFFFF"
                     BorderThickness="1"
-                    CornerRadius="4"
+                    CornerRadius="6"
                     Padding="12,8"
                     Click="BtnAddFile_Click">
-              <Button.Resources>
-                <SolidColorBrush x:Key="ButtonForeground" Color="{ThemeResource TextFillColorPrimaryBrush}" />
-                <SolidColorBrush x:Key="ButtonForegroundPointerOver" Color="{ThemeResource TextFillColorPrimaryBrush}" />
-                <SolidColorBrush x:Key="ButtonForegroundPressed" Color="{ThemeResource TextFillColorPrimaryBrush}" />
-              </Button.Resources>
               <StackPanel Orientation="Horizontal" Spacing="8">
-                <FontIcon Glyph="&#xE109;" FontSize="16" Foreground="{ThemeResource AccentFillColorDefaultBrush}" />
-                <TextBlock Text="Ajouter un fichier" Foreground="{ThemeResource TextFillColorPrimaryBrush}" FontWeight="Medium" />
+                <FontIcon Glyph="&#xE109;" FontSize="16" Foreground="#DCFFFFFF" />
+                <TextBlock Text="Ajouter un fichier" Foreground="#DCFFFFFF" />
               </StackPanel>
             </Button>
             
@@ -377,16 +363,18 @@
                 <Button Grid.Column="0"
                         x:Name="BackToChatButton"
                         Click="BackToChatButton_Click"
-                        Background="Transparent"
-                        BorderThickness="0"
-                        Padding="8"
-                        ToolTipService.ToolTip="Back to Chat">
+                        Background="#19FFFFFF"
+                        BorderBrush="#28FFFFFF"
+                        BorderThickness="1"
+                        CornerRadius="6"
+                        Padding="12,8"
+                        ToolTipService.ToolTip="Back">
                   <StackPanel Orientation="Horizontal" Spacing="8">
                     <FontIcon Glyph="&#xE72B;" 
                               FontSize="16" 
-                              Foreground="{ThemeResource MaterialOnSurfaceBrush}"/>
-                    <TextBlock Text="Back to Chat"
-                               Foreground="{ThemeResource MaterialOnSurfaceBrush}"
+                              Foreground="#DCFFFFFF"/>
+                    <TextBlock Text="Back"
+                               Foreground="#DCFFFFFF"
                                FontWeight="Medium"/>
                   </StackPanel>
                 </Button>
@@ -519,11 +507,11 @@
                   <!-- Reset Button -->
                   <Button x:Name="OverlayResetButton"
                           Content="Reset"
-                          Background="Transparent"
-                          Foreground="{ThemeResource MaterialErrorBrush}"
-                          BorderBrush="{ThemeResource MaterialErrorBrush}"
+                          Background="#19FFFFFF"
+                          Foreground="#DCFFFFFF"
+                          BorderBrush="#28FFFFFF"
                           BorderThickness="1"
-                          CornerRadius="8"
+                          CornerRadius="6"
                           Padding="16,12"
                           HorizontalAlignment="Stretch"
                           FontWeight="Medium"
@@ -686,16 +674,16 @@
                            Foreground="{ThemeResource MaterialOnSurfaceVariantBrush}"
                            VerticalAlignment="Center" />
                 <Button x:Name="ClearSessionButton"
-                        Background="Transparent"
+                        Background="#19FFFFFF"
                         BorderThickness="1"
-                        BorderBrush="{ThemeResource ControlStrokeColorDefaultBrush}"
-                        CornerRadius="4"
-                        Padding="8,4"
+                        BorderBrush="#28FFFFFF"
+                        CornerRadius="6"
+                        Padding="12,6"
                         ToolTipService.ToolTip="Clear chat history and file context"
                         Click="ClearSessionButton_Click">
-                  <StackPanel Orientation="Horizontal" Spacing="4">
-                    <FontIcon Glyph="&#xE74D;" FontSize="12" />
-                    <TextBlock Text="Clear Session" FontSize="12" />
+                  <StackPanel Orientation="Horizontal" Spacing="6">
+                    <FontIcon Glyph="&#xE74D;" FontSize="14" Foreground="#DCFFFFFF" />
+                    <TextBlock Text="Clear Session" FontSize="13" Foreground="#DCFFFFFF" />
                   </StackPanel>
                 </Button>
                 <Button Background="Transparent"
@@ -851,18 +839,18 @@
                        VerticalAlignment="Center"
                        KeyDown="ChatInput_KeyDown" />
               
-              <Button x:Name="SendButton"
-                      Grid.Column="2"
-                      Background="{ThemeResource AccentFillColorDefaultBrush}"
-                      BorderThickness="0"
-                      CornerRadius="20"
-                      Width="40"
-                      Height="40"
-                      Margin="8,0,0,0"
-                      Click="SendButton_Click"
-                      ToolTipService.ToolTip="Send message">
-                <FontIcon Glyph="&#xE122;" FontSize="16" Foreground="White" />
-              </Button>
+              <AppBarButton x:Name="SendButton"
+                            Grid.Column="2"
+                            Width="40"
+                            Height="40"
+                            Margin="8,0,0,0"
+                            Click="SendButton_Click"
+                            ToolTipService.ToolTip="Send message">
+                <AppBarButton.Icon>
+                  <FontIcon FontFamily="{ThemeResource SymbolThemeFontFamily}"
+                            Glyph="&#xE122;"/>
+                </AppBarButton.Icon>
+              </AppBarButton>
             </Grid>
           </Border>
           

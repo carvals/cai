@@ -367,15 +367,16 @@ public sealed partial class ContextPanel : UserControl
         };
         
         // Pen button (rename) - now functional
-        var penButton = new Button
+        var penButton = new AppBarButton
         {
-            Content = "🖊",
-            FontSize = 12,
             Width = 28,
             Height = 28,
-            Background = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Transparent),
-            BorderThickness = new Thickness(0),
             Tag = file.Id // Store file ID for reference
+        };
+        penButton.Icon = new FontIcon
+        {
+            FontFamily = (Microsoft.UI.Xaml.Media.FontFamily)Application.Current.Resources["SymbolThemeFontFamily"],
+            Glyph = "\uE70F" // Edit/Rename icon
         };
         ToolTipService.SetToolTip(penButton, "Rename");
         
@@ -386,15 +387,16 @@ public sealed partial class ContextPanel : UserControl
         };
         
         // Eye button (toggle visibility) - now functional
-        var eyeButton = new Button
+        var eyeButton = new AppBarButton
         {
-            Content = file.IsExcluded ? "👁‍🗨" : "👁",
-            FontSize = 12,
             Width = 28,
             Height = 28,
-            Background = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Transparent),
-            BorderThickness = new Thickness(0),
             Tag = file.Id // Store file ID for reference
+        };
+        eyeButton.Icon = new FontIcon
+        {
+            FontFamily = (Microsoft.UI.Xaml.Media.FontFamily)Application.Current.Resources["SymbolThemeFontFamily"],
+            Glyph = file.IsExcluded ? "\uE7B3" : "\uE890" // Hidden/Visible icon
         };
         ToolTipService.SetToolTip(eyeButton, file.IsExcluded ? "Show in context" : "Hide from context");
         
@@ -405,15 +407,16 @@ public sealed partial class ContextPanel : UserControl
         };
         
         // Delete button - now functional
-        var deleteButton = new Button
+        var deleteButton = new AppBarButton
         {
-            Content = "🗑",
-            FontSize = 12,
             Width = 28,
             Height = 28,
-            Background = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Transparent),
-            BorderThickness = new Thickness(0),
             Tag = file.Id // Store file ID for reference
+        };
+        deleteButton.Icon = new FontIcon
+        {
+            FontFamily = (Microsoft.UI.Xaml.Media.FontFamily)Application.Current.Resources["SymbolThemeFontFamily"],
+            Glyph = "\uE74D" // Delete icon
         };
         ToolTipService.SetToolTip(deleteButton, "Remove from context");
         
@@ -626,7 +629,7 @@ public sealed partial class ContextPanel : UserControl
         }
     }
 
-    private async Task ToggleFileVisibility(Button eyeButton, Border card, ContextFileInfo file)
+    private async Task ToggleFileVisibility(AppBarButton eyeButton, Border card, ContextFileInfo file)
     {
         try
         {
@@ -637,7 +640,7 @@ public sealed partial class ContextPanel : UserControl
             await UpdateFileVisibility(file.Id, file.IsExcluded);
             
             // Update button icon and tooltip
-            eyeButton.Content = file.IsExcluded ? "👁‍🗨" : "👁";
+            ((FontIcon)eyeButton.Icon).Glyph = file.IsExcluded ? "\uE7B3" : "\uE890";
             ToolTipService.SetToolTip(eyeButton, file.IsExcluded ? "Show in context" : "Hide from context");
             
             // Update visual state of the card

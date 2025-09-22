@@ -27,34 +27,28 @@
                                 Spacing="8">
                         
                         <!-- View Context Button -->
-                        <Button x:Name="ViewContextButton"
-                                Click="ViewContextButton_Click"
-                                Background="{ThemeResource SubtleFillColorSecondaryBrush}"
-                                BorderBrush="{ThemeResource ControlStrokeColorDefaultBrush}"
-                                BorderThickness="1"
-                                CornerRadius="6"
-                                Width="32"
-                                Height="32"
-                                ToolTipService.ToolTip="View context JSON">
-                            <FontIcon Glyph="👁" 
-                                      FontSize="14" 
-                                      Foreground="{ThemeResource TextFillColorPrimaryBrush}" />
-                        </Button>
+                        <AppBarButton x:Name="ViewContextButton"
+                                      Click="ViewContextButton_Click"
+                                      Width="32"
+                                      Height="32"
+                                      ToolTipService.ToolTip="View context JSON">
+                            <AppBarButton.Icon>
+                                <FontIcon FontFamily="{ThemeResource SymbolThemeFontFamily}"
+                                          Glyph="&#xE890;"/>
+                            </AppBarButton.Icon>
+                        </AppBarButton>
                         
                         <!-- Refresh Button -->
-                        <Button x:Name="RefreshButton"
-                                Click="RefreshButton_Click"
-                                Background="{ThemeResource SubtleFillColorSecondaryBrush}"
-                                BorderBrush="{ThemeResource ControlStrokeColorDefaultBrush}"
-                                BorderThickness="1"
-                                CornerRadius="6"
-                                Width="32"
-                                Height="32"
-                                ToolTipService.ToolTip="Refresh context files">
-                            <FontIcon Glyph="🔄" 
-                                      FontSize="14" 
-                                      Foreground="{ThemeResource TextFillColorPrimaryBrush}" />
-                        </Button>
+                        <AppBarButton x:Name="RefreshButton"
+                                      Click="RefreshButton_Click"
+                                      Width="32"
+                                      Height="32"
+                                      ToolTipService.ToolTip="Refresh context files">
+                            <AppBarButton.Icon>
+                                <FontIcon FontFamily="{ThemeResource SymbolThemeFontFamily}"
+                                          Glyph="&#xE72C;"/>
+                            </AppBarButton.Icon>
+                        </AppBarButton>
                         
                     </StackPanel>
                 </Grid>

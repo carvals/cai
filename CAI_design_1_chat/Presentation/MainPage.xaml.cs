@@ -12,6 +12,7 @@ using Windows.Storage;
 using CAI_design_1_chat.Services;
 using Microsoft.Data.Sqlite;
 using Windows.UI;
+using Windows.UI.Text;
 using Windows.ApplicationModel.DataTransfer;
 using Windows.System;
 
@@ -486,30 +487,46 @@ public sealed partial class MainPage : Page
 
         var copyButton = new Button
         {
-            Background = (Brush)Application.Current.Resources["SubtleFillColorSecondaryBrush"],
-            BorderBrush = (Brush)Application.Current.Resources["ControlStrokeColorDefaultBrush"],
+            Background = new SolidColorBrush(Color.FromArgb(25, 255, 255, 255)), // Subtle white background
             BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(4),
-            Padding = new Thickness(8, 4, 8, 4)
+            BorderBrush = new SolidColorBrush(Color.FromArgb(40, 255, 255, 255)), // Subtle white border
+            CornerRadius = new CornerRadius(6),
+            Padding = new Thickness(12, 6, 12, 6),
+            Margin = new Thickness(0, 4, 0, 0)
         };
         ToolTipService.SetToolTip(copyButton, "Copy message");
+
+        // Add hover effects
+        copyButton.PointerEntered += (s, e) =>
+        {
+            copyButton.Background = new SolidColorBrush(Color.FromArgb(40, 255, 255, 255));
+            copyButton.BorderBrush = new SolidColorBrush(Color.FromArgb(60, 255, 255, 255));
+        };
+        
+        copyButton.PointerExited += (s, e) =>
+        {
+            copyButton.Background = new SolidColorBrush(Color.FromArgb(25, 255, 255, 255));
+            copyButton.BorderBrush = new SolidColorBrush(Color.FromArgb(40, 255, 255, 255));
+        };
 
         var copyButtonContent = new StackPanel
         {
             Orientation = Orientation.Horizontal,
-            Spacing = 4
+            Spacing = 6
         };
 
         var copyIcon = new FontIcon
         {
             Glyph = "\uE8C8",
-            FontSize = 12
+            FontSize = 14,
+            Foreground = new SolidColorBrush(Color.FromArgb(220, 255, 255, 255)) // High contrast white
         };
 
         var copyText = new TextBlock
         {
             Text = "Copy",
-            FontSize = 12
+            FontSize = 13,
+            Foreground = new SolidColorBrush(Color.FromArgb(220, 255, 255, 255)) // High contrast white
         };
 
         copyButtonContent.Children.Add(copyIcon);
