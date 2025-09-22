@@ -1,9 +1,9 @@
+using Microsoft.Data.Sqlite;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Microsoft.Data.Sqlite;
 using CAI_design_1_chat.Services;
 
 namespace CAI_design_1_chat.Presentation.Controls;
@@ -11,12 +11,14 @@ namespace CAI_design_1_chat.Presentation.Controls;
 public sealed partial class ContextPanel : UserControl
 {
     private readonly DatabaseService _databaseService;
+    private readonly ContextObjectService _contextObjectService;
     private int _currentSessionId;
 
     public ContextPanel()
     {
         this.InitializeComponent();
         _databaseService = new DatabaseService();
+        _contextObjectService = new ContextObjectService();
     }
 
     public async Task LoadContextFilesAsync(int sessionId)
@@ -109,6 +111,102 @@ public sealed partial class ContextPanel : UserControl
                 button.IsEnabled = true;
             }
         }
+    }
+
+    private async void ViewContextButton_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            // Provide visual feedback during JSON generation
+            var button = sender as Button;
+            if (button != null)
+            {
+                button.IsEnabled = false;
+                var originalContent = button.Content;
+                
+                // Show loading state
+                var loadingIcon = new FontIcon 
+                { 
+                    Glyph = "⟳", 
+                    FontSize = 14,
+                    Foreground = (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources["TextFillColorSecondaryBrush"]
+                };
+                button.Content = loadingIcon;
+                
+                // Generate context JSON
+                var contextJson = await _contextObjectService.BuildContextJsonAsync(_currentSessionId);
+                
+                // Show JSON viewer overlay
+                await ShowContextViewerOverlay(contextJson);
+                
+                // Restore button state
+                button.Content = originalContent;
+                button.IsEnabled = true;
+            }
+            
+            Console.WriteLine($"Context JSON viewer opened for session {_currentSessionId}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error opening context viewer: {ex.Message}");
+            
+            // Restore button state on error
+            var button = sender as Button;
+            if (button != null)
+            {
+                button.Content = new FontIcon 
+                { 
+                    Glyph = "👁", 
+                    FontSize = 14,
+                    Foreground = (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources["TextFillColorPrimaryBrush"]
+                };
+                button.IsEnabled = true;
+            }
+            
+            // Show error dialog
+            var errorDialog = new Microsoft.UI.Xaml.Controls.ContentDialog
+            {
+                Title = "Error",
+                Content = $"Failed to generate context JSON: {ex.Message}",
+                CloseButtonText = "OK",
+                XamlRoot = this.XamlRoot
+            };
+            await errorDialog.ShowAsync();
+        }
+    }
+
+    private async Task ShowContextViewerOverlay(string contextJson)
+    {
+        // Create JSON viewer dialog
+        var scrollViewer = new ScrollViewer
+        {
+            VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+            HorizontalScrollBarVisibility = ScrollBarVisibility.Auto,
+            MaxHeight = 600,
+            MaxWidth = 800
+        };
+
+        var textBlock = new TextBlock
+        {
+            Text = contextJson,
+            FontFamily = new Microsoft.UI.Xaml.Media.FontFamily("Consolas"),
+            FontSize = 12,
+            IsTextSelectionEnabled = true,
+            TextWrapping = TextWrapping.NoWrap,
+            Margin = new Thickness(16)
+        };
+
+        scrollViewer.Content = textBlock;
+
+        var dialog = new Microsoft.UI.Xaml.Controls.ContentDialog
+        {
+            Title = "Context JSON Viewer",
+            Content = scrollViewer,
+            CloseButtonText = "Close",
+            XamlRoot = this.XamlRoot
+        };
+
+        await dialog.ShowAsync();
     }
 
     private async Task<List<ContextFileInfo>> GetContextFilesForSessionAsync(int sessionId)

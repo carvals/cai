@@ -692,12 +692,14 @@ UPDATE context_file_links SET display_name = (
 **Validation**: Context object uses summary when checked
 **Status**: ✅ Checkbox toggles use_summary with database updates, error handling, and state management
 
-#### **Step 1.8: JSON Context Object Service** 📄
+#### **Step 1.8: JSON Context Object Service** ✅ COMPLETED
 - Create ContextObjectService class
 - Implement BuildContextJsonAsync method
 - Structure: assistant_role, file_context, message_history
+- **ENHANCEMENT**: Added View Context button (👁) with JSON viewer overlay
 **Test**: JSON generated correctly, structure validated
 **Validation**: LLM receives properly formatted context
+**Status**: ✅ ContextObjectService created with JSON generation, View Context button with read-only overlay viewer
 
 #### **Step 1.9: ChatContextService Integration** 🔗
 - Integrate context object with existing ChatContextService

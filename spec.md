@@ -1110,7 +1110,7 @@ This provides intuitive toggle functionality matching modern application pattern
 **Panel Layout:**
 ```
 ┌─────────────────────────────────────┐
-│ Context                         [🔄] │
+│ Context                    [👁][🔄] │
 ├─────────────────────────────────────┤
 │ ┌─────────────────────────────────┐ │
 │ │ DT25.234.pdf            [🖊][👁][🗑] │
@@ -1128,10 +1128,15 @@ This provides intuitive toggle functionality matching modern application pattern
 
 **Header Controls:**
 - **Context Title**: Left-aligned panel title
-- **Refresh Button (🔄)**: Right-aligned button to reload context files from database
-  - **Behavior**: Clears current file list and reloads from `context_file_links` table
-  - **Use Cases**: Manual sync, external file changes, troubleshooting
-  - **Visual Feedback**: Brief loading state during refresh
+- **Action Buttons**: Right-aligned button group with consistent styling
+  - **View Context Button (👁)**: Opens JSON context viewer overlay
+    - **Behavior**: Generates and displays current context JSON in read-only overlay
+    - **Use Cases**: Debug context structure, verify file inclusion, inspect AI context
+    - **Visual Feedback**: Loading state during JSON generation
+  - **Refresh Button (🔄)**: Reloads context files from database
+    - **Behavior**: Clears current file list and reloads from `context_file_links` table
+    - **Use Cases**: Manual sync, external file changes, troubleshooting
+    - **Visual Feedback**: Brief loading state during refresh
 
 **Action Button Specifications:**
 1. **Pen (🖊) - Rename**: In-place editing of display_name
