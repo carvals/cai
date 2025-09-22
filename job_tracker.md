@@ -684,12 +684,13 @@ UPDATE context_file_links SET display_name = (
 **Validation**: Record removed from database, context rebuilt
 **Status**: ✅ Trash button shows confirmation dialog, removes from database, updates UI, handles empty state
 
-#### **Step 1.7: Use Summary Checkbox** ☑️
+#### **Step 1.7: Use Summary Checkbox** ✅ COMPLETED
 - Implement checkbox for use_summary property
 - Update database on change
 - Provide visual indication of summary vs full content
 **Test**: Checkbox works, database updated
 **Validation**: Context object uses summary when checked
+**Status**: ✅ Checkbox toggles use_summary with database updates, error handling, and state management
 
 #### **Step 1.8: JSON Context Object Service** 📄
 - Create ContextObjectService class

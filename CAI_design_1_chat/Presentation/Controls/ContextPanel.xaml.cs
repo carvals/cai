@@ -289,13 +289,27 @@ public sealed partial class ContextPanel : UserControl
         };
         stackPanel.Children.Add(characterCount);
 
-        // Use summary checkbox
+        // Summary checkbox - now functional
         var summaryCheckbox = new CheckBox
         {
             Content = "Utiliser le sommaire",
             IsChecked = file.UseSummary,
-            FontSize = 12
+            FontSize = 12,
+            Foreground = (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources["TextFillColorSecondaryBrush"],
+            Tag = file.Id // Store file ID for reference
         };
+        
+        // Add change handler for summary checkbox
+        summaryCheckbox.Checked += async (sender, e) =>
+        {
+            await UpdateUseSummary(file, true);
+        };
+        
+        summaryCheckbox.Unchecked += async (sender, e) =>
+        {
+            await UpdateUseSummary(file, false);
+        };
+        
         stackPanel.Children.Add(summaryCheckbox);
 
         // Apply visual state for excluded files
@@ -615,6 +629,51 @@ public sealed partial class ContextPanel : UserControl
         catch (Exception ex)
         {
             Console.WriteLine($"Error removing file from context: {ex.Message}");
+            throw;
+        }
+    }
+
+    private async Task UpdateUseSummary(ContextFileInfo file, bool useSummary)
+    {
+        try
+        {
+            // Update the file object
+            file.UseSummary = useSummary;
+            
+            // Update database
+            await UpdateFileSummaryUsage(file.Id, useSummary);
+            
+            Console.WriteLine($"Summary usage updated: {file.DisplayName} → use_summary = {useSummary}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error updating summary usage: {ex.Message}");
+            
+            // Revert the state on error
+            file.UseSummary = !useSummary;
+        }
+    }
+
+    private async Task UpdateFileSummaryUsage(int contextLinkId, bool useSummary)
+    {
+        try
+        {
+            using var connection = new SqliteConnection(_databaseService.GetConnectionString());
+            await connection.OpenAsync();
+            
+            var sql = "UPDATE context_file_links SET use_summary = @useSummary WHERE id = @contextLinkId";
+            
+            using var command = new SqliteCommand(sql, connection);
+            command.Parameters.AddWithValue("@useSummary", useSummary);
+            command.Parameters.AddWithValue("@contextLinkId", contextLinkId);
+            
+            await command.ExecuteNonQueryAsync();
+            
+            Console.WriteLine($"Database updated: context link ID {contextLinkId} → use_summary = {useSummary}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error updating file summary usage: {ex.Message}");
             throw;
         }
     }
