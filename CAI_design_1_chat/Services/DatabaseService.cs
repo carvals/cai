@@ -9,6 +9,7 @@ namespace CAI_design_1_chat.Services
     {
         private readonly string _connectionString;
         private readonly string _databasePath;
+        private ContextCacheService? _contextCacheService;
 
         public DatabaseService()
         {
@@ -19,6 +20,15 @@ namespace CAI_design_1_chat.Services
             
             _databasePath = Path.Combine(appFolder, "cai_chat.db");
             _connectionString = $"Data Source={_databasePath}";
+        }
+
+        /// <summary>
+        /// Set the context cache service for automatic invalidation
+        /// </summary>
+        public void SetContextCacheService(ContextCacheService contextCacheService)
+        {
+            _contextCacheService = contextCacheService;
+            Console.WriteLine("Context cache service connected to DatabaseService");
         }
 
         public async Task InitializeDatabaseAsync()
@@ -266,7 +276,7 @@ namespace CAI_design_1_chat.Services
             }
         }
 
-        // Simple method to save chat messages
+        // Enhanced method to save chat messages with context invalidation
         public async Task SaveChatMessageAsync(int sessionId, string messageType, string content)
         {
             try
@@ -284,10 +294,197 @@ namespace CAI_design_1_chat.Services
                 
                 await command.ExecuteNonQueryAsync();
                 Console.WriteLine($"Chat message saved: {messageType} (session {sessionId}) - {content.Substring(0, Math.Min(50, content.Length))}...");
+                
+                // Trigger context invalidation
+                if (_contextCacheService != null)
+                {
+                    await _contextCacheService.InvalidateContextAsync(sessionId);
+                }
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Error saving chat message: {ex.Message}");
+            }
+        }
+
+        // Context-aware file operations with automatic cache invalidation
+
+        /// <summary>
+        /// Update file display name with context invalidation
+        /// </summary>
+        public async Task UpdateContextFileDisplayNameAsync(int contextLinkId, string newDisplayName)
+        {
+            try
+            {
+                using var connection = new SqliteConnection(_connectionString);
+                await connection.OpenAsync();
+                
+                // Get session ID first
+                var sessionId = await GetSessionIdForContextLinkAsync(connection, contextLinkId);
+                
+                // Update display_name in file_data table
+                var sql = @"
+                    UPDATE file_data 
+                    SET display_name = @displayName 
+                    WHERE id = (
+                        SELECT file_id 
+                        FROM context_file_links 
+                        WHERE id = @contextLinkId
+                    )";
+                
+                using var command = new SqliteCommand(sql, connection);
+                command.Parameters.AddWithValue("@displayName", newDisplayName);
+                command.Parameters.AddWithValue("@contextLinkId", contextLinkId);
+                
+                await command.ExecuteNonQueryAsync();
+                
+                Console.WriteLine($"Database updated: context link ID {contextLinkId} → file display_name = '{newDisplayName}'");
+                
+                // Trigger context invalidation
+                if (_contextCacheService != null && sessionId > 0)
+                {
+                    await _contextCacheService.InvalidateContextAsync(sessionId);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error updating file display name: {ex.Message}");
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Update file visibility with context invalidation
+        /// </summary>
+        public async Task UpdateContextFileVisibilityAsync(int contextLinkId, bool isExcluded)
+        {
+            try
+            {
+                using var connection = new SqliteConnection(_connectionString);
+                await connection.OpenAsync();
+                
+                // Get session ID first
+                var sessionId = await GetSessionIdForContextLinkAsync(connection, contextLinkId);
+                
+                var sql = "UPDATE context_file_links SET is_excluded = @isExcluded WHERE id = @contextLinkId";
+                
+                using var command = new SqliteCommand(sql, connection);
+                command.Parameters.AddWithValue("@isExcluded", isExcluded);
+                command.Parameters.AddWithValue("@contextLinkId", contextLinkId);
+                
+                await command.ExecuteNonQueryAsync();
+                
+                Console.WriteLine($"Database updated: context link ID {contextLinkId} → is_excluded = {isExcluded}");
+                
+                // Trigger context invalidation
+                if (_contextCacheService != null && sessionId > 0)
+                {
+                    await _contextCacheService.InvalidateContextAsync(sessionId);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error updating file visibility: {ex.Message}");
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Update file summary usage with context invalidation
+        /// </summary>
+        public async Task UpdateContextFileSummaryUsageAsync(int contextLinkId, bool useSummary)
+        {
+            try
+            {
+                using var connection = new SqliteConnection(_connectionString);
+                await connection.OpenAsync();
+                
+                // Get session ID first
+                var sessionId = await GetSessionIdForContextLinkAsync(connection, contextLinkId);
+                
+                var sql = "UPDATE context_file_links SET use_summary = @useSummary WHERE id = @contextLinkId";
+                
+                using var command = new SqliteCommand(sql, connection);
+                command.Parameters.AddWithValue("@useSummary", useSummary);
+                command.Parameters.AddWithValue("@contextLinkId", contextLinkId);
+                
+                await command.ExecuteNonQueryAsync();
+                
+                Console.WriteLine($"Database updated: context link ID {contextLinkId} → use_summary = {useSummary}");
+                
+                // Trigger context invalidation
+                if (_contextCacheService != null && sessionId > 0)
+                {
+                    await _contextCacheService.InvalidateContextAsync(sessionId);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error updating file summary usage: {ex.Message}");
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Remove file from context with context invalidation
+        /// </summary>
+        public async Task RemoveContextFileAsync(int contextLinkId)
+        {
+            try
+            {
+                using var connection = new SqliteConnection(_connectionString);
+                await connection.OpenAsync();
+                
+                // Get session ID first
+                var sessionId = await GetSessionIdForContextLinkAsync(connection, contextLinkId);
+                
+                var sql = "DELETE FROM context_file_links WHERE id = @contextLinkId";
+                
+                using var command = new SqliteCommand(sql, connection);
+                command.Parameters.AddWithValue("@contextLinkId", contextLinkId);
+                
+                var rowsAffected = await command.ExecuteNonQueryAsync();
+                
+                if (rowsAffected > 0)
+                {
+                    Console.WriteLine($"Database updated: context link ID {contextLinkId} removed from context_file_links");
+                }
+                else
+                {
+                    Console.WriteLine($"Warning: No rows affected when removing context link ID {contextLinkId}");
+                }
+                
+                // Trigger context invalidation
+                if (_contextCacheService != null && sessionId > 0)
+                {
+                    await _contextCacheService.InvalidateContextAsync(sessionId);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error removing file from context: {ex.Message}");
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Helper method to get session ID for a context link
+        /// </summary>
+        private async Task<int> GetSessionIdForContextLinkAsync(SqliteConnection connection, int contextLinkId)
+        {
+            try
+            {
+                var sql = "SELECT context_session_id FROM context_file_links WHERE id = @contextLinkId";
+                using var command = new SqliteCommand(sql, connection);
+                command.Parameters.AddWithValue("@contextLinkId", contextLinkId);
+                
+                var result = await command.ExecuteScalarAsync();
+                return result != null ? Convert.ToInt32(result) : 0;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error getting session ID for context link {contextLinkId}: {ex.Message}");
+                return 0;
             }
         }
     }

@@ -56,6 +56,10 @@ public sealed partial class MainPage : Page
         // Initialize database service
         _databaseService = new DatabaseService();
         
+        // Initialize context cache service and connect to database service
+        var contextCacheService = new ContextCacheService();
+        _databaseService.SetContextCacheService(contextCacheService);
+        
         // Initialize chat context service
         _chatContextService = new ChatContextService(_databaseService);
         

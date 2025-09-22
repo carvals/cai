@@ -563,26 +563,8 @@ public sealed partial class ContextPanel : UserControl
     {
         try
         {
-            using var connection = new SqliteConnection(_databaseService.GetConnectionString());
-            await connection.OpenAsync();
-            
-            // Update display_name in file_data table (not context_file_links)
-            var sql = @"
-                UPDATE file_data 
-                SET display_name = @displayName 
-                WHERE id = (
-                    SELECT file_id 
-                    FROM context_file_links 
-                    WHERE id = @contextLinkId
-                )";
-            
-            using var command = new SqliteCommand(sql, connection);
-            command.Parameters.AddWithValue("@displayName", newDisplayName);
-            command.Parameters.AddWithValue("@contextLinkId", contextLinkId);
-            
-            await command.ExecuteNonQueryAsync();
-            
-            Console.WriteLine($"Database updated: context link ID {contextLinkId} → file display_name = '{newDisplayName}'");
+            // Use the new context-aware database method
+            await _databaseService.UpdateContextFileDisplayNameAsync(contextLinkId, newDisplayName);
         }
         catch (Exception ex)
         {
@@ -623,18 +605,8 @@ public sealed partial class ContextPanel : UserControl
     {
         try
         {
-            using var connection = new SqliteConnection(_databaseService.GetConnectionString());
-            await connection.OpenAsync();
-            
-            var sql = "UPDATE context_file_links SET is_excluded = @isExcluded WHERE id = @contextLinkId";
-            
-            using var command = new SqliteCommand(sql, connection);
-            command.Parameters.AddWithValue("@isExcluded", isExcluded);
-            command.Parameters.AddWithValue("@contextLinkId", contextLinkId);
-            
-            await command.ExecuteNonQueryAsync();
-            
-            Console.WriteLine($"Database updated: context link ID {contextLinkId} → is_excluded = {isExcluded}");
+            // Use the new context-aware database method
+            await _databaseService.UpdateContextFileVisibilityAsync(contextLinkId, isExcluded);
         }
         catch (Exception ex)
         {
@@ -662,8 +634,8 @@ public sealed partial class ContextPanel : UserControl
             
             if (result == Microsoft.UI.Xaml.Controls.ContentDialogResult.Primary)
             {
-                // Remove from database
-                await RemoveFileFromContext(file.Id);
+                // Remove from database using context-aware method
+                await _databaseService.RemoveContextFileAsync(file.Id);
                 
                 // Remove from UI
                 var parent = card.Parent as StackPanel;
@@ -701,35 +673,6 @@ public sealed partial class ContextPanel : UserControl
         }
     }
 
-    private async Task RemoveFileFromContext(int contextLinkId)
-    {
-        try
-        {
-            using var connection = new SqliteConnection(_databaseService.GetConnectionString());
-            await connection.OpenAsync();
-            
-            var sql = "DELETE FROM context_file_links WHERE id = @contextLinkId";
-            
-            using var command = new SqliteCommand(sql, connection);
-            command.Parameters.AddWithValue("@contextLinkId", contextLinkId);
-            
-            var rowsAffected = await command.ExecuteNonQueryAsync();
-            
-            if (rowsAffected > 0)
-            {
-                Console.WriteLine($"Database updated: context link ID {contextLinkId} removed from context_file_links");
-            }
-            else
-            {
-                Console.WriteLine($"Warning: No rows affected when removing context link ID {contextLinkId}");
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error removing file from context: {ex.Message}");
-            throw;
-        }
-    }
 
     private async Task UpdateUseSummary(ContextFileInfo file, bool useSummary)
     {
@@ -756,18 +699,8 @@ public sealed partial class ContextPanel : UserControl
     {
         try
         {
-            using var connection = new SqliteConnection(_databaseService.GetConnectionString());
-            await connection.OpenAsync();
-            
-            var sql = "UPDATE context_file_links SET use_summary = @useSummary WHERE id = @contextLinkId";
-            
-            using var command = new SqliteCommand(sql, connection);
-            command.Parameters.AddWithValue("@useSummary", useSummary);
-            command.Parameters.AddWithValue("@contextLinkId", contextLinkId);
-            
-            await command.ExecuteNonQueryAsync();
-            
-            Console.WriteLine($"Database updated: context link ID {contextLinkId} → use_summary = {useSummary}");
+            // Use the new context-aware database method
+            await _databaseService.UpdateContextFileSummaryUsageAsync(contextLinkId, useSummary);
         }
         catch (Exception ex)
         {
