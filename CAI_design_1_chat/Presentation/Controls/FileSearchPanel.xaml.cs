@@ -92,8 +92,11 @@ namespace CAI_design_1_chat.Presentation.Controls
                 _currentResults.Clear();
                 _selectedFile = null;
                 
+                // Check if search should be name-only
+                var searchNameOnly = SearchNameOnlyCheckBox.IsChecked == true;
+                
                 // Perform search
-                var results = await _fileSearchService.SearchFilesAsync(searchText, _currentSessionId);
+                var results = await _fileSearchService.SearchFilesAsync(searchText, _currentSessionId, searchNameOnly);
                 _currentResults = results;
                 
                 // Display results
@@ -217,19 +220,22 @@ namespace CAI_design_1_chat.Presentation.Controls
                 TextTrimming = TextTrimming.CharacterEllipsis
             };
 
-            // Set text and color based on state - NO green colors, only white text
+            // Set text and color based on state - following the spec exactly
             if (isInContext)
             {
+                // In Context: "  ✓ filename.pdf" (white text, transparent background)
                 nameText.Text = $"  ✓ {file.DisplayFileName}";
                 nameText.Foreground = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.White);
             }
             else if (isSelected)
             {
+                // Selected: "  ► filename.pdf" (white text, darker purple background)
                 nameText.Text = $"  ► {file.DisplayFileName}";
                 nameText.Foreground = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.White);
             }
             else
             {
+                // Available: "    filename.pdf" (white text, transparent background)
                 nameText.Text = $"    {file.DisplayFileName}";
                 nameText.Foreground = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.White);
             }
@@ -356,48 +362,51 @@ namespace CAI_design_1_chat.Presentation.Controls
 
         private async void AddToContextButton_Click(object sender, RoutedEventArgs e)
         {
-            var button = sender as Button;
-            var file = button?.Tag as FileSearchResult;
-            
-            if (file == null || _fileSearchService == null)
+            if (_selectedFile == null || _fileSearchService == null)
             {
-                Console.WriteLine("FileSearchPanel: Cannot add to context - file or service is null");
+                Console.WriteLine("FileSearchPanel: Cannot add to context - no file selected or service is null");
                 return;
             }
 
             try
             {
-                button.IsEnabled = false;
-                button.Content = "Adding...";
+                // Show loading state
+                AddToContextButton.IsEnabled = false;
+                AddToContextButton.Content = "Adding...";
                 
-                var success = await _fileSearchService.AddFileToContextAsync(file.Id, _currentSessionId);
+                var success = await _fileSearchService.AddFileToContextAsync(_selectedFile.Id, _currentSessionId);
                 
                 if (success)
                 {
-                    file.InContext = true;
-                    button.Content = "✓ Added";
-                    button.Background = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Green);
+                    // Mark file as in context
+                    _selectedFile.InContext = true;
                     
-                    // Update main Add to Context button if this is the selected file
-                    if (_selectedFile?.Id == file.Id)
-                    {
-                        AddToContextButton.IsEnabled = false;
-                    }
+                    // Refresh the display to show the ✓ tick mark
+                    await DisplaySearchResults(_currentResults);
                     
-                    Console.WriteLine($"FileSearchPanel: Successfully added file '{file.DisplayFileName}' to context");
+                    // Show success feedback
+                    AddToContextButton.Content = "Added ✓";
+                    await Task.Delay(1500);
+                    
+                    // Update button state to reflect file is now in context
+                    UpdateAddToContextButton();
+                    
+                    Console.WriteLine($"FileSearchPanel: Successfully added '{_selectedFile.DisplayFileName}' to context for session {_currentSessionId}");
                 }
                 else
                 {
-                    button.Content = "Already Added";
-                    button.IsEnabled = false;
-                    Console.WriteLine($"FileSearchPanel: File '{file.DisplayFileName}' was already in context");
+                    AddToContextButton.Content = "Already in Context";
+                    AddToContextButton.IsEnabled = false;
+                    Console.WriteLine($"FileSearchPanel: File '{_selectedFile.DisplayFileName}' was already in context");
                 }
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"FileSearchPanel: Error adding file to context: {ex.Message}");
-                button.Content = "Error";
-                button.IsEnabled = true;
+                AddToContextButton.Content = "Error";
+                await Task.Delay(2000);
+                AddToContextButton.Content = "Add to Context";
+                AddToContextButton.IsEnabled = true;
             }
         }
 
@@ -412,11 +421,43 @@ namespace CAI_design_1_chat.Presentation.Controls
                 // Refresh display to show purple selection
                 await DisplaySearchResults(_currentResults);
                 
-                Console.WriteLine($"FileSearchPanel: Selected file '{file.DisplayFileName}'");
+                // Update Add to Context button based on whether file is already in context
+                UpdateAddToContextButton();
+                
+                Console.WriteLine($"FileSearchPanel: Selected file '{file.DisplayFileName}' (InContext: {file.InContext})");
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"FileSearchPanel: Error selecting file: {ex.Message}");
+            }
+        }
+
+        private void UpdateAddToContextButton()
+        {
+            try
+            {
+                if (_selectedFile == null)
+                {
+                    // No file selected - disable button
+                    AddToContextButton.IsEnabled = false;
+                    AddToContextButton.Content = "Add to Context";
+                }
+                else if (_selectedFile.InContext)
+                {
+                    // File already in context - disable button and show status
+                    AddToContextButton.IsEnabled = false;
+                    AddToContextButton.Content = "Already in Context";
+                }
+                else
+                {
+                    // File not in context - enable button
+                    AddToContextButton.IsEnabled = true;
+                    AddToContextButton.Content = "Add to Context";
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"FileSearchPanel: Error updating Add to Context button: {ex.Message}");
             }
         }
 

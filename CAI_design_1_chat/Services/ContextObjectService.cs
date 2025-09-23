@@ -184,11 +184,14 @@ namespace CAI_design_1_chat.Services
                 var contentOrdinal = reader.GetOrdinal("content");
                 var summaryOrdinal = reader.GetOrdinal("summary");
 
+                var displayNameOrdinal = reader.GetOrdinal("display_name");
+                var originalNameOrdinal = reader.GetOrdinal("original_name");
+
                 files.Add(new ContextFileInfo
                 {
                     Id = reader.GetInt32(reader.GetOrdinal("id")),
-                    DisplayName = reader.GetString(reader.GetOrdinal("display_name")),
-                    OriginalName = reader.GetString(reader.GetOrdinal("original_name")),
+                    DisplayName = reader.IsDBNull(displayNameOrdinal) ? "" : reader.GetString(displayNameOrdinal),
+                    OriginalName = reader.IsDBNull(originalNameOrdinal) ? "" : reader.GetString(originalNameOrdinal),
                     UseSummary = reader.GetBoolean(reader.GetOrdinal("use_summary")),
                     IsExcluded = reader.GetBoolean(reader.GetOrdinal("is_excluded")),
                     OrderIndex = reader.GetInt32(reader.GetOrdinal("order_index")),

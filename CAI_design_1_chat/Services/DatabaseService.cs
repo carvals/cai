@@ -270,14 +270,36 @@ namespace CAI_design_1_chat.Services
                     return sessionId;
                 }
                 
-                // If no session exists, return 1 as fallback
-                Console.WriteLine("No session found, using session ID: 1");
-                return 1;
+                // If no session exists, create a default session
+                Console.WriteLine("No session found, creating default session");
+                var newSessionId = await CreateDefaultSessionAsync(connection);
+                Console.WriteLine($"Created default session with ID: {newSessionId}");
+                return newSessionId;
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Error getting session ID: {ex.Message}");
                 return 1; // Fallback
+            }
+        }
+
+        private async Task<int> CreateDefaultSessionAsync(SqliteConnection connection)
+        {
+            try
+            {
+                var insertSql = "INSERT INTO session (session_name, user, is_active) VALUES ('Default Session', 'user', 1)";
+                using var insertCommand = new SqliteCommand(insertSql, connection);
+                await insertCommand.ExecuteNonQueryAsync();
+                
+                // Get the newly created session ID
+                using var selectCommand = new SqliteCommand("SELECT last_insert_rowid()", connection);
+                var result = await selectCommand.ExecuteScalarAsync();
+                return Convert.ToInt32(result);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error creating default session: {ex.Message}");
+                throw;
             }
         }
 
@@ -496,7 +518,7 @@ namespace CAI_design_1_chat.Services
 
         #region File Search Methods
 
-        public async Task<List<Models.FileSearchResult>> SearchFilesAsync(string searchTerm, int currentSessionId)
+        public async Task<List<Models.FileSearchResult>> SearchFilesAsync(string searchTerm, int currentSessionId, bool searchNameOnly = false)
         {
             var results = new List<Models.FileSearchResult>();
 
@@ -522,8 +544,10 @@ namespace CAI_design_1_chat.Services
                         AND cfl.context_session_id = @currentSessionId
                     WHERE (
                         LOWER(fd.name) LIKE LOWER(@search) OR 
-                        LOWER(fd.display_name) LIKE LOWER(@search) OR 
-                        LOWER(fd.summary) LIKE LOWER(@search)
+                        LOWER(fd.display_name) LIKE LOWER(@search)" + 
+                        (searchNameOnly ? "" : @" OR 
+                        LOWER(fd.summary) LIKE LOWER(@search) OR
+                        LOWER(fd.content) LIKE LOWER(@search)") + @"
                     )
                     ORDER BY fd.created_at DESC
                     LIMIT 50";

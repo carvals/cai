@@ -1754,13 +1754,18 @@ public sealed partial class MainPage : Page
     {
         try
         {
-            // Hide other overlays
+            Console.WriteLine("MainPage: Showing FileSearchPanel overlay");
+            
+            // Hide file upload overlay if visible
             FileUploadOverlay.Visibility = Visibility.Collapsed;
+            
+            // Set the current session ID in FileSearchPanel
+            FileSearchOverlay.SetCurrentSession(_currentSessionId);
             
             // Show file search overlay
             FileSearchOverlay.Visibility = Visibility.Visible;
             
-            Console.WriteLine("MainPage: FileSearchPanel overlay shown successfully");
+            Console.WriteLine($"MainPage: FileSearchPanel overlay shown with session {_currentSessionId}");
         }
         catch (Exception ex)
         {

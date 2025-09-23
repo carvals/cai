@@ -14,11 +14,12 @@ namespace CAI_design_1_chat.Services
             _databaseService = databaseService ?? throw new ArgumentNullException(nameof(databaseService));
         }
 
-        public async Task<List<FileSearchResult>> SearchFilesAsync(string searchTerm, int currentSessionId)
+        public async Task<List<FileSearchResult>> SearchFilesAsync(string searchTerm, int currentSessionId, bool searchNameOnly = false)
         {
             try
             {
-                Console.WriteLine($"FileSearchService: Searching for '{searchTerm}' in session {currentSessionId}");
+                var searchScope = searchNameOnly ? "name only" : "all fields";
+                Console.WriteLine($"FileSearchService: Searching for '{searchTerm}' in session {currentSessionId} ({searchScope})");
 
                 if (string.IsNullOrWhiteSpace(searchTerm) || searchTerm.Length < 3)
                 {
@@ -26,7 +27,7 @@ namespace CAI_design_1_chat.Services
                     return new List<FileSearchResult>();
                 }
 
-                var results = await _databaseService.SearchFilesAsync(searchTerm, currentSessionId);
+                var results = await _databaseService.SearchFilesAsync(searchTerm, currentSessionId, searchNameOnly);
                 Console.WriteLine($"FileSearchService: Found {results.Count} results");
 
                 return results;

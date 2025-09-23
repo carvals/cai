@@ -73,10 +73,20 @@ public sealed partial class ContextPanel : UserControl
     {
         try
         {
-            // Trigger manual refresh event for context token count update
-            if (_contextObjectService != null)
+            // Guard clause: Don't load if session ID is invalid
+            if (_currentSessionId <= 0)
             {
-                // This will trigger context cache invalidation and token count update
+                Console.WriteLine($"ContextPanel: Cannot load context files - invalid session ID: {_currentSessionId}");
+                EmptyStateText.Text = "No session selected";
+                EmptyStateText.Visibility = Visibility.Visible;
+                return;
+            }
+
+            Console.WriteLine($"ContextPanel: Loading context files for session {_currentSessionId}");
+
+            // Invalidate cache before refreshing
+            if (_databaseService != null)
+            {
                 var contextCacheService = _databaseService.GetContextCacheService();
                 if (contextCacheService != null)
                 {
@@ -111,8 +121,9 @@ public sealed partial class ContextPanel : UserControl
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error loading context files: {ex.Message}");
-            EmptyStateText.Text = "Error loading context files";
+            Console.WriteLine($"Error loading context files for session {_currentSessionId}: {ex.Message}");
+            Console.WriteLine($"Stack trace: {ex.StackTrace}");
+            EmptyStateText.Text = $"Error loading context files (Session: {_currentSessionId})";
             EmptyStateText.Visibility = Visibility.Visible;
         }
     }
@@ -293,12 +304,14 @@ public sealed partial class ContextPanel : UserControl
         {
             var contentOrdinal = reader.GetOrdinal("content");
             var summaryOrdinal = reader.GetOrdinal("summary");
+            var displayNameOrdinal = reader.GetOrdinal("display_name");
+            var originalNameOrdinal = reader.GetOrdinal("original_name");
             
             files.Add(new ContextFileInfo
             {
                 Id = reader.GetInt32(reader.GetOrdinal("id")),
-                DisplayName = reader.GetString(reader.GetOrdinal("display_name")),
-                OriginalName = reader.GetString(reader.GetOrdinal("original_name")),
+                DisplayName = reader.IsDBNull(displayNameOrdinal) ? "" : reader.GetString(displayNameOrdinal),
+                OriginalName = reader.IsDBNull(originalNameOrdinal) ? "" : reader.GetString(originalNameOrdinal),
                 UseSummary = reader.GetBoolean(reader.GetOrdinal("use_summary")),
                 IsExcluded = reader.GetBoolean(reader.GetOrdinal("is_excluded")),
                 OrderIndex = reader.GetInt32(reader.GetOrdinal("order_index")),
