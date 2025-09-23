@@ -190,9 +190,10 @@ public sealed partial class MainPage : Page
                 // Update button visual states
                 UpdatePanelButtonStates(isWorkspaceActive: true);
                 
-                // Show workspace panel, hide context panel
+                // Show workspace panel, hide others
                 WorkspacePanel.Visibility = Visibility.Visible;
                 ContextPanelControl.Visibility = Visibility.Collapsed;
+                InstructionShortcutsPanel.Visibility = Visibility.Collapsed;
                 
                 Console.WriteLine("Workspace panel activated");
                 break;

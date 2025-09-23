@@ -137,7 +137,7 @@ namespace CAI_design_1_chat.Presentation.Controls
                 Text = shortcut.Title,
                 Style = (Style)Application.Current.Resources["BodyTextBlockStyle"],
                 Foreground = shortcut.IsActive 
-                    ? (Brush)Application.Current.Resources["MaterialOnSurfaceBrush"]
+                    ? new SolidColorBrush(Colors.White)
                     : new SolidColorBrush(Color.FromArgb(128, 255, 255, 255)),
                 VerticalAlignment = VerticalAlignment.Center
             };
@@ -149,7 +149,7 @@ namespace CAI_design_1_chat.Presentation.Controls
                 Text = shortcut.Shortcut ?? "",
                 Style = (Style)Application.Current.Resources["CaptionTextBlockStyle"],
                 Foreground = shortcut.IsActive 
-                    ? (Brush)Application.Current.Resources["MaterialOnSurfaceVariantBrush"]
+                    ? new SolidColorBrush(Colors.White)
                     : new SolidColorBrush(Color.FromArgb(128, 255, 255, 255)),
                 FontFamily = new FontFamily("Consolas"),
                 VerticalAlignment = VerticalAlignment.Center
@@ -160,10 +160,11 @@ namespace CAI_design_1_chat.Presentation.Controls
             grid.Children.Add(shortcutText);
             border.Child = grid;
 
-            // Add hover effects
+            // Add hover effects - match Add New button color
             border.PointerEntered += (s, e) =>
             {
-                border.Background = new SolidColorBrush(Color.FromArgb(25, 138, 43, 226));
+                // Use the same purple color as Add New button
+                border.Background = new SolidColorBrush(Color.FromArgb(255, 138, 43, 226)); // Purple color
                 ToolTipService.SetToolTip(border, shortcut.Description);
             };
 

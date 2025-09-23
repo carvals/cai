@@ -44,7 +44,6 @@
                    FontWeight="Medium" />
         
         <ComboBox x:Name="CategoryFilterComboBox"
-                  PlaceholderText="All Categories"
                   HorizontalAlignment="Stretch"
                   SelectionChanged="CategoryFilterComboBox_SelectionChanged" />
       </StackPanel>
