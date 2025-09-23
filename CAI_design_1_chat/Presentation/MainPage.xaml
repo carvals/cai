@@ -769,100 +769,108 @@
                       CornerRadius="8"
                       Padding="20">
                 
-                <ScrollViewer VerticalScrollBarVisibility="Auto">
-                  <StackPanel Spacing="16">
-                    <!-- Name Field -->
-                    <StackPanel Spacing="6">
-                      <TextBlock Text="Name"
-                                 Style="{ThemeResource CaptionTextBlockStyle}"
-                                 Foreground="{ThemeResource MaterialOnSurfaceVariantBrush}"
-                                 FontWeight="Medium" />
-                      <TextBox x:Name="FormNameTextBox"
-                               PlaceholderText="Enter instruction name"
-                               Background="{ThemeResource MaterialSurfaceVariantBrush}"
-                               BorderBrush="{ThemeResource MaterialOutlineVariantBrush}"
-                               BorderThickness="1"
-                               CornerRadius="4"
-                               Padding="12,8" />
+                <Grid>
+                  <Grid.RowDefinitions>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                  </Grid.RowDefinitions>
+
+                  <!-- Form Fields (scrollable) -->
+                  <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto">
+                    <StackPanel Spacing="16">
+                      <!-- Name Field -->
+                      <StackPanel Spacing="6">
+                        <TextBlock Text="Name"
+                                   Style="{ThemeResource CaptionTextBlockStyle}"
+                                   Foreground="{ThemeResource MaterialOnSurfaceVariantBrush}"
+                                   FontWeight="Medium" />
+                        <TextBox x:Name="FormNameTextBox"
+                                 PlaceholderText="Enter instruction name"
+                                 Background="{ThemeResource MaterialSurfaceVariantBrush}"
+                                 BorderBrush="{ThemeResource MaterialOutlineVariantBrush}"
+                                 BorderThickness="1"
+                                 CornerRadius="4"
+                                 Padding="12,8" />
+                      </StackPanel>
+                      
+                      <!-- Shortcut Field -->
+                      <StackPanel Spacing="6">
+                        <TextBlock Text="Shortcut"
+                                   Style="{ThemeResource CaptionTextBlockStyle}"
+                                   Foreground="{ThemeResource MaterialOnSurfaceVariantBrush}"
+                                   FontWeight="Medium" />
+                        <TextBox x:Name="FormShortcutTextBox"
+                                 PlaceholderText="e.g., sum, trans, debug (max 20 chars)"
+                                 Background="{ThemeResource MaterialSurfaceVariantBrush}"
+                                 BorderBrush="{ThemeResource MaterialOutlineVariantBrush}"
+                                 BorderThickness="1"
+                                 CornerRadius="4"
+                                 Padding="12,8"
+                                 MaxLength="20"
+                                 TextChanged="FormShortcutTextBox_TextChanged" />
+                        <TextBlock x:Name="FormShortcutValidationText"
+                                   Text="No underscores or spaces allowed"
+                                   Style="{ThemeResource CaptionTextBlockStyle}"
+                                   Foreground="{ThemeResource SystemErrorTextColor}"
+                                   Visibility="Collapsed" />
+                      </StackPanel>
+                      
+                      <!-- Language Field -->
+                      <StackPanel Spacing="6">
+                        <TextBlock Text="Language"
+                                   Style="{ThemeResource CaptionTextBlockStyle}"
+                                   Foreground="{ThemeResource MaterialOnSurfaceVariantBrush}"
+                                   FontWeight="Medium" />
+                        <TextBox x:Name="FormLanguageTextBox"
+                                 PlaceholderText="e.g., en, fr, es"
+                                 Background="{ThemeResource MaterialSurfaceVariantBrush}"
+                                 BorderBrush="{ThemeResource MaterialOutlineVariantBrush}"
+                                 BorderThickness="1"
+                                 CornerRadius="4"
+                                 Padding="12,8" />
+                      </StackPanel>
+                      
+                      <!-- Prompt Type Field -->
+                      <StackPanel Spacing="6">
+                        <TextBlock Text="Prompt Type"
+                                   Style="{ThemeResource CaptionTextBlockStyle}"
+                                   Foreground="{ThemeResource MaterialOnSurfaceVariantBrush}"
+                                   FontWeight="Medium" />
+                        <TextBox x:Name="FormPromptTypeTextBox"
+                                 PlaceholderText="e.g., summary, translation, analysis"
+                                 Background="{ThemeResource MaterialSurfaceVariantBrush}"
+                                 BorderBrush="{ThemeResource MaterialOutlineVariantBrush}"
+                                 BorderThickness="1"
+                                 CornerRadius="4"
+                                 Padding="12,8" />
+                      </StackPanel>
+                      
+                      <!-- Description Field -->
+                      <StackPanel Spacing="6">
+                        <TextBlock Text="Description"
+                                   Style="{ThemeResource CaptionTextBlockStyle}"
+                                   Foreground="{ThemeResource MaterialOnSurfaceVariantBrush}"
+                                   FontWeight="Medium" />
+                        <TextBox x:Name="FormDescriptionTextBox"
+                                 PlaceholderText="Brief description of this instruction"
+                                 Background="{ThemeResource MaterialSurfaceVariantBrush}"
+                                 BorderBrush="{ThemeResource MaterialOutlineVariantBrush}"
+                                 BorderThickness="1"
+                                 CornerRadius="4"
+                                 Padding="12,8"
+                                 Height="80"
+                                 TextWrapping="Wrap"
+                                 AcceptsReturn="True" />
+                      </StackPanel>
+                      
+                      <!-- Is Active Checkbox -->
+                      <CheckBox x:Name="FormIsActiveCheckBox"
+                                Content="Is Active"
+                                IsChecked="True"
+                                Foreground="{ThemeResource MaterialOnSurfaceBrush}" />
                     </StackPanel>
-                    
-                    <!-- Shortcut Field -->
-                    <StackPanel Spacing="6">
-                      <TextBlock Text="Shortcut"
-                                 Style="{ThemeResource CaptionTextBlockStyle}"
-                                 Foreground="{ThemeResource MaterialOnSurfaceVariantBrush}"
-                                 FontWeight="Medium" />
-                      <TextBox x:Name="FormShortcutTextBox"
-                               PlaceholderText="e.g., sum, trans, debug (max 20 chars)"
-                               Background="{ThemeResource MaterialSurfaceVariantBrush}"
-                               BorderBrush="{ThemeResource MaterialOutlineVariantBrush}"
-                               BorderThickness="1"
-                               CornerRadius="4"
-                               Padding="12,8"
-                               MaxLength="20"
-                               TextChanged="FormShortcutTextBox_TextChanged" />
-                      <TextBlock x:Name="FormShortcutValidationText"
-                                 Text="No underscores or spaces allowed"
-                                 Style="{ThemeResource CaptionTextBlockStyle}"
-                                 Foreground="{ThemeResource SystemErrorTextColor}"
-                                 Visibility="Collapsed" />
-                    </StackPanel>
-                    
-                    <!-- Language Field -->
-                    <StackPanel Spacing="6">
-                      <TextBlock Text="Language"
-                                 Style="{ThemeResource CaptionTextBlockStyle}"
-                                 Foreground="{ThemeResource MaterialOnSurfaceVariantBrush}"
-                                 FontWeight="Medium" />
-                      <TextBox x:Name="FormLanguageTextBox"
-                               PlaceholderText="e.g., en, fr, es"
-                               Background="{ThemeResource MaterialSurfaceVariantBrush}"
-                               BorderBrush="{ThemeResource MaterialOutlineVariantBrush}"
-                               BorderThickness="1"
-                               CornerRadius="4"
-                               Padding="12,8" />
-                    </StackPanel>
-                    
-                    <!-- Prompt Type Field -->
-                    <StackPanel Spacing="6">
-                      <TextBlock Text="Prompt Type"
-                                 Style="{ThemeResource CaptionTextBlockStyle}"
-                                 Foreground="{ThemeResource MaterialOnSurfaceVariantBrush}"
-                                 FontWeight="Medium" />
-                      <TextBox x:Name="FormPromptTypeTextBox"
-                               PlaceholderText="e.g., summary, translation, analysis"
-                               Background="{ThemeResource MaterialSurfaceVariantBrush}"
-                               BorderBrush="{ThemeResource MaterialOutlineVariantBrush}"
-                               BorderThickness="1"
-                               CornerRadius="4"
-                               Padding="12,8" />
-                    </StackPanel>
-                    
-                    <!-- Description Field -->
-                    <StackPanel Spacing="6">
-                      <TextBlock Text="Description"
-                                 Style="{ThemeResource CaptionTextBlockStyle}"
-                                 Foreground="{ThemeResource MaterialOnSurfaceVariantBrush}"
-                                 FontWeight="Medium" />
-                      <TextBox x:Name="FormDescriptionTextBox"
-                               PlaceholderText="Brief description of this instruction"
-                               Background="{ThemeResource MaterialSurfaceVariantBrush}"
-                               BorderBrush="{ThemeResource MaterialOutlineVariantBrush}"
-                               BorderThickness="1"
-                               CornerRadius="4"
-                               Padding="12,8"
-                               Height="80"
-                               TextWrapping="Wrap"
-                               AcceptsReturn="True" />
-                    </StackPanel>
-                    
-                    <!-- Is Active Checkbox -->
-                    <CheckBox x:Name="FormIsActiveCheckBox"
-                              Content="Is Active"
-                              IsChecked="True"
-                              Foreground="{ThemeResource MaterialOnSurfaceBrush}" />
-                  </StackPanel>
-                </ScrollViewer>
+                  </ScrollViewer>
+                </Grid>
               </Border>
 
               <!-- Resizable Splitter -->
@@ -925,9 +933,9 @@
                              x:Name="FormCharacterCountText"
                              Text="0 / 500 characters"
                              Style="{ThemeResource CaptionTextBlockStyle}"
-                             Foreground="{ThemeResource MaterialOnSurfaceVariantBrush}"
+                             Foreground="White"
                              HorizontalAlignment="Right"
-                             Margin="0,6,0,16" />
+                             Margin="0,6,0,6" />
 
                   <!-- Action Buttons -->
                   <StackPanel Grid.Row="3"
@@ -936,21 +944,23 @@
                               HorizontalAlignment="Right">
                     <Button x:Name="FormCancelButton"
                             Content="Cancel"
-                            Background="Transparent"
-                            Foreground="{ThemeResource MaterialOnSurfaceBrush}"
-                            BorderBrush="{ThemeResource MaterialOutlineVariantBrush}"
+                            Background="#19FFFFFF"
+                            Foreground="#DCFFFFFF"
+                            BorderBrush="#28FFFFFF"
                             BorderThickness="1"
-                            CornerRadius="8"
-                            Padding="20,8"
+                            CornerRadius="6"
+                            Padding="12,8"
+                            FontWeight="Medium"
                             Click="FormCancelButton_Click" />
                     
                     <Button x:Name="FormSaveButton"
                             Content="Save"
-                            Background="{ThemeResource MaterialPrimaryBrush}"
-                            Foreground="{ThemeResource MaterialOnPrimaryBrush}"
-                            BorderThickness="0"
-                            CornerRadius="8"
-                            Padding="20,8"
+                            Background="#19FFFFFF"
+                            Foreground="#DCFFFFFF"
+                            BorderBrush="#28FFFFFF"
+                            BorderThickness="1"
+                            CornerRadius="6"
+                            Padding="12,8"
                             FontWeight="Medium"
                             Click="FormSaveButton_Click" />
                   </StackPanel>

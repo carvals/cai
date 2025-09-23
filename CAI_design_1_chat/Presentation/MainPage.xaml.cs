@@ -342,7 +342,7 @@ public sealed partial class MainPage : Page
             }
             else
             {
-                FormCharacterCountText.Foreground = (Brush)Application.Current.Resources["MaterialOnSurfaceVariantBrush"];
+                FormCharacterCountText.Foreground = new SolidColorBrush(Color.FromArgb(255, 255, 255, 255)); // White
             }
         }
     }
