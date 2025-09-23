@@ -324,6 +324,10 @@
           <controls:ContextPanel x:Name="ContextPanelControl" 
                                  Visibility="Collapsed" />
           
+          <!-- Instruction Shortcuts Panel -->
+          <controls:InstructionShortcutsPanel x:Name="InstructionShortcutsPanel" 
+                                              Visibility="Collapsed" />
+          
         </Grid>
       </Border>
       
@@ -690,8 +694,8 @@
                                     Canvas.ZIndex="1001"
                                     BackRequested="FileSearchOverlay_BackRequested"/>
           
-          <!-- Instruction Shortcuts Overlay - Positioned within chat content area -->
-          <Grid x:Name="InstructionShortcutsOverlay" 
+          <!-- Instruction Shortcuts Form Overlay - Small overlay for add/edit form only -->
+          <Grid x:Name="InstructionFormOverlay" 
                 Grid.RowSpan="3"
                 Visibility="Collapsed" 
                 Canvas.ZIndex="1002"
@@ -716,8 +720,8 @@
 
                 <!-- Back Button -->
                 <Button Grid.Column="0"
-                        x:Name="BackFromInstructionShortcutsButton"
-                        Click="BackFromInstructionShortcutsButton_Click"
+                        x:Name="BackFromInstructionFormButton"
+                        Click="BackFromInstructionFormButton_Click"
                         Background="#19FFFFFF"
                         BorderBrush="#28FFFFFF"
                         BorderThickness="1"
@@ -736,7 +740,8 @@
 
                 <!-- Page Title -->
                 <TextBlock Grid.Column="1"
-                           Text="Instruction Shortcuts"
+                           x:Name="FormOverlayTitle"
+                           Text="Add Instruction"
                            Style="{ThemeResource TitleTextBlockStyle}"
                            Foreground="{ThemeResource MaterialOnSurfaceBrush}"
                            VerticalAlignment="Center"
@@ -745,303 +750,156 @@
               </Grid>
             </Border>
 
-            <!-- Main Content Area -->
-            <Grid Grid.Row="1" Background="{ThemeResource MaterialSurfaceBrush}">
-              <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="2*" MinWidth="300" />
-                <ColumnDefinition Width="3*" MinWidth="400" />
-              </Grid.ColumnDefinitions>
-
-              <!-- Left Panel: Shortcuts List (from InstructionShortcutsPanel) -->
-              <Border Grid.Column="0" 
-                      Background="{ThemeResource MaterialSurfaceVariantBrush}"
-                      BorderBrush="{ThemeResource MaterialOutlineVariantBrush}"
-                      BorderThickness="0,0,1,0"
-                      Padding="16">
-                
-                <StackPanel Spacing="16">
-                  <!-- Header -->
-                  <Grid>
-                    <Grid.ColumnDefinitions>
-                      <ColumnDefinition Width="*" />
-                      <ColumnDefinition Width="Auto" />
-                    </Grid.ColumnDefinitions>
-                    
-                    <TextBlock Grid.Column="0"
-                               Text="Shortcuts"
-                               Style="{ThemeResource SubtitleTextBlockStyle}"
-                               Foreground="{ThemeResource MaterialOnSurfaceBrush}"
-                               FontWeight="SemiBold"
-                               VerticalAlignment="Center" />
-                  </Grid>
+            <!-- Form Content -->
+            <Border Grid.Row="1"
+                    Background="{ThemeResource MaterialSurfaceBrush}"
+                    Padding="24">
+              
+              <ScrollViewer VerticalScrollBarVisibility="Auto"
+                            HorizontalAlignment="Center"
+                            MaxWidth="600">
+                <StackPanel Spacing="20">
                   
-                  <!-- Add New Button -->
-                  <Button x:Name="OverlayAddNewShortcutButton"
-                          Content="+ Add New"
-                          Background="{ThemeResource MaterialPrimaryBrush}"
-                          Foreground="{ThemeResource MaterialOnPrimaryBrush}"
-                          BorderThickness="0"
-                          CornerRadius="8"
-                          Padding="16,8"
-                          HorizontalAlignment="Stretch"
-                          FontWeight="Medium"
-                          Click="OverlayAddNewShortcutButton_Click" />
-                  
-                  <!-- Category Filter -->
-                  <StackPanel Spacing="8">
-                    <TextBlock Text="Filter by Category:"
-                               Style="{ThemeResource CaptionTextBlockStyle}"
-                               Foreground="{ThemeResource MaterialOnSurfaceVariantBrush}"
-                               FontWeight="Medium" />
-                    
-                    <ComboBox x:Name="OverlayCategoryFilterComboBox"
-                              PlaceholderText="All Categories"
-                              HorizontalAlignment="Stretch"
-                              SelectionChanged="OverlayCategoryFilterComboBox_SelectionChanged" />
-                  </StackPanel>
-                  
-                  <!-- View Deleted Checkbox -->
-                  <CheckBox x:Name="OverlayViewDeletedCheckBox"
-                            Content="View deleted instructions"
-                            Foreground="{ThemeResource MaterialOnSurfaceVariantBrush}"
-                            Checked="OverlayViewDeletedCheckBox_Changed"
-                            Unchecked="OverlayViewDeletedCheckBox_Changed" />
-                  
-                  <!-- Shortcuts Table -->
-                  <Border Background="{ThemeResource MaterialSurfaceBrush}"
-                          BorderBrush="{ThemeResource MaterialOutlineVariantBrush}"
-                          BorderThickness="1"
-                          CornerRadius="8"
-                          MinHeight="300">
-                    
-                    <Grid>
-                      <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="*" />
-                      </Grid.RowDefinitions>
-                      
-                      <!-- Table Header -->
-                      <Border Grid.Row="0"
-                              Background="{ThemeResource MaterialSurfaceVariantBrush}"
-                              BorderBrush="{ThemeResource MaterialOutlineVariantBrush}"
-                              BorderThickness="0,0,0,1"
-                              Padding="12,8">
-                        
-                        <Grid>
-                          <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="2*" />
-                            <ColumnDefinition Width="1*" />
-                          </Grid.ColumnDefinitions>
-                          
-                          <TextBlock Grid.Column="0"
-                                     Text="Name"
-                                     Style="{ThemeResource CaptionTextBlockStyle}"
-                                     Foreground="{ThemeResource MaterialOnSurfaceVariantBrush}"
-                                     FontWeight="SemiBold" />
-                          
-                          <TextBlock Grid.Column="1"
-                                     Text="Shortcut"
-                                     Style="{ThemeResource CaptionTextBlockStyle}"
-                                     Foreground="{ThemeResource MaterialOnSurfaceVariantBrush}"
-                                     FontWeight="SemiBold" />
-                        </Grid>
-                      </Border>
-                      
-                      <!-- Table Content -->
-                      <ScrollViewer Grid.Row="1"
-                                    VerticalScrollBarVisibility="Auto"
-                                    HorizontalScrollBarVisibility="Disabled">
-                        
-                        <StackPanel x:Name="OverlayShortcutsContainer"
-                                    Spacing="0" />
-                      </ScrollViewer>
-                    </Grid>
-                  </Border>
-                </StackPanel>
-              </Border>
-
-              <!-- Right Panel: Add/Edit Form -->
-              <Border Grid.Column="1"
-                      Background="{ThemeResource MaterialSurfaceBrush}"
-                      Padding="24"
-                      x:Name="OverlayEditFormPanel"
-                      Visibility="Collapsed">
-                
-                <ScrollViewer VerticalScrollBarVisibility="Auto">
-                  <StackPanel Spacing="20">
-                    <!-- Form Header -->
-                    <TextBlock x:Name="OverlayFormHeaderText"
-                               Text="Instruction"
-                               Style="{ThemeResource TitleTextBlockStyle}"
-                               Foreground="{ThemeResource MaterialOnSurfaceBrush}"
-                               FontWeight="SemiBold" />
-                    
-                    <!-- Form Fields -->
-                    <StackPanel Spacing="16">
-                      <!-- Name Field -->
-                      <StackPanel Spacing="6">
-                        <TextBlock Text="Name"
-                                   Style="{ThemeResource CaptionTextBlockStyle}"
-                                   Foreground="{ThemeResource MaterialOnSurfaceVariantBrush}"
-                                   FontWeight="Medium" />
-                        <TextBox x:Name="OverlayNameTextBox"
-                                 PlaceholderText="Enter instruction name"
-                                 Background="{ThemeResource MaterialSurfaceVariantBrush}"
-                                 BorderBrush="{ThemeResource MaterialOutlineVariantBrush}"
-                                 BorderThickness="1"
-                                 CornerRadius="4"
-                                 Padding="12,8" />
-                      </StackPanel>
-                      
-                      <!-- Shortcut Field -->
-                      <StackPanel Spacing="6">
-                        <TextBlock Text="Shortcut"
-                                   Style="{ThemeResource CaptionTextBlockStyle}"
-                                   Foreground="{ThemeResource MaterialOnSurfaceVariantBrush}"
-                                   FontWeight="Medium" />
-                        <TextBox x:Name="OverlayShortcutTextBox"
-                                 PlaceholderText="e.g., sum, trans, debug (max 20 chars)"
-                                 Background="{ThemeResource MaterialSurfaceVariantBrush}"
-                                 BorderBrush="{ThemeResource MaterialOutlineVariantBrush}"
-                                 BorderThickness="1"
-                                 CornerRadius="4"
-                                 Padding="12,8"
-                                 MaxLength="20"
-                                 TextChanged="OverlayShortcutTextBox_TextChanged" />
-                        <TextBlock x:Name="OverlayShortcutValidationText"
-                                   Text="No underscores or spaces allowed"
-                                   Style="{ThemeResource CaptionTextBlockStyle}"
-                                   Foreground="{ThemeResource SystemErrorTextColor}"
-                                   Visibility="Collapsed" />
-                      </StackPanel>
-                      
-                      <!-- Language Field -->
-                      <StackPanel Spacing="6">
-                        <TextBlock Text="Language"
-                                   Style="{ThemeResource CaptionTextBlockStyle}"
-                                   Foreground="{ThemeResource MaterialOnSurfaceVariantBrush}"
-                                   FontWeight="Medium" />
-                        <TextBox x:Name="OverlayLanguageTextBox"
-                                 PlaceholderText="e.g., en, fr, es"
-                                 Background="{ThemeResource MaterialSurfaceVariantBrush}"
-                                 BorderBrush="{ThemeResource MaterialOutlineVariantBrush}"
-                                 BorderThickness="1"
-                                 CornerRadius="4"
-                                 Padding="12,8" />
-                      </StackPanel>
-                      
-                      <!-- Prompt Type Field -->
-                      <StackPanel Spacing="6">
-                        <TextBlock Text="Prompt Type"
-                                   Style="{ThemeResource CaptionTextBlockStyle}"
-                                   Foreground="{ThemeResource MaterialOnSurfaceVariantBrush}"
-                                   FontWeight="Medium" />
-                        <TextBox x:Name="OverlayPromptTypeTextBox"
-                                 PlaceholderText="e.g., summary, translation, analysis"
-                                 Background="{ThemeResource MaterialSurfaceVariantBrush}"
-                                 BorderBrush="{ThemeResource MaterialOutlineVariantBrush}"
-                                 BorderThickness="1"
-                                 CornerRadius="4"
-                                 Padding="12,8" />
-                      </StackPanel>
-                      
-                      <!-- Description Field -->
-                      <StackPanel Spacing="6">
-                        <TextBlock Text="Description"
-                                   Style="{ThemeResource CaptionTextBlockStyle}"
-                                   Foreground="{ThemeResource MaterialOnSurfaceVariantBrush}"
-                                   FontWeight="Medium" />
-                        <TextBox x:Name="OverlayDescriptionTextBox"
-                                 PlaceholderText="Brief description of this instruction"
-                                 Background="{ThemeResource MaterialSurfaceVariantBrush}"
-                                 BorderBrush="{ThemeResource MaterialOutlineVariantBrush}"
-                                 BorderThickness="1"
-                                 CornerRadius="4"
-                                 Padding="12,8"
-                                 Height="80"
-                                 TextWrapping="Wrap"
-                                 AcceptsReturn="True" />
-                      </StackPanel>
-                      
-                      <!-- Is Active Checkbox -->
-                      <CheckBox x:Name="OverlayIsActiveCheckBox"
-                                Content="Is Active"
-                                IsChecked="True"
-                                Foreground="{ThemeResource MaterialOnSurfaceBrush}" />
-                    </StackPanel>
-                    
-                    <!-- Instruction Content -->
+                  <!-- Form Fields -->
+                  <StackPanel Spacing="16">
+                    <!-- Name Field -->
                     <StackPanel Spacing="6">
-                      <TextBlock Text="Instruction"
+                      <TextBlock Text="Name"
                                  Style="{ThemeResource CaptionTextBlockStyle}"
                                  Foreground="{ThemeResource MaterialOnSurfaceVariantBrush}"
                                  FontWeight="Medium" />
-                      <TextBox x:Name="OverlayInstructionTextBox"
-                               PlaceholderText="Enter the full instruction text (max 500 characters)"
+                      <TextBox x:Name="FormNameTextBox"
+                               PlaceholderText="Enter instruction name"
+                               Background="{ThemeResource MaterialSurfaceVariantBrush}"
+                               BorderBrush="{ThemeResource MaterialOutlineVariantBrush}"
+                               BorderThickness="1"
+                               CornerRadius="4"
+                               Padding="12,8" />
+                    </StackPanel>
+                    
+                    <!-- Shortcut Field -->
+                    <StackPanel Spacing="6">
+                      <TextBlock Text="Shortcut"
+                                 Style="{ThemeResource CaptionTextBlockStyle}"
+                                 Foreground="{ThemeResource MaterialOnSurfaceVariantBrush}"
+                                 FontWeight="Medium" />
+                      <TextBox x:Name="FormShortcutTextBox"
+                               PlaceholderText="e.g., sum, trans, debug (max 20 chars)"
                                Background="{ThemeResource MaterialSurfaceVariantBrush}"
                                BorderBrush="{ThemeResource MaterialOutlineVariantBrush}"
                                BorderThickness="1"
                                CornerRadius="4"
                                Padding="12,8"
-                               Height="120"
-                               MaxLength="500"
+                               MaxLength="20"
+                               TextChanged="FormShortcutTextBox_TextChanged" />
+                      <TextBlock x:Name="FormShortcutValidationText"
+                                 Text="No underscores or spaces allowed"
+                                 Style="{ThemeResource CaptionTextBlockStyle}"
+                                 Foreground="{ThemeResource SystemErrorTextColor}"
+                                 Visibility="Collapsed" />
+                    </StackPanel>
+                    
+                    <!-- Language Field -->
+                    <StackPanel Spacing="6">
+                      <TextBlock Text="Language"
+                                 Style="{ThemeResource CaptionTextBlockStyle}"
+                                 Foreground="{ThemeResource MaterialOnSurfaceVariantBrush}"
+                                 FontWeight="Medium" />
+                      <TextBox x:Name="FormLanguageTextBox"
+                               PlaceholderText="e.g., en, fr, es"
+                               Background="{ThemeResource MaterialSurfaceVariantBrush}"
+                               BorderBrush="{ThemeResource MaterialOutlineVariantBrush}"
+                               BorderThickness="1"
+                               CornerRadius="4"
+                               Padding="12,8" />
+                    </StackPanel>
+                    
+                    <!-- Prompt Type Field -->
+                    <StackPanel Spacing="6">
+                      <TextBlock Text="Prompt Type"
+                                 Style="{ThemeResource CaptionTextBlockStyle}"
+                                 Foreground="{ThemeResource MaterialOnSurfaceVariantBrush}"
+                                 FontWeight="Medium" />
+                      <TextBox x:Name="FormPromptTypeTextBox"
+                               PlaceholderText="e.g., summary, translation, analysis"
+                               Background="{ThemeResource MaterialSurfaceVariantBrush}"
+                               BorderBrush="{ThemeResource MaterialOutlineVariantBrush}"
+                               BorderThickness="1"
+                               CornerRadius="4"
+                               Padding="12,8" />
+                    </StackPanel>
+                    
+                    <!-- Description Field -->
+                    <StackPanel Spacing="6">
+                      <TextBlock Text="Description"
+                                 Style="{ThemeResource CaptionTextBlockStyle}"
+                                 Foreground="{ThemeResource MaterialOnSurfaceVariantBrush}"
+                                 FontWeight="Medium" />
+                      <TextBox x:Name="FormDescriptionTextBox"
+                               PlaceholderText="Brief description of this instruction"
+                               Background="{ThemeResource MaterialSurfaceVariantBrush}"
+                               BorderBrush="{ThemeResource MaterialOutlineVariantBrush}"
+                               BorderThickness="1"
+                               CornerRadius="4"
+                               Padding="12,8"
+                               Height="80"
                                TextWrapping="Wrap"
                                AcceptsReturn="True" />
                     </StackPanel>
                     
-                    <!-- Action Buttons -->
-                    <StackPanel Orientation="Horizontal"
-                                Spacing="12"
-                                HorizontalAlignment="Right">
-                      <Button x:Name="InstructionCancelButton"
-                              Content="Cancel"
-                              Background="Transparent"
-                              Foreground="{ThemeResource MaterialOnSurfaceBrush}"
-                              BorderBrush="{ThemeResource MaterialOutlineVariantBrush}"
-                              BorderThickness="1"
-                              CornerRadius="8"
-                              Padding="20,8"
-                              Click="InstructionCancelButton_Click" />
-                      
-                      <Button x:Name="InstructionSaveButton"
-                              Content="Save"
-                              Background="{ThemeResource MaterialPrimaryBrush}"
-                              Foreground="{ThemeResource MaterialOnPrimaryBrush}"
-                              BorderThickness="0"
-                              CornerRadius="8"
-                              Padding="20,8"
-                              FontWeight="Medium"
-                              Click="InstructionSaveButton_Click" />
-                    </StackPanel>
+                    <!-- Is Active Checkbox -->
+                    <CheckBox x:Name="FormIsActiveCheckBox"
+                              Content="Is Active"
+                              IsChecked="True"
+                              Foreground="{ThemeResource MaterialOnSurfaceBrush}" />
                   </StackPanel>
-                </ScrollViewer>
-              </Border>
-
-              <!-- Empty State (when no shortcut selected) -->
-              <Border Grid.Column="1"
-                      Background="{ThemeResource MaterialSurfaceBrush}"
-                      x:Name="OverlayEmptyStatePanel">
-                
-                <StackPanel HorizontalAlignment="Center"
-                            VerticalAlignment="Center"
-                            Spacing="16">
                   
-                  <FontIcon Glyph="&#xE945;"
-                            FontSize="48"
-                            Foreground="{ThemeResource MaterialOnSurfaceVariantBrush}" />
+                  <!-- Instruction Content -->
+                  <StackPanel Spacing="6">
+                    <TextBlock Text="Instruction"
+                               Style="{ThemeResource CaptionTextBlockStyle}"
+                               Foreground="{ThemeResource MaterialOnSurfaceVariantBrush}"
+                               FontWeight="Medium" />
+                    <TextBox x:Name="FormInstructionTextBox"
+                             PlaceholderText="Enter the full instruction text (max 500 characters)"
+                             Background="{ThemeResource MaterialSurfaceVariantBrush}"
+                             BorderBrush="{ThemeResource MaterialOutlineVariantBrush}"
+                             BorderThickness="1"
+                             CornerRadius="4"
+                             Padding="12,8"
+                             Height="120"
+                             MaxLength="500"
+                             TextWrapping="Wrap"
+                             AcceptsReturn="True" />
+                  </StackPanel>
                   
-                  <TextBlock Text="Select an instruction to edit"
-                             Style="{ThemeResource SubtitleTextBlockStyle}"
-                             Foreground="{ThemeResource MaterialOnSurfaceVariantBrush}"
-                             HorizontalAlignment="Center" />
-                  
-                  <TextBlock Text="or click 'Add New' to create a shortcut"
-                             Style="{ThemeResource CaptionTextBlockStyle}"
-                             Foreground="{ThemeResource MaterialOnSurfaceVariantBrush}"
-                             HorizontalAlignment="Center" />
+                  <!-- Action Buttons -->
+                  <StackPanel Orientation="Horizontal"
+                              Spacing="12"
+                              HorizontalAlignment="Right">
+                    <Button x:Name="FormCancelButton"
+                            Content="Cancel"
+                            Background="Transparent"
+                            Foreground="{ThemeResource MaterialOnSurfaceBrush}"
+                            BorderBrush="{ThemeResource MaterialOutlineVariantBrush}"
+                            BorderThickness="1"
+                            CornerRadius="8"
+                            Padding="20,8"
+                            Click="FormCancelButton_Click" />
+                    
+                    <Button x:Name="FormSaveButton"
+                            Content="Save"
+                            Background="{ThemeResource MaterialPrimaryBrush}"
+                            Foreground="{ThemeResource MaterialOnPrimaryBrush}"
+                            BorderThickness="0"
+                            CornerRadius="8"
+                            Padding="20,8"
+                            FontWeight="Medium"
+                            Click="FormSaveButton_Click" />
+                  </StackPanel>
                 </StackPanel>
-              </Border>
-            </Grid>
+              </ScrollViewer>
+            </Border>
           </Grid>
           
           <!-- Chat Header -->

@@ -148,9 +148,9 @@ public sealed partial class MainPage : Page
         HandleSidebarButtonClick(PanelType.Context);
     }
 
-    private async void InstructionShortcutsButton_Click(object sender, RoutedEventArgs e)
+    private void InstructionShortcutsButton_Click(object sender, RoutedEventArgs e)
     {
-        await ShowInstructionShortcutsOverlayAsync();
+        HandleSidebarButtonClick(PanelType.InstructionShortcuts);
     }
 
     private void HandleSidebarButtonClick(PanelType requestedPanelType)
@@ -204,6 +204,7 @@ public sealed partial class MainPage : Page
                 // Show context panel, hide workspace panel
                 WorkspacePanel.Visibility = Visibility.Collapsed;
                 ContextPanelControl.Visibility = Visibility.Visible;
+                InstructionShortcutsPanel.Visibility = Visibility.Collapsed;
                 
                 // Load context files for current session
                 await ContextPanelControl.LoadContextFilesAsync(_currentSessionId);
@@ -211,212 +212,123 @@ public sealed partial class MainPage : Page
                 Console.WriteLine("Context panel activated");
                 break;
                 
+            case PanelType.InstructionShortcuts:
+                // Update button visual states
+                UpdatePanelButtonStates(isWorkspaceActive: false);
+                
+                // Show instruction shortcuts panel, hide others
+                WorkspacePanel.Visibility = Visibility.Collapsed;
+                ContextPanelControl.Visibility = Visibility.Collapsed;
+                InstructionShortcutsPanel.Visibility = Visibility.Visible;
+                
+                // Load instruction shortcuts and wire events
+                await LoadInstructionShortcutsAsync();
+                
+                Console.WriteLine("Instruction Shortcuts panel activated");
+                break;
+                
         }
     }
 
 
-    // Instruction Shortcuts Overlay Methods
-    private async Task ShowInstructionShortcutsOverlayAsync()
+    // Instruction Shortcuts Methods
+    private async Task LoadInstructionShortcutsAsync()
     {
         try
         {
-            InstructionShortcutsOverlay.Visibility = Visibility.Visible;
-            await LoadInstructionShortcutsOverlayAsync();
-            ShowOverlayEmptyState();
-            Console.WriteLine("Instruction shortcuts overlay opened");
+            // Initialize the panel and wire events
+            await InstructionShortcutsPanel.InitializeAsync(_instructionShortcutService);
+            
+            // Wire events for overlay
+            InstructionShortcutsPanel.EditShortcutRequested += OnEditShortcutRequested;
+            InstructionShortcutsPanel.AddNewShortcutRequested += OnAddNewShortcutRequested;
+            
+            Console.WriteLine("Instruction shortcuts panel loaded successfully");
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error showing instruction shortcuts overlay: {ex.Message}");
+            Console.WriteLine($"Error loading instruction shortcuts: {ex.Message}");
         }
     }
 
-    private async Task LoadInstructionShortcutsOverlayAsync()
+    private void OnEditShortcutRequested(object? sender, InstructionShortcut shortcut)
     {
-        try
+        ShowInstructionFormOverlay(shortcut);
+    }
+
+    private void OnAddNewShortcutRequested(object? sender, EventArgs e)
+    {
+        ShowInstructionFormOverlay(null);
+    }
+
+    private void ShowInstructionFormOverlay(InstructionShortcut? shortcut)
+    {
+        if (shortcut != null)
         {
-            var shortcuts = await _instructionShortcutService.GetAllShortcutsAsync(false);
-            var categories = await _instructionShortcutService.GetDistinctPromptTypesAsync();
-            
-            // Load categories
-            OverlayCategoryFilterComboBox.Items.Clear();
-            OverlayCategoryFilterComboBox.Items.Add("All Categories");
-            foreach (var category in categories)
-            {
-                OverlayCategoryFilterComboBox.Items.Add(category);
-            }
-            OverlayCategoryFilterComboBox.SelectedIndex = 0;
-            
-            // Load shortcuts
-            RefreshOverlayShortcutsDisplay(shortcuts);
-            
-            Console.WriteLine($"Loaded {shortcuts.Count} shortcuts in overlay");
+            // Edit mode
+            FormOverlayTitle.Text = "Edit Instruction";
+            PopulateFormFields(shortcut);
         }
-        catch (Exception ex)
+        else
         {
-            Console.WriteLine($"Error loading shortcuts overlay: {ex.Message}");
+            // Add mode
+            FormOverlayTitle.Text = "Add Instruction";
+            ClearFormFields();
         }
+        
+        InstructionFormOverlay.Visibility = Visibility.Visible;
+        Console.WriteLine($"Instruction form overlay opened: {(shortcut != null ? "Edit" : "Add")} mode");
     }
 
-    private void RefreshOverlayShortcutsDisplay(List<InstructionShortcut> shortcuts)
+    private void PopulateFormFields(InstructionShortcut shortcut)
     {
-        OverlayShortcutsContainer.Children.Clear();
-
-        foreach (var shortcut in shortcuts)
-        {
-            var shortcutRow = CreateOverlayShortcutRow(shortcut);
-            OverlayShortcutsContainer.Children.Add(shortcutRow);
-        }
+        FormNameTextBox.Text = shortcut.Title;
+        FormShortcutTextBox.Text = shortcut.Shortcut ?? "";
+        FormLanguageTextBox.Text = shortcut.Language;
+        FormPromptTypeTextBox.Text = shortcut.PromptType;
+        FormDescriptionTextBox.Text = shortcut.Description;
+        FormInstructionTextBox.Text = shortcut.Instruction;
+        FormIsActiveCheckBox.IsChecked = shortcut.IsActive;
     }
 
-    private Border CreateOverlayShortcutRow(InstructionShortcut shortcut)
+    private void ClearFormFields()
     {
-        var border = new Border
-        {
-            Background = new SolidColorBrush(Color.FromArgb(0, 0, 0, 0)),
-            BorderBrush = new SolidColorBrush(Color.FromArgb(40, 255, 255, 255)),
-            BorderThickness = new Thickness(0, 0, 0, 1),
-            Padding = new Thickness(12, 8),
-            Tag = shortcut
-        };
-
-        var grid = new Grid();
-        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(2, GridUnitType.Star) });
-        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-
-        // Name column
-        var nameText = new TextBlock
-        {
-            Text = shortcut.Title,
-            Style = (Style)Application.Current.Resources["BodyTextBlockStyle"],
-            Foreground = shortcut.IsActive 
-                ? (Brush)Application.Current.Resources["MaterialOnSurfaceBrush"]
-                : new SolidColorBrush(Color.FromArgb(128, 255, 255, 255)),
-            VerticalAlignment = VerticalAlignment.Center
-        };
-        Grid.SetColumn(nameText, 0);
-
-        // Shortcut column
-        var shortcutText = new TextBlock
-        {
-            Text = shortcut.Shortcut ?? "",
-            Style = (Style)Application.Current.Resources["CaptionTextBlockStyle"],
-            Foreground = shortcut.IsActive 
-                ? (Brush)Application.Current.Resources["MaterialOnSurfaceVariantBrush"]
-                : new SolidColorBrush(Color.FromArgb(128, 255, 255, 255)),
-            FontFamily = new FontFamily("Consolas"),
-            VerticalAlignment = VerticalAlignment.Center
-        };
-        Grid.SetColumn(shortcutText, 1);
-
-        grid.Children.Add(nameText);
-        grid.Children.Add(shortcutText);
-        border.Child = grid;
-
-        // Add hover effects
-        border.PointerEntered += (s, e) =>
-        {
-            border.Background = new SolidColorBrush(Color.FromArgb(25, 138, 43, 226));
-            ToolTipService.SetToolTip(border, shortcut.Description);
-        };
-
-        border.PointerExited += (s, e) =>
-        {
-            border.Background = new SolidColorBrush(Color.FromArgb(0, 0, 0, 0));
-        };
-
-        // Add click handler
-        border.Tapped += (s, e) => EditOverlayShortcut(shortcut);
-        border.DoubleTapped += (s, e) => EditOverlayShortcut(shortcut);
-
-        return border;
+        FormNameTextBox.Text = "";
+        FormShortcutTextBox.Text = "";
+        FormLanguageTextBox.Text = "";
+        FormPromptTypeTextBox.Text = "";
+        FormDescriptionTextBox.Text = "";
+        FormInstructionTextBox.Text = "";
+        FormIsActiveCheckBox.IsChecked = true;
+        ResetFormShortcutValidation();
     }
 
-    private void EditOverlayShortcut(InstructionShortcut shortcut)
+    private void ResetFormShortcutValidation()
     {
-        PopulateOverlayEditForm(shortcut);
-        ShowOverlayEditForm();
+        FormShortcutTextBox.BorderBrush = (Brush)Application.Current.Resources["MaterialOutlineVariantBrush"];
+        FormShortcutValidationText.Visibility = Visibility.Collapsed;
     }
 
-    private void PopulateOverlayEditForm(InstructionShortcut shortcut)
+    // Form Overlay Event Handlers
+    private void BackFromInstructionFormButton_Click(object sender, RoutedEventArgs e)
     {
-        OverlayFormHeaderText.Text = "Edit Instruction";
-        OverlayNameTextBox.Text = shortcut.Title;
-        OverlayShortcutTextBox.Text = shortcut.Shortcut ?? "";
-        OverlayLanguageTextBox.Text = shortcut.Language;
-        OverlayPromptTypeTextBox.Text = shortcut.PromptType;
-        OverlayDescriptionTextBox.Text = shortcut.Description;
-        OverlayInstructionTextBox.Text = shortcut.Instruction;
-        OverlayIsActiveCheckBox.IsChecked = shortcut.IsActive;
+        InstructionFormOverlay.Visibility = Visibility.Collapsed;
+        Console.WriteLine("Instruction form overlay closed");
     }
 
-    private void ShowOverlayEditForm()
-    {
-        OverlayEmptyStatePanel.Visibility = Visibility.Collapsed;
-        OverlayEditFormPanel.Visibility = Visibility.Visible;
-    }
-
-    private void ShowOverlayEmptyState()
-    {
-        OverlayEditFormPanel.Visibility = Visibility.Collapsed;
-        OverlayEmptyStatePanel.Visibility = Visibility.Visible;
-    }
-
-    private void ClearOverlayEditForm()
-    {
-        OverlayFormHeaderText.Text = "New Instruction";
-        OverlayNameTextBox.Text = "";
-        OverlayShortcutTextBox.Text = "";
-        OverlayLanguageTextBox.Text = "";
-        OverlayPromptTypeTextBox.Text = "";
-        OverlayDescriptionTextBox.Text = "";
-        OverlayInstructionTextBox.Text = "";
-        OverlayIsActiveCheckBox.IsChecked = true;
-        ResetOverlayShortcutValidation();
-    }
-
-    private void ResetOverlayShortcutValidation()
-    {
-        OverlayShortcutTextBox.BorderBrush = (Brush)Application.Current.Resources["MaterialOutlineVariantBrush"];
-        OverlayShortcutValidationText.Visibility = Visibility.Collapsed;
-    }
-
-    // Overlay Event Handlers
-    private void BackFromInstructionShortcutsButton_Click(object sender, RoutedEventArgs e)
-    {
-        InstructionShortcutsOverlay.Visibility = Visibility.Collapsed;
-        Console.WriteLine("Instruction shortcuts overlay closed");
-    }
-
-    private void OverlayAddNewShortcutButton_Click(object sender, RoutedEventArgs e)
-    {
-        ClearOverlayEditForm();
-        ShowOverlayEditForm();
-    }
-
-    private async void OverlayCategoryFilterComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
-    {
-        // TODO: Implement category filtering
-    }
-
-    private async void OverlayViewDeletedCheckBox_Changed(object sender, RoutedEventArgs e)
-    {
-        // TODO: Implement view deleted functionality
-    }
-
-    private void OverlayShortcutTextBox_TextChanged(object sender, TextChangedEventArgs e)
+    private void FormShortcutTextBox_TextChanged(object sender, TextChangedEventArgs e)
     {
         // TODO: Implement validation
     }
 
-    private async void InstructionSaveButton_Click(object sender, RoutedEventArgs e)
+    private async void FormSaveButton_Click(object sender, RoutedEventArgs e)
     {
         // TODO: Implement save functionality
     }
 
-    private void InstructionCancelButton_Click(object sender, RoutedEventArgs e)
+    private void FormCancelButton_Click(object sender, RoutedEventArgs e)
     {
-        ShowOverlayEmptyState();
+        InstructionFormOverlay.Visibility = Visibility.Collapsed;
     }
 
     private void UpdatePanelButtonStates(bool isWorkspaceActive)

@@ -1,0 +1,111 @@
+<UserControl x:Class="CAI_design_1_chat.Presentation.Controls.InstructionShortcutsPanel"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  
+  <!-- Instruction Shortcuts Left Panel -->
+  <Border Background="{ThemeResource MaterialSurfaceVariantBrush}"
+          BorderBrush="{ThemeResource MaterialOutlineVariantBrush}"
+          BorderThickness="0,0,1,0"
+          Padding="16">
+    
+    <StackPanel Spacing="16">
+      <!-- Header -->
+      <Grid>
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="*" />
+          <ColumnDefinition Width="Auto" />
+        </Grid.ColumnDefinitions>
+        
+        <TextBlock Grid.Column="0"
+                   Text="Shortcuts"
+                   Style="{ThemeResource SubtitleTextBlockStyle}"
+                   Foreground="{ThemeResource MaterialOnSurfaceBrush}"
+                   FontWeight="SemiBold"
+                   VerticalAlignment="Center" />
+      </Grid>
+      
+      <!-- Add New Button -->
+      <Button x:Name="AddNewShortcutButton"
+              Content="+ Add New"
+              Background="{ThemeResource MaterialPrimaryBrush}"
+              Foreground="{ThemeResource MaterialOnPrimaryBrush}"
+              BorderThickness="0"
+              CornerRadius="8"
+              Padding="16,8"
+              HorizontalAlignment="Stretch"
+              FontWeight="Medium"
+              Click="AddNewShortcutButton_Click" />
+      
+      <!-- Category Filter -->
+      <StackPanel Spacing="8">
+        <TextBlock Text="Filter by Category:"
+                   Style="{ThemeResource CaptionTextBlockStyle}"
+                   Foreground="{ThemeResource MaterialOnSurfaceVariantBrush}"
+                   FontWeight="Medium" />
+        
+        <ComboBox x:Name="CategoryFilterComboBox"
+                  PlaceholderText="All Categories"
+                  HorizontalAlignment="Stretch"
+                  SelectionChanged="CategoryFilterComboBox_SelectionChanged" />
+      </StackPanel>
+      
+      <!-- View Deleted Checkbox -->
+      <CheckBox x:Name="ViewDeletedCheckBox"
+                Content="View deleted instructions"
+                Foreground="{ThemeResource MaterialOnSurfaceVariantBrush}"
+                Checked="ViewDeletedCheckBox_Changed"
+                Unchecked="ViewDeletedCheckBox_Changed" />
+      
+      <!-- Shortcuts Table -->
+      <Border Background="{ThemeResource MaterialSurfaceBrush}"
+              BorderBrush="{ThemeResource MaterialOutlineVariantBrush}"
+              BorderThickness="1"
+              CornerRadius="8"
+              MinHeight="300">
+        
+        <Grid>
+          <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+          </Grid.RowDefinitions>
+          
+          <!-- Table Header -->
+          <Border Grid.Row="0"
+                  Background="{ThemeResource MaterialSurfaceVariantBrush}"
+                  BorderBrush="{ThemeResource MaterialOutlineVariantBrush}"
+                  BorderThickness="0,0,0,1"
+                  Padding="12,8">
+            
+            <Grid>
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="2*" />
+                <ColumnDefinition Width="1*" />
+              </Grid.ColumnDefinitions>
+              
+              <TextBlock Grid.Column="0"
+                         Text="Name"
+                         Style="{ThemeResource CaptionTextBlockStyle}"
+                         Foreground="{ThemeResource MaterialOnSurfaceVariantBrush}"
+                         FontWeight="SemiBold" />
+              
+              <TextBlock Grid.Column="1"
+                         Text="Shortcut"
+                         Style="{ThemeResource CaptionTextBlockStyle}"
+                         Foreground="{ThemeResource MaterialOnSurfaceVariantBrush}"
+                         FontWeight="SemiBold" />
+            </Grid>
+          </Border>
+          
+          <!-- Table Content -->
+          <ScrollViewer Grid.Row="1"
+                        VerticalScrollBarVisibility="Auto"
+                        HorizontalScrollBarVisibility="Disabled">
+            
+            <StackPanel x:Name="ShortcutsContainer"
+                        Spacing="0" />
+          </ScrollViewer>
+        </Grid>
+      </Border>
+    </StackPanel>
+  </Border>
+</UserControl>
