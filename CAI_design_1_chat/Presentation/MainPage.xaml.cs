@@ -26,16 +26,14 @@ public sealed partial class MainPage : Page
     private DateTime _animationStartTime;
     private TimeSpan _animationDuration = TimeSpan.FromMilliseconds(250);
     
-    // AI Services
+    // Services
     private readonly OpenAIService _openAIService;
     private readonly OllamaService _ollamaService;
-    private bool _isAnimating = false;
-    
-    // Database service for chat persistence
     private readonly DatabaseService _databaseService;
     private readonly ChatContextService _chatContextService;
+    private readonly ContextCacheService _contextCacheService;
+    private readonly InstructionShortcutService _instructionShortcutService;
     private ContextParserService _contextParserService;
-    private ContextCacheService _contextCacheService;
     private int _currentSessionId;
     
     // Context token count debouncing
@@ -51,8 +49,9 @@ public sealed partial class MainPage : Page
     private bool _isChatTabActive = true;
     
     // Panel state tracking
-    private enum PanelType { Workspace, Context }
+    private enum PanelType { Workspace, Context, InstructionShortcuts }
     private PanelType? _currentPanelType = PanelType.Workspace;
+    private bool _isAnimating = false;
 
     public MainPage()
     {
@@ -64,9 +63,9 @@ public sealed partial class MainPage : Page
         
         // Initialize database service
         _databaseService = new DatabaseService();
-        
-        // Initialize chat context service
         _chatContextService = new ChatContextService(_databaseService);
+        _contextCacheService = new ContextCacheService(_databaseService, _chatContextService);
+        _instructionShortcutService = new InstructionShortcutService(_databaseService);
         
         // Initialize context cache service with shared service instances
         _contextCacheService = new ContextCacheService(_databaseService, _chatContextService);
@@ -149,6 +148,11 @@ public sealed partial class MainPage : Page
         HandleSidebarButtonClick(PanelType.Context);
     }
 
+    private async void InstructionShortcutsButton_Click(object sender, RoutedEventArgs e)
+    {
+        await ShowInstructionShortcutsOverlayAsync();
+    }
+
     private void HandleSidebarButtonClick(PanelType requestedPanelType)
     {
         if (_isAnimating) return;
@@ -206,7 +210,213 @@ public sealed partial class MainPage : Page
                 
                 Console.WriteLine("Context panel activated");
                 break;
+                
         }
+    }
+
+
+    // Instruction Shortcuts Overlay Methods
+    private async Task ShowInstructionShortcutsOverlayAsync()
+    {
+        try
+        {
+            InstructionShortcutsOverlay.Visibility = Visibility.Visible;
+            await LoadInstructionShortcutsOverlayAsync();
+            ShowOverlayEmptyState();
+            Console.WriteLine("Instruction shortcuts overlay opened");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error showing instruction shortcuts overlay: {ex.Message}");
+        }
+    }
+
+    private async Task LoadInstructionShortcutsOverlayAsync()
+    {
+        try
+        {
+            var shortcuts = await _instructionShortcutService.GetAllShortcutsAsync(false);
+            var categories = await _instructionShortcutService.GetDistinctPromptTypesAsync();
+            
+            // Load categories
+            OverlayCategoryFilterComboBox.Items.Clear();
+            OverlayCategoryFilterComboBox.Items.Add("All Categories");
+            foreach (var category in categories)
+            {
+                OverlayCategoryFilterComboBox.Items.Add(category);
+            }
+            OverlayCategoryFilterComboBox.SelectedIndex = 0;
+            
+            // Load shortcuts
+            RefreshOverlayShortcutsDisplay(shortcuts);
+            
+            Console.WriteLine($"Loaded {shortcuts.Count} shortcuts in overlay");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading shortcuts overlay: {ex.Message}");
+        }
+    }
+
+    private void RefreshOverlayShortcutsDisplay(List<InstructionShortcut> shortcuts)
+    {
+        OverlayShortcutsContainer.Children.Clear();
+
+        foreach (var shortcut in shortcuts)
+        {
+            var shortcutRow = CreateOverlayShortcutRow(shortcut);
+            OverlayShortcutsContainer.Children.Add(shortcutRow);
+        }
+    }
+
+    private Border CreateOverlayShortcutRow(InstructionShortcut shortcut)
+    {
+        var border = new Border
+        {
+            Background = new SolidColorBrush(Color.FromArgb(0, 0, 0, 0)),
+            BorderBrush = new SolidColorBrush(Color.FromArgb(40, 255, 255, 255)),
+            BorderThickness = new Thickness(0, 0, 0, 1),
+            Padding = new Thickness(12, 8),
+            Tag = shortcut
+        };
+
+        var grid = new Grid();
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(2, GridUnitType.Star) });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+
+        // Name column
+        var nameText = new TextBlock
+        {
+            Text = shortcut.Title,
+            Style = (Style)Application.Current.Resources["BodyTextBlockStyle"],
+            Foreground = shortcut.IsActive 
+                ? (Brush)Application.Current.Resources["MaterialOnSurfaceBrush"]
+                : new SolidColorBrush(Color.FromArgb(128, 255, 255, 255)),
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        Grid.SetColumn(nameText, 0);
+
+        // Shortcut column
+        var shortcutText = new TextBlock
+        {
+            Text = shortcut.Shortcut ?? "",
+            Style = (Style)Application.Current.Resources["CaptionTextBlockStyle"],
+            Foreground = shortcut.IsActive 
+                ? (Brush)Application.Current.Resources["MaterialOnSurfaceVariantBrush"]
+                : new SolidColorBrush(Color.FromArgb(128, 255, 255, 255)),
+            FontFamily = new FontFamily("Consolas"),
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        Grid.SetColumn(shortcutText, 1);
+
+        grid.Children.Add(nameText);
+        grid.Children.Add(shortcutText);
+        border.Child = grid;
+
+        // Add hover effects
+        border.PointerEntered += (s, e) =>
+        {
+            border.Background = new SolidColorBrush(Color.FromArgb(25, 138, 43, 226));
+            ToolTipService.SetToolTip(border, shortcut.Description);
+        };
+
+        border.PointerExited += (s, e) =>
+        {
+            border.Background = new SolidColorBrush(Color.FromArgb(0, 0, 0, 0));
+        };
+
+        // Add click handler
+        border.Tapped += (s, e) => EditOverlayShortcut(shortcut);
+        border.DoubleTapped += (s, e) => EditOverlayShortcut(shortcut);
+
+        return border;
+    }
+
+    private void EditOverlayShortcut(InstructionShortcut shortcut)
+    {
+        PopulateOverlayEditForm(shortcut);
+        ShowOverlayEditForm();
+    }
+
+    private void PopulateOverlayEditForm(InstructionShortcut shortcut)
+    {
+        OverlayFormHeaderText.Text = "Edit Instruction";
+        OverlayNameTextBox.Text = shortcut.Title;
+        OverlayShortcutTextBox.Text = shortcut.Shortcut ?? "";
+        OverlayLanguageTextBox.Text = shortcut.Language;
+        OverlayPromptTypeTextBox.Text = shortcut.PromptType;
+        OverlayDescriptionTextBox.Text = shortcut.Description;
+        OverlayInstructionTextBox.Text = shortcut.Instruction;
+        OverlayIsActiveCheckBox.IsChecked = shortcut.IsActive;
+    }
+
+    private void ShowOverlayEditForm()
+    {
+        OverlayEmptyStatePanel.Visibility = Visibility.Collapsed;
+        OverlayEditFormPanel.Visibility = Visibility.Visible;
+    }
+
+    private void ShowOverlayEmptyState()
+    {
+        OverlayEditFormPanel.Visibility = Visibility.Collapsed;
+        OverlayEmptyStatePanel.Visibility = Visibility.Visible;
+    }
+
+    private void ClearOverlayEditForm()
+    {
+        OverlayFormHeaderText.Text = "New Instruction";
+        OverlayNameTextBox.Text = "";
+        OverlayShortcutTextBox.Text = "";
+        OverlayLanguageTextBox.Text = "";
+        OverlayPromptTypeTextBox.Text = "";
+        OverlayDescriptionTextBox.Text = "";
+        OverlayInstructionTextBox.Text = "";
+        OverlayIsActiveCheckBox.IsChecked = true;
+        ResetOverlayShortcutValidation();
+    }
+
+    private void ResetOverlayShortcutValidation()
+    {
+        OverlayShortcutTextBox.BorderBrush = (Brush)Application.Current.Resources["MaterialOutlineVariantBrush"];
+        OverlayShortcutValidationText.Visibility = Visibility.Collapsed;
+    }
+
+    // Overlay Event Handlers
+    private void BackFromInstructionShortcutsButton_Click(object sender, RoutedEventArgs e)
+    {
+        InstructionShortcutsOverlay.Visibility = Visibility.Collapsed;
+        Console.WriteLine("Instruction shortcuts overlay closed");
+    }
+
+    private void OverlayAddNewShortcutButton_Click(object sender, RoutedEventArgs e)
+    {
+        ClearOverlayEditForm();
+        ShowOverlayEditForm();
+    }
+
+    private async void OverlayCategoryFilterComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        // TODO: Implement category filtering
+    }
+
+    private async void OverlayViewDeletedCheckBox_Changed(object sender, RoutedEventArgs e)
+    {
+        // TODO: Implement view deleted functionality
+    }
+
+    private void OverlayShortcutTextBox_TextChanged(object sender, TextChangedEventArgs e)
+    {
+        // TODO: Implement validation
+    }
+
+    private async void InstructionSaveButton_Click(object sender, RoutedEventArgs e)
+    {
+        // TODO: Implement save functionality
+    }
+
+    private void InstructionCancelButton_Click(object sender, RoutedEventArgs e)
+    {
+        ShowOverlayEmptyState();
     }
 
     private void UpdatePanelButtonStates(bool isWorkspaceActive)

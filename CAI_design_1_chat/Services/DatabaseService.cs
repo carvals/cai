@@ -87,6 +87,12 @@ namespace CAI_design_1_chat.Services
                 {
                     await ExecuteMigrationV4Async();
                 }
+                
+                // Run migration v5 if needed
+                if (currentVersion < 5)
+                {
+                    await ExecuteMigrationV5Async();
+                }
             }
             catch (Exception ex)
             {
@@ -168,6 +174,34 @@ namespace CAI_design_1_chat.Services
             catch (Exception ex)
             {
                 Console.WriteLine($"Error executing migration v4: {ex.Message}");
+                throw;
+            }
+        }
+
+        private async Task ExecuteMigrationV5Async()
+        {
+            try
+            {
+                var migrationPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Database", "migration_v5.sql");
+                if (!File.Exists(migrationPath))
+                {
+                    Console.WriteLine($"Migration v5 file not found at: {migrationPath}");
+                    return;
+                }
+
+                var migrationSql = await File.ReadAllTextAsync(migrationPath);
+                
+                using var connection = new SqliteConnection(_connectionString);
+                await connection.OpenAsync();
+                
+                using var command = new SqliteCommand(migrationSql, connection);
+                await command.ExecuteNonQueryAsync();
+                
+                Console.WriteLine("✅ Database migration v5 completed successfully - Instruction Shortcuts ready");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error executing migration v5: {ex.Message}");
                 throw;
             }
         }
