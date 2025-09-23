@@ -322,6 +322,31 @@ public sealed partial class MainPage : Page
         // TODO: Implement validation
     }
 
+    private void FormInstructionTextBox_TextChanged(object sender, TextChangedEventArgs e)
+    {
+        // Update character counter
+        var textBox = sender as TextBox;
+        if (textBox != null && FormCharacterCountText != null)
+        {
+            var currentLength = textBox.Text?.Length ?? 0;
+            FormCharacterCountText.Text = $"{currentLength} / 500 characters";
+            
+            // Change color when approaching limit
+            if (currentLength > 450)
+            {
+                FormCharacterCountText.Foreground = new SolidColorBrush(Color.FromArgb(255, 255, 165, 0)); // Orange
+            }
+            else if (currentLength >= 500)
+            {
+                FormCharacterCountText.Foreground = new SolidColorBrush(Color.FromArgb(255, 255, 0, 0)); // Red
+            }
+            else
+            {
+                FormCharacterCountText.Foreground = (Brush)Application.Current.Resources["MaterialOnSurfaceVariantBrush"];
+            }
+        }
+    }
+
     private async void FormSaveButton_Click(object sender, RoutedEventArgs e)
     {
         // TODO: Implement save functionality
@@ -330,6 +355,67 @@ public sealed partial class MainPage : Page
     private void FormCancelButton_Click(object sender, RoutedEventArgs e)
     {
         InstructionFormOverlay.Visibility = Visibility.Collapsed;
+    }
+
+    // Form Splitter Functionality (similar to FileSearchPanel)
+    private bool _isFormSplitterDragging = false;
+
+    private void FormSplitterHandle_PointerPressed(object sender, PointerRoutedEventArgs e)
+    {
+        var border = sender as Border;
+        if (border != null)
+        {
+            _isFormSplitterDragging = true;
+            border.CapturePointer(e.Pointer);
+            border.Background = new SolidColorBrush(Color.FromArgb(40, 138, 43, 226)); // Light purple
+        }
+    }
+
+    private void FormSplitterHandle_PointerMoved(object sender, PointerRoutedEventArgs e)
+    {
+        if (_isFormSplitterDragging)
+        {
+            var border = sender as Border;
+            var parent = border?.Parent as Grid;
+            if (parent != null)
+            {
+                var position = e.GetCurrentPoint(parent);
+                var newWidth = Math.Max(300, Math.Min(position.Position.X, parent.ActualWidth - 300 - 16)); // Min 300px each side + splitter
+                
+                FormLeftColumn.Width = new GridLength(newWidth);
+            }
+        }
+    }
+
+    private void FormSplitterHandle_PointerReleased(object sender, PointerRoutedEventArgs e)
+    {
+        var border = sender as Border;
+        if (border != null)
+        {
+            _isFormSplitterDragging = false;
+            border.ReleasePointerCapture(e.Pointer);
+            border.Background = new SolidColorBrush(Color.FromArgb(0, 0, 0, 0));
+        }
+    }
+
+    private void FormSplitterHandle_PointerEntered(object sender, PointerRoutedEventArgs e)
+    {
+        var border = sender as Border;
+        if (border != null && !_isFormSplitterDragging)
+        {
+            border.Background = new SolidColorBrush(Color.FromArgb(20, 138, 43, 226)); // Very light purple
+            Window.Current.CoreWindow.PointerCursor = new Windows.UI.Core.CoreCursor(Windows.UI.Core.CoreCursorType.SizeWestEast, 1);
+        }
+    }
+
+    private void FormSplitterHandle_PointerExited(object sender, PointerRoutedEventArgs e)
+    {
+        var border = sender as Border;
+        if (border != null && !_isFormSplitterDragging)
+        {
+            border.Background = new SolidColorBrush(Color.FromArgb(0, 0, 0, 0));
+            Window.Current.CoreWindow.PointerCursor = new Windows.UI.Core.CoreCursor(Windows.UI.Core.CoreCursorType.Arrow, 1);
+        }
     }
 
     private void UpdatePanelButtonStates(bool isWorkspaceActive)

@@ -750,17 +750,26 @@
               </Grid>
             </Border>
 
-            <!-- Form Content -->
-            <Border Grid.Row="1"
-                    Background="{ThemeResource MaterialSurfaceBrush}"
-                    Padding="24">
-              
-              <ScrollViewer VerticalScrollBarVisibility="Auto"
-                            HorizontalAlignment="Center"
-                            MaxWidth="600">
-                <StackPanel Spacing="20">
-                  
-                  <!-- Form Fields -->
+            <!-- Form Content with Resizable Split Layout -->
+            <Grid Grid.Row="1" Margin="24">
+              <Grid.ColumnDefinitions>
+                <!-- Left Panel: Form Fields (resizable) -->
+                <ColumnDefinition x:Name="FormLeftColumn" Width="400" MinWidth="300"/>
+                <!-- Splitter -->
+                <ColumnDefinition Width="Auto"/>
+                <!-- Right Panel: Instruction + Buttons -->
+                <ColumnDefinition Width="*" MinWidth="300"/>
+              </Grid.ColumnDefinitions>
+
+              <!-- Left Panel: Form Fields -->
+              <Border Grid.Column="0"
+                      Background="{ThemeResource MaterialSurfaceBrush}"
+                      BorderBrush="{ThemeResource MaterialOutlineVariantBrush}"
+                      BorderThickness="1"
+                      CornerRadius="8"
+                      Padding="20">
+                
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
                   <StackPanel Spacing="16">
                     <!-- Name Field -->
                     <StackPanel Spacing="6">
@@ -853,28 +862,76 @@
                               IsChecked="True"
                               Foreground="{ThemeResource MaterialOnSurfaceBrush}" />
                   </StackPanel>
-                  
-                  <!-- Instruction Content -->
-                  <StackPanel Spacing="6">
-                    <TextBlock Text="Instruction"
-                               Style="{ThemeResource CaptionTextBlockStyle}"
-                               Foreground="{ThemeResource MaterialOnSurfaceVariantBrush}"
-                               FontWeight="Medium" />
-                    <TextBox x:Name="FormInstructionTextBox"
-                             PlaceholderText="Enter the full instruction text (max 500 characters)"
-                             Background="{ThemeResource MaterialSurfaceVariantBrush}"
-                             BorderBrush="{ThemeResource MaterialOutlineVariantBrush}"
-                             BorderThickness="1"
-                             CornerRadius="4"
-                             Padding="12,8"
-                             Height="120"
-                             MaxLength="500"
-                             TextWrapping="Wrap"
-                             AcceptsReturn="True" />
-                  </StackPanel>
-                  
+                </ScrollViewer>
+              </Border>
+
+              <!-- Resizable Splitter -->
+              <Border Grid.Column="1" 
+                      x:Name="FormSplitterHandle"
+                      Width="8" 
+                      Background="Transparent"
+                      Margin="4,0"
+                      PointerPressed="FormSplitterHandle_PointerPressed"
+                      PointerMoved="FormSplitterHandle_PointerMoved"
+                      PointerReleased="FormSplitterHandle_PointerReleased"
+                      PointerEntered="FormSplitterHandle_PointerEntered"
+                      PointerExited="FormSplitterHandle_PointerExited">
+                <Border Width="2" 
+                        Background="{ThemeResource MaterialOutlineVariantBrush}"
+                        HorizontalAlignment="Center"/>
+              </Border>
+
+              <!-- Right Panel: Instruction + Buttons -->
+              <Border Grid.Column="2"
+                      Background="{ThemeResource MaterialSurfaceBrush}"
+                      BorderBrush="{ThemeResource MaterialOutlineVariantBrush}"
+                      BorderThickness="1"
+                      CornerRadius="8"
+                      Padding="20">
+                
+                <Grid>
+                  <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                  </Grid.RowDefinitions>
+
+                  <!-- Instruction Label -->
+                  <TextBlock Grid.Row="0"
+                             Text="Instruction"
+                             Style="{ThemeResource CaptionTextBlockStyle}"
+                             Foreground="{ThemeResource MaterialOnSurfaceVariantBrush}"
+                             FontWeight="Medium"
+                             Margin="0,0,0,6" />
+
+                  <!-- Instruction TextBox -->
+                  <TextBox Grid.Row="1"
+                           x:Name="FormInstructionTextBox"
+                           PlaceholderText="Enter the full instruction text (max 500 characters)"
+                           Background="{ThemeResource MaterialSurfaceVariantBrush}"
+                           BorderBrush="{ThemeResource MaterialOutlineVariantBrush}"
+                           BorderThickness="1"
+                           CornerRadius="4"
+                           Padding="12,8"
+                           MaxLength="500"
+                           TextWrapping="Wrap"
+                           AcceptsReturn="True"
+                           VerticalAlignment="Stretch"
+                           TextChanged="FormInstructionTextBox_TextChanged" />
+
+                  <!-- Character Counter -->
+                  <TextBlock Grid.Row="2"
+                             x:Name="FormCharacterCountText"
+                             Text="0 / 500 characters"
+                             Style="{ThemeResource CaptionTextBlockStyle}"
+                             Foreground="{ThemeResource MaterialOnSurfaceVariantBrush}"
+                             HorizontalAlignment="Right"
+                             Margin="0,6,0,16" />
+
                   <!-- Action Buttons -->
-                  <StackPanel Orientation="Horizontal"
+                  <StackPanel Grid.Row="3"
+                              Orientation="Horizontal"
                               Spacing="12"
                               HorizontalAlignment="Right">
                     <Button x:Name="FormCancelButton"
@@ -897,9 +954,9 @@
                             FontWeight="Medium"
                             Click="FormSaveButton_Click" />
                   </StackPanel>
-                </StackPanel>
-              </ScrollViewer>
-            </Border>
+                </Grid>
+              </Border>
+            </Grid>
           </Grid>
           
           <!-- Chat Header -->
