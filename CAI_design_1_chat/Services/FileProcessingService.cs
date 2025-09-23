@@ -284,16 +284,17 @@ namespace CAI_design_1_chat.Services
             await connection.OpenAsync();
 
             var sql = @"
-                INSERT INTO file_data (name, content, summary, owner, date_created, file_type, file_size, 
+                INSERT INTO file_data (name, display_name, content, summary, owner, date_created, file_type, file_size, 
                                      processing_status, extraction_method, original_file_path, is_in_context, 
                                      use_summary_in_context, context_order, is_excluded_temporarily, created_at, updated_at)
-                VALUES (@name, @content, @summary, @owner, @dateCreated, @fileType, @fileSize, 
+                VALUES (@name, @displayName, @content, @summary, @owner, @dateCreated, @fileType, @fileSize, 
                         @processingStatus, @extractionMethod, @originalFilePath, @isInContext, 
                         @useSummaryInContext, @contextOrder, @isExcludedTemporarily, @createdAt, @updatedAt);
                 SELECT last_insert_rowid();";
 
             using var command = new SqliteCommand(sql, connection);
             command.Parameters.AddWithValue("@name", fileData.Name);
+            command.Parameters.AddWithValue("@displayName", fileData.DisplayName);
             command.Parameters.AddWithValue("@content", fileData.Content ?? (object)DBNull.Value);
             command.Parameters.AddWithValue("@summary", fileData.Summary ?? (object)DBNull.Value);
             command.Parameters.AddWithValue("@owner", fileData.Owner ?? (object)DBNull.Value);
@@ -321,12 +322,13 @@ namespace CAI_design_1_chat.Services
 
             var sql = @"
                 UPDATE file_data 
-                SET content = @content, summary = @summary, processing_status = @processingStatus, 
+                SET display_name = @displayName, content = @content, summary = @summary, processing_status = @processingStatus, 
                     extraction_method = @extractionMethod, updated_at = @updatedAt
                 WHERE id = @id";
 
             using var command = new SqliteCommand(sql, connection);
             command.Parameters.AddWithValue("@id", fileData.Id);
+            command.Parameters.AddWithValue("@displayName", fileData.DisplayName);
             command.Parameters.AddWithValue("@content", fileData.Content ?? (object)DBNull.Value);
             command.Parameters.AddWithValue("@summary", fileData.Summary ?? (object)DBNull.Value);
             command.Parameters.AddWithValue("@processingStatus", fileData.ProcessingStatus);

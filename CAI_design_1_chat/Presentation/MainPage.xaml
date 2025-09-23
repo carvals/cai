@@ -451,6 +451,22 @@
                                  Text=""
                                  Style="{ThemeResource CaptionTextBlockStyle}"
                                  Foreground="{ThemeResource MaterialOnSurfaceVariantBrush}"/>
+                      
+                      <!-- Rename File Section -->
+                      <TextBlock Text="Rename file to:"
+                                 Style="{ThemeResource CaptionTextBlockStyle}"
+                                 Foreground="{ThemeResource MaterialOnSurfaceVariantBrush}"
+                                 FontWeight="Medium"
+                                 Margin="0,8,0,4"/>
+                      <TextBox x:Name="OverlayFileDisplayNameTextBox"
+                               PlaceholderText="Enter display name (min 4 characters)"
+                               Background="{ThemeResource MaterialSurfaceBrush}"
+                               BorderBrush="{ThemeResource MaterialOutlineVariantBrush}"
+                               BorderThickness="1"
+                               CornerRadius="4"
+                               Padding="8,6"
+                               FontSize="14"
+                               TextChanged="OverlayFileDisplayNameTextBox_TextChanged"/>
                     </StackPanel>
                   </Border>
 

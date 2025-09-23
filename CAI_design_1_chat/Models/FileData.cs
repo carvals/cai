@@ -6,6 +6,7 @@ namespace CAI_design_1_chat.Models
     {
         public int Id { get; set; }
         public string Name { get; set; } = string.Empty;
+        public string DisplayName { get; set; } = string.Empty;
         public string? Content { get; set; }
         public string? Summary { get; set; }
         public string? Owner { get; set; }

@@ -1160,6 +1160,25 @@ public sealed partial class MainPage : Page
         }
     }
 
+    private void OverlayFileDisplayNameTextBox_TextChanged(object sender, TextChangedEventArgs e)
+    {
+        // This event handler can be used for real-time validation if needed
+        // For now, we'll handle validation during save
+    }
+
+    private string GetValidDisplayName()
+    {
+        var displayName = OverlayFileDisplayNameTextBox?.Text?.Trim() ?? "";
+        
+        // If display name is less than 4 characters or empty, use filename
+        if (displayName.Length < 4 && _currentOverlayFile != null)
+        {
+            displayName = System.IO.Path.GetFileNameWithoutExtension(_currentOverlayFile.Name);
+        }
+        
+        return displayName;
+    }
+
     private async Task<string> GetAnthropicResponseAsync(string message)
     {
         // Get conversation context for future implementation
@@ -1493,6 +1512,11 @@ public sealed partial class MainPage : Page
                 OverlaySelectedFileName.Text = file.Name;
                 var fileProperties = await file.GetBasicPropertiesAsync();
                 OverlaySelectedFileSize.Text = FormatFileSize(fileProperties.Size);
+                
+                // Set default display name to filename (without extension)
+                var fileNameWithoutExtension = System.IO.Path.GetFileNameWithoutExtension(file.Name);
+                OverlayFileDisplayNameTextBox.Text = fileNameWithoutExtension;
+                
                 OverlaySelectedFilePanel.Visibility = Visibility.Visible;
                 
                 // Enable extract text button
@@ -1532,6 +1556,9 @@ public sealed partial class MainPage : Page
             
             if (fileData != null && !string.IsNullOrEmpty(fileData.Content))
             {
+                // Set the display name from the textbox (with validation)
+                fileData.DisplayName = GetValidDisplayName();
+                
                 OverlayPreviewTextBox.Text = fileData.Content;
                 OverlayGenerateSummaryButton.IsEnabled = true;
                 OverlaySaveButton.IsEnabled = true;
