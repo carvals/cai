@@ -48,6 +48,10 @@ public sealed partial class MainPage : Page
     // Tab navigation state
     private bool _isChatTabActive = true;
     
+    // Form state tracking
+    private InstructionShortcut? _currentEditingShortcut = null;
+    private readonly InstructionFormValidator _formValidator = new();
+    
     // Panel state tracking
     private enum PanelType { Workspace, Context, InstructionShortcuts }
     private PanelType? _currentPanelType = PanelType.Workspace;
@@ -264,6 +268,8 @@ public sealed partial class MainPage : Page
 
     private void ShowInstructionFormOverlay(InstructionShortcut? shortcut)
     {
+        _currentEditingShortcut = shortcut;
+        
         if (shortcut != null)
         {
             // Edit mode
@@ -349,7 +355,58 @@ public sealed partial class MainPage : Page
 
     private async void FormSaveButton_Click(object sender, RoutedEventArgs e)
     {
-        // TODO: Implement save functionality
+        try
+        {
+            // Validate form data
+            var validationResult = _formValidator.ValidateForm(
+                FormNameTextBox.Text,
+                FormShortcutTextBox.Text,
+                FormLanguageTextBox.Text,
+                FormPromptTypeTextBox.Text,
+                FormDescriptionTextBox.Text,
+                FormInstructionTextBox.Text,
+                FormIsActiveCheckBox.IsChecked ?? true,
+                _currentEditingShortcut
+            );
+
+            if (!validationResult.IsValid)
+            {
+                // Show validation errors
+                var errorMessage = string.Join("\n", validationResult.Errors);
+                await ShowErrorMessage("Validation Error", errorMessage);
+                return;
+            }
+
+            // Save to database using the service
+            await _instructionShortcutService.SaveShortcutAsync(validationResult.ValidatedShortcut!);
+
+            // Refresh the shortcuts panel
+            await InstructionShortcutsPanel.LoadShortcutsAsync();
+
+            // Close the overlay
+            InstructionFormOverlay.Visibility = Visibility.Collapsed;
+            
+            Console.WriteLine($"Instruction shortcut saved successfully: {validationResult.ValidatedShortcut!.Title}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error saving instruction shortcut: {ex.Message}");
+            await ShowErrorMessage("Database Error", $"Failed to save shortcut: {ex.Message}");
+        }
+    }
+
+    private async Task ShowErrorMessage(string title, string message)
+    {
+        // Simple error display using ContentDialog
+        var dialog = new ContentDialog
+        {
+            Title = title,
+            Content = message,
+            CloseButtonText = "OK",
+            XamlRoot = this.XamlRoot
+        };
+
+        await dialog.ShowAsync();
     }
 
     private void FormCancelButton_Click(object sender, RoutedEventArgs e)
